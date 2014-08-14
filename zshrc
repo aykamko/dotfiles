@@ -37,7 +37,6 @@ export EDITOR='vim'
 ###########################################
 # Aliases
 ###########################################
-
 alias vimclean="rm -f ~/.zcompdump* && exec zsh"
 alias vi="vim"
 alias teven="tmux select-layout even-horizontal"
