@@ -12,17 +12,22 @@ call vundle#begin()
 
 " Vundles
 Bundle 'gmarik/Vundle.vim'
+Bundle 'a.vim'
+Bundle 'kien/ctrlp.vim'
+Bundle 'jalcine/cmake.vim'
+Bundle 'mattn/emmet-vim'
 Bundle 'LaTeX-Box-Team/LaTeX-Box'
-Bundle 'tpope/vim-fugitive'
-Bundle 'Lokaltog/vim-easymotion'
 Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Bundle 'majutsushi/tagbar'
-" Bundle 'Valloric/YouCompleteMe' <-- Needs to be set up
 Bundle 'tComment'
-Bundle 'kien/ctrlp.vim'
+Bundle 'scrooloose/syntastic'
 Bundle 'altercation/vim-colors-solarized'
-Bundle 'christoomey/vim-tmux-navigator'
 Bundle 'junegunn/vim-easy-align'
+Bundle 'Lokaltog/vim-easymotion'
+Bundle 'tpope/vim-fugitive'
+Bundle 'airblade/vim-gitgutter'
+Bundle 'christoomey/vim-tmux-navigator'
+Bundle 'Valloric/YouCompleteMe'
 
 call vundle#end()
 filetype plugin indent on     " required
@@ -60,6 +65,8 @@ set sidescroll=10   " minumum columns to scroll horizontally
 " Search
 set nohlsearch      " don't persist search highlighting
 set incsearch       " search with typeahead
+set ignorecase      " ignore case when searching
+set smartcase       " no ignorecase if Uppercase char present
 
 " Indent
 set autoindent      " carry indent over to new lines
@@ -80,6 +87,10 @@ set viminfo='50,"50   " '=marks for x files, "=registers for x files
 
 set modelines=0       " modelines are bad for your health
 
+" hack to always display sign column
+autocmd BufEnter * sign define dummy
+autocmd BufEnter * execute 'sign place 9999 line=1 name=dummy buffer=' . bufnr('')
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Colorscheme
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -94,13 +105,15 @@ set colorcolumn=80,81,120,121
 " unhighlight search terms
 highlight Search cterm=NONE ctermbg=NONE
 
+" unhighlight sign column
+highlight SignColumn cterm=NONE ctermbg=NONE
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Indentation
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set shiftwidth=2 
 set tabstop=2
 set softtabstop=2
-set textwidth=79
 set expandtab
 set backspace=indent,eol,start
 
@@ -109,6 +122,8 @@ set backspace=indent,eol,start
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd FileType html setlocal textwidth=0
 autocmd FileType python setlocal sw=4 ts=4 sts=4
+autocmd FileType tex setlocal sw=4 ts=4 sts=4
+autocmd FileType cpp setlocal sw=4 ts=4 sts=4
 autocmd FileType sh setlocal textwidth=0
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 
@@ -168,6 +183,27 @@ if g:fb_kill_whitespace
     \ :call <SID>StripTrailingWhitespaces()
 endif
 
+" set buffer to unmodifiable if read-only
+if !exists("g:update_modifiable") | let g:update_modifiable = 1 | endif
+if g:update_modifiable
+  fu! <SID>UpdateModifiable()
+    if !exists("b:setmodifiable")
+      let b:setmodifiable = 0
+    endif
+    if &readonly
+      if &modifiable
+        setlocal nomodifiable
+        let b:setmodifiable = 1
+      endif
+    else
+      if b:setmodifiable
+        setlocal modifiable
+      endif
+    endif
+  endfu
+  autocmd BufReadPost * call <SID>UpdateModifiable()
+endif
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-tmux-navigator
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -176,6 +212,10 @@ map <leader>h :wincmd h<CR>
 map <leader>j :wincmd j<CR>
 map <leader>k :wincmd k<CR>
 map <leader>l :wincmd l<CR>
+map <leader><Left>  :wincmd h<CR>
+map <leader><Down>  :wincmd j<CR>
+map <leader><Up>    :wincmd k<CR>
+map <leader><Right> :wincmd l<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " tComment
@@ -202,7 +242,8 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " LaTeX-Box
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:LatexBox_latexmk_preview_continuously="1"
+let g:LatexBox_latexmk_preview_continuously=1
+let g:LatexBox_show_warnings=2
 map <silent> <leader>ll :Latexmk<CR>
 map <silent> <Leader>ls :silent
         \ !/Applications/Skim.app/Contents/SharedSupport/displayline
@@ -218,14 +259,19 @@ vmap <Enter> <Plug>(EasyAlign)
 " Start interactive EasyAlign for a motion/text object (e.g. <Leader>aip)
 nmap <Leader>a <Plug>(EasyAlign)
 
-""""""""""""""""""""""""""""""""""""""""""
-" You Complete Me <-- Needs to be set up
-""""""""""""""""""""""""""""""""""""""""""
-" let g:ycm_autoclose_preview_window_after_completion = 1
-" let g:ycm_min_num_identifier_candidate_chars = 4
-" let g:ycm_global_ycm_extra_conf = '/home/maxim/local/bin/.ycm_extra_conf.py'
-" let g:ycm_filetype_specific_completion_to_disable = {'php': 1}
-" nnoremap <leader>y :YcmForceCompileAndDiagnostics<cr>
-" nnoremap <leader>pg :YcmCompleter GoToDefinitionElseDeclaration<CR>
-" nnoremap <leader>pd :YcmCompleter GoToDefinition<CR>
-" nnoremap <leader>pc :YcmCompleter GoToDeclaration<CR>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" a.vim
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" toggle between .h and .c with <leader>a
+nnoremap <Leader>a :A<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" You Complete Me
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:ycm_autoclose_preview_window_after_completion = 1
+let g:ycm_min_num_identifier_candidate_chars = 4
+let g:ycm_confirm_extra_conf = 0
+nnoremap <leader>y :YcmForceCompileAndDiagnostics<cr>
+nnoremap <leader>fg :YcmCompleter GoToDefinitionElseDeclaration<CR>
+nnoremap <leader>ff :YcmCompleter GoToDefinition<CR>
+nnoremap <leader>fc :YcmCompleter GoToDeclaration<CR>
