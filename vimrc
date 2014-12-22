@@ -1,44 +1,46 @@
-set nocompatible
-set encoding=utf-8 " Necessary to show Unicode glyphs
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Vundle
+" NeoBundle
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-filetype off
+" Skip initialization for vim-tiny or vim-small.
+if !1 | finish | endif
+if has('vim_starting')
+  if &compatible
+    set nocompatible " be iMproved
+  endif
 
-" set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+  set runtimepath+=~/.vim/bundle/neobundle.vim/ " init NeoBundle
+  set encoding=utf-8 " necessary to show Unicode glyphs
+endif
 
-" Vundles
-Bundle 'gmarik/Vundle.vim'
-Bundle 'a.vim'
-Bundle 'kien/ctrlp.vim'
-Bundle 'jalcine/cmake.vim'
-Bundle 'mattn/emmet-vim'
-Bundle 'LaTeX-Box-Team/LaTeX-Box'
-Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
-Bundle 'majutsushi/tagbar'
-Bundle 'tComment'
-Bundle 'scrooloose/syntastic'
-Bundle 'altercation/vim-colors-solarized'
-Bundle 'junegunn/vim-easy-align'
-Bundle 'Lokaltog/vim-easymotion'
-Bundle 'tpope/vim-fugitive'
-Bundle 'airblade/vim-gitgutter'
-Bundle 'christoomey/vim-tmux-navigator'
-Bundle 'Valloric/YouCompleteMe'
+call neobundle#begin(expand('~/.vim/bundle/'))
 
-call vundle#end()
-filetype plugin indent on     " required
+NeoBundleFetch 'Shougo/neobundle.vim'
+NeoBundle 'a.vim'
+NeoBundle 'rking/ag.vim'
+NeoBundle 'tpope/vim-abolish'
+NeoBundle 'kien/ctrlp.vim'
+NeoBundle 'jalcine/cmake.vim'
+NeoBundle 'mattn/emmet-vim'
+NeoBundle 'nono/vim-handlebars'
+NeoBundle 'LaTeX-Box-Team/LaTeX-Box'
+NeoBundle 'itchyny/lightline.vim'
+NeoBundle 'majutsushi/tagbar'
+NeoBundle 'tComment'
+NeoBundle 'scrooloose/syntastic'
+NeoBundle 'altercation/vim-colors-solarized'
+NeoBundle 'kchmck/vim-coffee-script'
+NeoBundle 'junegunn/vim-easy-align'
+NeoBundle 'Lokaltog/vim-easymotion'
+NeoBundle 'tpope/vim-fugitive'
+NeoBundle 'airblade/vim-gitgutter'
+NeoBundle 'jason0x43/vim-js-indent'
+NeoBundle 'christoomey/vim-tmux-navigator'
+NeoBundle 'leafgarland/typescript-vim'
+NeoBundle 'Valloric/YouCompleteMe'
 
-" Brief help
-" :BundleList          - list configured bundles
-" :BundleInstall(!)    - install (update) bundles
-" :BundleSearch(!) foo - search (or refresh cache first) for foo
-" :BundleClean(!)      - confirm (or auto-approve) removal of unused bundles
-"
-" NOTE: comments after Bundle commands are not allowed
+call neobundle#end()
+filetype plugin indent on " required
+NeoBundleCheck " check for uninstalled bundles
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " General Settings
@@ -65,8 +67,6 @@ set sidescroll=10   " minumum columns to scroll horizontally
 " Search
 set nohlsearch      " don't persist search highlighting
 set incsearch       " search with typeahead
-set ignorecase      " ignore case when searching
-set smartcase       " no ignorecase if Uppercase char present
 
 " Indent
 set autoindent      " carry indent over to new lines
@@ -94,12 +94,12 @@ autocmd BufEnter * execute 'sign place 9999 line=1 name=dummy buffer=' . bufnr('
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Colorscheme
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set background=dark
-colorscheme solarized
+let g:hybrid_use_iTerm_colors = 1
+colorscheme hybrid-ayk
 set t_Co=256            " tell vim that terminal supports 256 colors
 
 " highlight columns 80, 81, 120, 121
-highlight ColorColumn ctermbg=Black
+highlight ColorColumn ctermbg=235
 set colorcolumn=80,81,120,121
 
 " unhighlight search terms
@@ -111,19 +111,15 @@ highlight SignColumn cterm=NONE ctermbg=NONE
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Indentation
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set shiftwidth=2 
-set tabstop=2
-set softtabstop=2
+set shiftwidth=4
+set tabstop=4
+set softtabstop=4
 set expandtab
 set backspace=indent,eol,start
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Filetype
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-autocmd FileType html setlocal textwidth=0
-autocmd FileType python setlocal sw=4 ts=4 sts=4
-autocmd FileType tex setlocal sw=4 ts=4 sts=4
-autocmd FileType cpp setlocal sw=4 ts=4 sts=4
 autocmd FileType sh setlocal textwidth=0
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 
@@ -165,9 +161,18 @@ vmap <C-C> "*y
 vnoremap < <gv
 vnoremap > >gv
 
-" change working directory to current file
-cmap cwd lcd %:p:h
-cmap cd. lcd %:p:h
+" prettify JSON
+:command! Prettify %!python -m json.tool
+
+" remove small delay when leaving insert mode
+if !has('gui_running')
+    set ttimeoutlen=10
+    augroup FastEscape
+        autocmd!
+        au InsertEnter * set timeoutlen=0
+        au InsertLeave * set timeoutlen=1000
+    augroup END
+endif
 
 " kill any trailing whitespace on save (Credit to Facebook)
 if !exists("g:fb_kill_whitespace") | let g:fb_kill_whitespace = 1 | endif
@@ -204,6 +209,10 @@ if g:update_modifiable
   autocmd BufReadPost * call <SID>UpdateModifiable()
 endif
 
+" auto quickfix window
+autocmd QuickFixCmdPost [^l]* nested cwindow
+autocmd QuickFixCmdPost    l* nested lwindow
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-tmux-navigator
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -212,10 +221,6 @@ map <leader>h :wincmd h<CR>
 map <leader>j :wincmd j<CR>
 map <leader>k :wincmd k<CR>
 map <leader>l :wincmd l<CR>
-map <leader><Left>  :wincmd h<CR>
-map <leader><Down>  :wincmd j<CR>
-map <leader><Up>    :wincmd k<CR>
-map <leader><Right> :wincmd l<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " tComment
@@ -225,19 +230,73 @@ map <leader>c :TComment<CR>
 vmap <leader>c :TComment<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Powerline
+" Lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set laststatus=2   " Always show the statusline
+let g:lightline = {
+            \ 'colorscheme': 'Tomorrow_Night',
+            \ 'active': {
+                \ 'left': [ [ 'mode', 'paste' ],
+                \           [ 'fileinfo', 'syntastic' ],
+                \           [ 'ctrlpmark' ] ],
+                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ] ] 
+            \ },
+            \ 'component': {
+                \ 'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}'
+            \ },
+            \ 'component_function' : {
+                \ 'mode': 'LLMode',
+                \ 'fileinfo': 'LLFileinfo',
+                \ 'ctrlpmark': 'CtrlPMark',
+            \ },
+            \ 'component_expand' : {
+                \ 'syntastic': 'SyntasticStatuslineFlag',
+            \ },
+            \ 'component_type': {
+                \ 'syntastic': 'error',
+            \ },
+            \ }
 
-" remove small delay when leaving insert mode
-if !has('gui_running')
-    set ttimeoutlen=10
-    augroup FastEscape
-        autocmd!
-        au InsertEnter * set timeoutlen=0
-        au InsertLeave * set timeoutlen=1000
-    augroup END
-endif
+" mode
+function! LLMode()
+    let fname = expand('%:t')
+    return fname == 'ControlP' ? 'CtrlP' :
+                \ winwidth(0) > 60 ? lightline#mode() : ''
+endfunction
+
+" filename and fileinfo
+let g:pathname_depth = 3
+function! LLModified()
+    return &ft =~ 'help' ? '' : &modified ? '+' : &modifiable ? '' : '-'
+endfunction
+function! LLReadonly()
+    return &ft !~? 'help' && &readonly ? 'RO' : ''
+endfunction
+function! LLTrucatedFilePath()
+    let depth = g:pathname_depth ? g:pathname_depth : 10
+    let fullpath = expand('%:p:~')
+    let truncpath = matchstr(fullpath, printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$', depth))
+    return truncpath
+endfunction
+function! LLFileinfo()
+    let fname = expand('%:t')
+    return fname == 'ControlP' ? g:lightline.ctrlp_item :
+                \ ('' != LLReadonly() ? LLReadonly() . ' ' : '') .
+                \ ('' != LLTrucatedFilePath() ? LLTrucatedFilePath() : '[No Name]') .
+                \ ('' != LLModified() ? ' ' . LLModified() : '')
+endfunction
+
+" ctrlpmark
+function! CtrlPMark()
+  if expand('%:t') =~ 'ControlP'
+    call lightline#link('iR'[g:lightline.ctrlp_regex])
+    return lightline#concatenate([g:lightline.ctrlp_prev, 
+                \ g:lightline.ctrlp_item , g:lightline.ctrlp_next], 0)
+  else
+    return ''
+  endif
+endfunction
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " LaTeX-Box
@@ -275,3 +334,46 @@ nnoremap <leader>y :YcmForceCompileAndDiagnostics<cr>
 nnoremap <leader>fg :YcmCompleter GoToDefinitionElseDeclaration<CR>
 nnoremap <leader>ff :YcmCompleter GoToDefinition<CR>
 nnoremap <leader>fc :YcmCompleter GoToDeclaration<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Syntastic
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:syntastic_java_javac_custom_classpath_command =
+    \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
+let g:syntastic_stl_format = '%E{!(%e) → %fe}%B{, }%W{?(%w) → %fw}'
+
+" hack to get syntastic to update lightline on syntax check
+let g:syntastic_mode_map = { "mode": "passive" }
+augroup SyntasticLightline
+    autocmd!
+    autocmd BufWritePost * call s:syntastic_lightline()
+augroup END
+function! s:syntastic_lightline()
+    SyntasticCheck
+    call lightline#update()
+endfunction
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" CtrlP
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <leader>m :CtrlP<CR>
+let g:ctrlp_custom_ignore = {
+  \ 'dir':  '\v[\/]\.(git|hg|svn)$',
+  \ 'file': '\v\.(exe|so|dll|class)$',
+  \ }
+let g:ctrlp_status_func = {
+  \ 'main': 'CtrlPStatusFunc_1',
+  \ 'prog': 'CtrlPStatusFunc_2',
+  \ }
+
+function! CtrlPStatusFunc_1(focus, byfname, regex, prev, item, next, marked)
+  let g:lightline.ctrlp_regex = a:regex
+  let g:lightline.ctrlp_prev = a:prev
+  let g:lightline.ctrlp_item = a:item
+  let g:lightline.ctrlp_next = a:next
+  return lightline#statusline(0)
+endfunction
+
+function! CtrlPStatusFunc_2(str)
+  return lightline#statusline(0)
+endfunction
