@@ -232,6 +232,10 @@ let g:lightline = {
                 \           [ 'ctrlpmark' ] ],
                 \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ] ] 
             \ },
+            \ 'inactive': {
+                \ 'left': [ [ 'fileinfo' ] ],
+                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ] ] 
+            \ },
             \ 'component': {
                 \ 'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}'
             \ },
@@ -266,15 +270,17 @@ endfunction
 function! LLTrucatedFilePath()
     let depth = g:pathname_depth ? g:pathname_depth : 10
     let fullpath = expand('%:p:~')
-    let truncpath = matchstr(fullpath, printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$', depth))
+    let truncpath = matchstr(fullpath, 
+        \ printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$', 
+        \ depth))
     return truncpath
 endfunction
 function! LLFileinfo()
     let fname = expand('%:t')
     return fname == 'ControlP' ? g:lightline.ctrlp_item :
-                \ ('' != LLReadonly() ? LLReadonly() . ' ' : '') .
-                \ ('' != LLTrucatedFilePath() ? LLTrucatedFilePath() : '[No Name]') .
-                \ ('' != LLModified() ? ' ' . LLModified() : '')
+        \ ('' != LLReadonly() ? LLReadonly() . ' ' : '') .
+        \ ('' != LLTrucatedFilePath() ? LLTrucatedFilePath() : '[No Name]') .
+        \ ('' != LLModified() ? ' ' . LLModified() : '')
 endfunction
 
 " ctrlpmark
