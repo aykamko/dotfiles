@@ -106,12 +106,14 @@ function tmux() {
         realtmux ${*:1}
         return
     fi
+    local sessions
     sessions=$(realtmux ls 2>/dev/null)
     if [[ -z $sessions ]]; then 
         # if no tmux sessions open, start a new one
         realtmux
     else
         # else, do useful things
+        local num_sess
         num_sess=$(echo $sessions | wc -l)
         if [[ -z $TMUX ]]; then 
             # not in tmux already
@@ -128,10 +130,7 @@ function tmux() {
             # already in tmux, sessions == 1
             echo "Only running tmux session.\nExit tmux and use tnew to create a new one."
         fi
-        unset num_sess
-        unset first_sess
     fi
-    unset sessions
 }
 
 # attach to session
@@ -146,12 +145,12 @@ function ta() {
 # create new session
 function ts() {
     if [[ ! -z $TMUX ]]; then
+        local before
+        local after
         before=$(tmux ls)
         TMUX= tmux new-session -d
         after=$(tmux ls)
         tmux switch -t $(diff <(echo $before) <(echo $after) | sed -n 2p | sed "s/:.*$//g" | cut -c2-)
-        unset before
-        unset after
     else
         tmux
     fi
