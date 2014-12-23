@@ -89,7 +89,8 @@ set modelines=0       " modelines are bad for your health
 
 " hack to always display sign column
 autocmd BufEnter * sign define dummy
-autocmd BufEnter * execute 'sign place 9999 line=1 name=dummy buffer=' . bufnr('')
+autocmd BufEnter * execute 'sign place 9999 line=1 name=dummy buffer=' . 
+            \ bufnr('')
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Colorscheme
@@ -292,7 +293,6 @@ function! CtrlPMark()
   endif
   return ''
 endfunction
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " LaTeX-Box
