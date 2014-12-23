@@ -236,6 +236,8 @@ function dsclean() {
     find . -name ".DS_Store" -exec /bin/rm -rf {} \;
 }
 
+# go to temp dir
+alias temp="cs ~/temp"
 
 ###############################################################################
 # End trace .zshrc startup
