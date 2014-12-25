@@ -19,7 +19,7 @@ function git_remote_status() {
 }
 
 # Virtualenv: current working virtualenv
-# export VIRTUAL_ENV_DISABLE_PROMPT=yes
+export VIRTUAL_ENV_DISABLE_PROMPT=yes
 function virtualenv_prompt_info {
     if [[ -n ${VIRTUAL_ENV} ]]; then
         echo -n "${ZSH_THEME_VENV_PREFIX}${VIRTUAL_ENV:t}$ZSH_THEME_VENV_SUFFIX"
