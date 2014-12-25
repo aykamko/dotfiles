@@ -190,6 +190,17 @@ alias ssh188='ssh -Y cs188-hz@pentagon.cs.berkeley.edu'
 alias py="python"
 alias py3="python3"
 alias venvwrapper="source /usr/local/bin/virtualenvwrapper.sh"
+function venv() {
+    if [[ -n $VIRTUAL_ENV ]]; then
+        workon $*
+    else
+        venvwrapper
+        workon $*
+    fi
+}
+if [[ -n $VIRTUAL_ENV ]]; then
+    venv ${VIRTUAL_ENV:t}
+fi
 
 # alias for rm (requires trash script)
 #------------------------------------------------------------------------------
