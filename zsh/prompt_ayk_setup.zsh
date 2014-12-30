@@ -16,12 +16,12 @@ function +vi-git_remote {
 
     # $1 is behind, $2 is forward
     if [[ -n $2 && $2 != 0 ]]; then
-        remote_info+=("+$2")
+        remote_info+="+$2"
         left_right=true
     fi
     if [[ -n $1 && $1 != 0 ]]; then
-        (( $left_right )) && remote_info+=(", ")
-        remote_info+=("-$1")
+        (( $left_right )) && remote_info+=", "
+        remote_info+="-$1"
     fi
     [[ -n $remote_info ]] && hook_com[misc]="%F{$_secondary_color}{%f%F{yellow}$remote_info%f%F{$_secondary_color}}%f"
     return 0
@@ -45,16 +45,13 @@ function prompt_ayk_venv {
     fi
 }
 
+# PWD: Add space before prompt extras, if they exist.
 function prompt_ayk_pwd {
-    _pwd='%F{$_primary_color}%3~%f'
-    # Add space before prompt extras.
-    [[ -n ${vcs_info_msg_0_} || -n ${_prompt_ayk_venv} ]] && _pwd+=' '
+    _pwd="%F{$_primary_color}%3~%f"
+    [[ -n ${vcs_info_msg_0_} || -n ${_prompt_ayk_venv} ]] && _pwd+=" "
 }
 
 function prompt_ayk_precmd {
-    setopt LOCAL_OPTIONS
-    unsetopt XTRACE KSH_ARRAYS
-
     prompt_ayk_venv
     vcs_info
     prompt_ayk_pwd

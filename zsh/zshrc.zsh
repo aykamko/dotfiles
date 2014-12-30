@@ -49,7 +49,7 @@ function tmux() {
             realtmux choose-session
         else
             # already in tmux, sessions == 1
-            echo "Only running tmux session.\nExit tmux and use tnew to create a new one."
+            echo 'Only running tmux session.\nExit tmux and use tnew to create a new one.'
         fi
     fi
 }
