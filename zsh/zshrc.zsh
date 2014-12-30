@@ -132,15 +132,15 @@ alias rm='trash'
 #------------------------------------------------------------------------------
 # override cd to do ls and vi when necessary
 function _better_cd() {
-    _cdpath="$1";
-    if [[ -f $_cdpath ]]; then
-        _fdir=${_cdpath%/*}
-        if [[ -d $_fdir ]]; then
-            builtin cd "${_fdir}" && ls
+    if [[ -f $1 ]]; then
+        local fdir
+        fdir="${$1%/*}"
+        if [[ -d $fdir ]]; then
+            builtin cd "$fdir" && ls
         fi
-        vim "${_cdpath##*/}" ${*:2}
+        vim "${$1##*/}" ${*:2}
     else
-        cd $* && ls
+        builtin cd $* && ls
     fi
 }
 alias cd=_better_cd
@@ -152,7 +152,7 @@ function cs() {
 
 # tab completion in school directory
 cds() { cd $HOME/Documents/School/$1; }
-compctl -W $HOME/Documents/School/ -/ cds
+compctl -/ -W $HOME/Documents/School/ cds
 
 # go to root of git directory
 function gitroot() {
