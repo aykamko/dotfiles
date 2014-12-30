@@ -47,7 +47,7 @@ function prompt_ayk_setup {
     zstyle ':vcs_info:*' check-for-changes true
     zstyle ':vcs_info:*' stagedstr '%F{yellow}●%f'
     zstyle ':vcs_info:*' unstagedstr '%F{green}●%f'
-    zstyle ':vcs_info:*' formats ' %F{$secondary_color}(%f%F{red}%b%f%c%u%F{$secondary_color})%f%m'
+    zstyle ':vcs_info:*' formats ' %F{$secondary_color}(%f%F{red}%b %f%c%u%F{$secondary_color})%f%m'
     zstyle ':vcs_info:*' actionformats ' %F{$secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$secondary_color})%f%m'
     zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%F{cyan}%r%f'
     zstyle ':vcs_info:git*+set-message:*' hooks git_remote
