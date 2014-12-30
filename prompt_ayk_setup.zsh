@@ -23,7 +23,7 @@ function +vi-git_remote {
         (( $left_right )) && remote_info+=(", ")
         remote_info+=("-$1")
     fi
-    [[ -n $remote_info ]] && hook_com[misc]="%F{$_secondary_color}{%f%F{yellow}${remote_info}%f%F{$_secondary_color}}%f"
+    [[ -n $remote_info ]] && hook_com[misc]="%F{$_secondary_color}{%f%F{yellow}$remote_info%f%F{$_secondary_color}}%f"
 }
 
 function prompt_ayk_precmd {
@@ -41,14 +41,18 @@ function prompt_ayk_setup {
 
     # Add hook for calling vcs_info before each command.
     add-zsh-hook precmd prompt_ayk_precmd
+
+    echo $hook_com[misc]
     
     # Set vcs_info parameters.
     zstyle ':vcs_info:*' enable git hg svn
     zstyle ':vcs_info:*' check-for-changes true
     zstyle ':vcs_info:*' stagedstr '%F{yellow}●%f'
     zstyle ':vcs_info:*' unstagedstr '%F{green}●%f'
-    zstyle ':vcs_info:*' formats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m'
-    zstyle ':vcs_info:*' actionformats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m'
+    zstyle ':vcs_info:git*' formats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m'
+    zstyle ':vcs_info:git*' actionformats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m'
+    zstyle ':vcs_info:*' formats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f'
+    zstyle ':vcs_info:*' actionformats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f'
     zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%F{cyan}%r%f'
     zstyle ':vcs_info:git*+set-message:*' hooks git_remote
 
