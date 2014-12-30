@@ -45,15 +45,19 @@ function prompt_ayk_venv {
     fi
 }
 
+function prompt_ayk_pwd {
+    _pwd='%F{$_primary_color}%3~%f'
+    # Add space before prompt extras.
+    [[ -n ${vcs_info_msg_0_} || -n ${_prompt_ayk_venv} ]] && _pwd+=' '
+}
+
 function prompt_ayk_precmd {
     setopt LOCAL_OPTIONS
     unsetopt XTRACE KSH_ARRAYS
 
     prompt_ayk_venv
     vcs_info
-    _pwd='%F{$_primary_color}%3~%f'
-    # Add space before prompt extras.
-    [[ -n ${vcs_info_msg_0_} || -n ${_prompt_ayk_venv} ]] && _pwd+=' '
+    prompt_ayk_pwd
 }
 
 function prompt_ayk_setup {
