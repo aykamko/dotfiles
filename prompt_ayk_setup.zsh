@@ -26,6 +26,15 @@ function +vi-git_remote {
     [[ -n $remote_info ]] && hook_com[misc]="%F{$_secondary_color}{%f%F{yellow}$remote_info%f%F{$_secondary_color}}%f"
 }
 
+# add space before change symbols, if they exist
+function +vi-git_changes_fmt {
+    if [[ -n ${hook_com[staged]} ]]; then
+        hook_com[staged]=" ${hook_com[staged]}"
+    elif [[ -n ${hook_com[unstaged]} ]]; then
+        hook_com[unstaged]=" ${hook_com[unstaged]}"
+    fi
+}
+
 function prompt_ayk_precmd {
     vcs_info
 }
@@ -42,8 +51,6 @@ function prompt_ayk_setup {
     # Add hook for calling vcs_info before each command.
     add-zsh-hook precmd prompt_ayk_precmd
 
-    echo $hook_com[misc]
-    
     # Set vcs_info parameters.
     zstyle ':vcs_info:*' enable git hg svn
     zstyle ':vcs_info:*' check-for-changes true
@@ -54,7 +61,7 @@ function prompt_ayk_setup {
     zstyle ':vcs_info:*' formats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f'
     zstyle ':vcs_info:*' actionformats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f'
     zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%F{cyan}%r%f'
-    zstyle ':vcs_info:git*+set-message:*' hooks git_remote
+    zstyle ':vcs_info:git*+set-message:*' hooks git_remote git_changes_fmt
 
     # Define prompts.
     PROMPT='%F{$_primary_color}%3~%f${vcs_info_msg_0_} 🐼  '
