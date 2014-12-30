@@ -1,94 +1,13 @@
 ###############################################################################
-# Trace .zshrc startup
+# Prezto
 ###############################################################################
-# set trace prompt to include seconds since start, script name, and line number
-zmodload zsh/datetime
-setopt promptsubst
-SHELL_START_TIME=$EPOCHREALTIME
-PS4='+$((EPOCHREALTIME - SHELL_START_TIME)) %N:%i> '
-# save file stderr to file descriptor 3 and redirect stderr (including trace 
-# output) to a file with the unixtime and the script's PID as an extension
-exec 3>&2 2>/tmp/shellstartlog.$(echo $(date +%s) | cut -c6-)-$$
-# turn on tracing and expansion of commands contained in the prompt
-setopt xtrace prompt_subst
-
+# Source Prezto
+if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+  source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+fi
 
 ###############################################################################
-# Basics
-###############################################################################
-# Path to your oh-my-zsh installation.
-export ZSH=$HOME/.oh-my-zsh
-
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-ZSH_THEME="ayk"
-
-# Display red dots whilst waiting for completion.
-COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment following line if you want to disable autosetting terminal title.
-export DISABLE_AUTO_TITLE="true"
-
-# Plugins to load (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-plugins=(git github python brew)
-
-source $ZSH/oh-my-zsh.sh
-
-
-###############################################################################
-# Custom Config
-###############################################################################
-# Base Path
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin
-# X11
-export PATH=/opt/X11/bin:$PATH
-# heroku
-export PATH=/usr/local/heroku/bin:$PATH
-# git
-export PATH=/usr/local/git/bin:$PATH
-# LaTeX
-export PATH=/usr/texbin:$PATH
-# rvm
-export PATH=$HOME/.rvm/bin:$PATH
-export PATH=$HOME/.rvm/gems/ruby-2.1.3/bin:$PATH
-# oculus
-export PATH=$HOME/Documents/School/Research/osgoculusviewer/bin:$PATH
-
-# virtualenvwrapper
-export WORKON_HOME=$HOME/.pyvirtualenvs
-
-# Manually set language to UTF-8
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
-export LANGUAGE=en_US.UTF-8
-
-# Default editor to vim
-export EDITOR='vim'
-
-# latex
-export TEXMFHOME=texmf
-
-# tab completion in school directory
-cds() { cd $HOME/Documents/School/$1; }
-compctl -W $HOME/Documents/School/ -/ cds
-
-# cd .. completion
-zstyle ':completion:*' special-dirs true
-
-# //FIXME: temporary for cs61b
-source $HOME/Documents/School/61B/cs61b-software/adm/login
-
-# pass bad match to command
-setopt NO_NOMATCH
-
-###############################################################################
-# Aliases
+# Aliases & Functions
 ###############################################################################
 # vim
 #------------------------------------------------------------------------------
@@ -231,6 +150,10 @@ function cs() {
     builtin cd $*
 }
 
+# tab completion in school directory
+cds() { cd $HOME/Documents/School/$1; }
+compctl -W $HOME/Documents/School/ -/ cds
+
 # go to root of git directory
 function gitroot() {
     cd "$(git rev-parse --show-toplevel)"
@@ -251,10 +174,3 @@ function dsclean() {
 
 # go to temp dir
 alias temp="cs ~/temp"
-
-###############################################################################
-# End trace .zshrc startup
-###############################################################################
-unsetopt xtrace
-# restore stderr to the value saved in FD 3
-exec 2>&3 3>&-

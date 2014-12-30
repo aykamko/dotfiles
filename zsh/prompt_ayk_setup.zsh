@@ -4,11 +4,11 @@
 # Authors:
 #   Aleks Kamko <aykamko@gmail.com>
 #
-#
 
 _primary_color='cyan'
 _secondary_color='blue'
 
+# Git: remote status (number of commits behind and after remote)
 function +vi-git_remote {
     local left_right
     local -a remote_info
@@ -24,19 +24,36 @@ function +vi-git_remote {
         remote_info+=("-$1")
     fi
     [[ -n $remote_info ]] && hook_com[misc]="%F{$_secondary_color}{%f%F{yellow}$remote_info%f%F{$_secondary_color}}%f"
+    return 0
 }
 
-# add space before change symbols, if they exist
+# Git: add space before change symbols, if they exist
 function +vi-git_changes_fmt {
     if [[ -n ${hook_com[staged]} ]]; then
         hook_com[staged]=" ${hook_com[staged]}"
     elif [[ -n ${hook_com[unstaged]} ]]; then
         hook_com[unstaged]=" ${hook_com[unstaged]}"
     fi
+    return 0
+}
+
+# Virtualenv: current working virtualenv
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+function prompt_ayk_venv {
+    if [[ -n ${VIRTUAL_ENV} ]]; then
+        _prompt_ayk_venv="%F{$_secondary_color}[%f%F{white}${VIRTUAL_ENV:t}%f%F{$_secondary_color}]%f"
+    fi
 }
 
 function prompt_ayk_precmd {
+    setopt LOCAL_OPTIONS
+    unsetopt XTRACE KSH_ARRAYS
+
+    prompt_ayk_venv
     vcs_info
+    _pwd='%F{$_primary_color}%3~%f'
+    # Add space before prompt extras.
+    [[ -n ${vcs_info_msg_0_} || -n ${_prompt_ayk_venv} ]] && _pwd+=' '
 }
 
 function prompt_ayk_setup {
@@ -56,16 +73,16 @@ function prompt_ayk_setup {
     zstyle ':vcs_info:*' check-for-changes true
     zstyle ':vcs_info:*' stagedstr '%F{yellow}●%f'
     zstyle ':vcs_info:*' unstagedstr '%F{green}●%f'
-    zstyle ':vcs_info:git*' formats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m'
-    zstyle ':vcs_info:git*' actionformats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m'
-    zstyle ':vcs_info:*' formats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f'
-    zstyle ':vcs_info:*' actionformats ' %F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f'
+    zstyle ':vcs_info:git:*' formats '%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m'
+    zstyle ':vcs_info:git:*' actionformats '%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m'
+    zstyle ':vcs_info:*' formats '%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f'
+    zstyle ':vcs_info:*' actionformats '%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f'
     zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%F{cyan}%r%f'
     zstyle ':vcs_info:git*+set-message:*' hooks git_remote git_changes_fmt
 
     # Define prompts.
-    PROMPT='%F{$_primary_color}%3~%f${vcs_info_msg_0_} 🐼  '
-    RPROMPT=''
+    PROMPT='${_pwd}${_prompt_ayk_venv}${vcs_info_msg_0_} 🐼  '
+    RPROMPT='%(?:: %F{red}⏎%f)'
 }
 
 prompt_ayk_setup "$@"
