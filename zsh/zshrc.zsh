@@ -157,7 +157,7 @@ function cs() {
 
 # tab completion in school directory
 cds() { cd $HOME/Documents/School/$1; }
-compctl -/ -W $HOME/Documents/School/ cds
+compctl -f -W $HOME/Documents/School/ cds
 
 # go to root of git directory
 function gitroot() {
