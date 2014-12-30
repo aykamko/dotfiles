@@ -84,6 +84,8 @@ zstyle ':completion:*' special-dirs true
 # //FIXME: temporary for cs61b
 source $HOME/Documents/School/61B/cs61b-software/adm/login
 
+# pass bad match to command
+setopt NO_NOMATCH
 
 ###############################################################################
 # Aliases
