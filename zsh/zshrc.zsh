@@ -6,6 +6,9 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
+# disable autocorrect suggestions for commands
+unsetopt CORRECT
+
 ###############################################################################
 # Aliases & Functions
 ###############################################################################
@@ -98,8 +101,10 @@ fi
 
 # zsh
 #------------------------------------------------------------------------------
+alias newzsh="exec zsh"
 alias zshrc="vi ~/.zshrc"
-alias zshso="source ~/.zshrc"
+alias zprofile="vi ~/.zprofile"
+alias zpreztorc="vi ~/.zpreztorc"
 
 # ssh aliases
 #------------------------------------------------------------------------------
@@ -133,12 +138,12 @@ alias rm='trash'
 # override cd to do ls and vi when necessary
 function _better_cd() {
     if [[ -f $1 ]]; then
-        local fdir
-        fdir="${$1%/*}"
+        local -a fdir
+        fdir="${${1}%/*}"
         if [[ -d $fdir ]]; then
             builtin cd "$fdir" && ls
         fi
-        vim "${$1##*/}" ${*:2}
+        vim "${${1}##*/}" ${*:2}
     else
         builtin cd $* && ls
     fi
