@@ -72,8 +72,8 @@ function prompt_ayk_setup {
     # Set vcs_info parameters.
     zstyle ':vcs_info:*' enable git hg svn
     zstyle ':vcs_info:*' check-for-changes true
-    zstyle ':vcs_info:*' stagedstr '%F{yellow}●%f'
-    zstyle ':vcs_info:*' unstagedstr '%F{green}●%f'
+    zstyle ':vcs_info:*' stagedstr '%F{green}●%f'
+    zstyle ':vcs_info:*' unstagedstr '%F{yellow}●%f'
     zstyle ':vcs_info:git:*' formats '%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m'
     zstyle ':vcs_info:git:*' actionformats '%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m'
     zstyle ':vcs_info:*' formats '%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f'

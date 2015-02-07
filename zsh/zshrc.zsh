@@ -1,25 +1,32 @@
 ###############################################################################
+# Autostart TMUX
+###############################################################################
+if [[ ! -f "$HOME/.notmux" && -z "$TMUX" ]]; then
+    echo "Not in tmux session. Won't load rest of zshrc."
+    tmux attach || tmux
+    return
+fi
+
+###############################################################################
 # Prezto
 ###############################################################################
-# Source Prezto
 if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
-# disable autocorrect suggestions for commands
-unsetopt CORRECT
-
 ###############################################################################
 # Aliases & Functions
 ###############################################################################
-# vim
+# basics
 #------------------------------------------------------------------------------
-alias vimclean="realrm -f ~/.zcompdump* && exec zsh"
-alias vi="vim"
-alias vimrc="vi ~/.vimrc"
-function swpclean() {
-    find . -name "*.sw*" -exec /bin/rm -rf {} \;
-}
+alias c="clear"
+
+# zsh
+#------------------------------------------------------------------------------
+alias zshso="source ~/.zshrc"
+alias zshrc="vi ~/.zshrc"
+alias zprofile="vi ~/.zprofile"
+alias zpreztorc="vi ~/.zpreztorc"
 
 # tmux
 #------------------------------------------------------------------------------
@@ -30,6 +37,7 @@ function tmux() {
         realtmux ${*:1}
         return
     fi
+
     local sessions
     sessions=$(realtmux ls 2>/dev/null)
     if [[ -z $sessions ]]; then 
@@ -44,9 +52,10 @@ function tmux() {
             if [[ $num_sess -gt 1 ]]; then
                 # sessions > 1
                 realtmux a \; choose-session
+            else
+                # sessions == 1
+                realtmux a
             fi
-            # sessions == 1
-            realtmux a
         elif [[ $num_sess -gt 1 ]]; then 
             # already in tmux, sessions > 1
             realtmux choose-session
@@ -57,7 +66,7 @@ function tmux() {
     fi
 }
 
-# attach to session
+# tmux attach
 function ta() {
     if [[ -z $TMUX ]]; then
         tmux attach -t $*
@@ -66,25 +75,6 @@ function ta() {
     fi
 }
 
-# create new session
-function ts() {
-    if [[ ! -z $TMUX ]]; then
-        local before
-        local after
-        before=$(tmux ls)
-        TMUX= tmux new-session -d
-        after=$(tmux ls)
-        tmux switch -t $(diff <(echo $before) <(echo $after) | sed -n 2p | sed "s/:.*$//g" | cut -c2-)
-    else
-        tmux
-    fi
-}
-alias tl='tmux ls'
-alias tconf="vi ~/.tmux.conf"
-alias c="clear"
-alias cls="clear && ls"
-
-# hook into exit for special tmux behavior
 function exit() {
     if [[ -n $TMUX ]]; then
         tmux detach
@@ -92,27 +82,34 @@ function exit() {
         builtin exit
     fi
 }
-alias tkill="exit && tmux ls | awk '{print $1}' | sed 's/:.*$//' | xargs -I{} tmux kill-session -t {}"
 
-# Autostart if not already in tmux.
-if [[ -z "$TMUX" ]]; then
-    tmux
-fi
+function tkill() {
+    [[ -n $TMUX ]] && exit
+    tmux ls | awk '{print $1}' | sed 's/:.*$//' | xargs -I{} tmux kill-session -t {}
+}
 
-# zsh
+alias tl='tmux ls'
+alias detach='tmux detach'
+alias tconf="vi ~/.tmux.conf"
+
+# vim
 #------------------------------------------------------------------------------
-alias newzsh="exec zsh"
-alias zshrc="vi ~/.zshrc"
-alias zprofile="vi ~/.zprofile"
-alias zpreztorc="vi ~/.zpreztorc"
+alias vimclean="realrm -f ~/.zcompdump* && exec zsh"
+alias vi="vim"
+alias vimrc="vi ~/.vimrc"
+function swpclean() {
+    find . -name "*.sw*" -exec /bin/rm -rf {} \;
+}
 
 # ssh aliases
 #------------------------------------------------------------------------------
-alias ssh61b='ssh -Y cs61b-tb@pentagon.cs.berkeley.edu'
-alias ssh188='ssh -Y cs188-hz@pentagon.cs.berkeley.edu'
+alias ssh164='ssh -X cs164-em@pentagon.cs.berkeley.edu'
+alias ssh61b='ssh -X cs61b@cs61b.eecs.berkeley.edu'
+alias ssh188='ssh -X cs188-hz@pentagon.cs.berkeley.edu'
 
 # python
 #------------------------------------------------------------------------------
+eval "$(pyenv init -)"
 alias py="python"
 alias py3="python3"
 alias venvwrapper="source /usr/local/bin/virtualenvwrapper.sh"
@@ -125,8 +122,18 @@ function venv() {
     fi
 }
 if [[ -n $VIRTUAL_ENV ]]; then
-    venv ${VIRTUAL_ENV:t}
+    venvwrapper
+    workon ${VIRTUAL_ENV:t}
 fi
+
+# ruby
+#------------------------------------------------------------------------------
+function _loadrvm() {
+    echo 'Loading RVM. Run command again to use it.'
+    unalias rvm
+    [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
+}
+alias rvm=_loadrvm
 
 # alias for rm (requires trash script)
 #------------------------------------------------------------------------------
@@ -155,27 +162,24 @@ function cs() {
     builtin cd $*
 }
 
-# tab completion in school directory
-cds() { cd $HOME/Documents/School/$1; }
-compctl -f -W $HOME/Documents/School/ cds
-
 # go to root of git directory
-function gitroot() {
+function groot() {
     cd "$(git rev-parse --show-toplevel)"
 }
 
-# copy to mac osx clipboard
-function copy() {
-    cat $1 | pbcopy
-}
-
-# core audio restart because apple tv sucks
-alias fuckyouappletv='sudo killall coreaudiod'
-
-# clean .DS_Store
-function dsclean() {
-    find . -name ".DS_Store" -exec /bin/rm -rf {} \;
-}
-
 # go to temp dir
-alias temp="cs ~/temp"
+alias temp="cs $HOME/temp"
+
+###############################################################################
+# Mac OSX
+###############################################################################
+if [[ "$OSTYPE" == darwin* && -f "$HOME/.osx_zshrc" ]]; then
+    source "$HOME/.osx_zshrc";
+fi
+
+###############################################################################
+# Temporary
+###############################################################################
+if [[ -f "$HOME/.tmp_zshrc" ]]; then
+    source "$HOME/.tmp_zshrc";
+fi

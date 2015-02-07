@@ -25,7 +25,12 @@ export LANGUAGE='en_US.UTF-8'
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
+export PYENV_ROOT=$HOME/.pyenv
+export POSTGRES_CLTOOLS=/Applications/Postgres.app/Contents/Versions/9.4/bin
+
 path=(
+  $PYENV_ROOT
+  $HOME/.rvm/bin
   /usr/local/{bin,sbin}
   /usr/{bin,sbin}
   /bin
@@ -33,8 +38,7 @@ path=(
   /usr/local/heroku/bin
   /usr/local/git/bin
   /usr/texbin
-  $HOME/.rvm/bin
-  $HOME/.rvm/gems/ruby-2.1.3/bin
+  $POSTGRES_CLTOOLS
   $path
 )
 
@@ -60,6 +64,9 @@ export WORKON_HOME=$HOME/.pyvirtualenvs
 
 # Latex
 export TEXMFHOME=texmf
+
+# disable autocorrect suggestions for commands
+unsetopt CORRECT
 
 # pass bad match to command
 setopt NO_NOMATCH

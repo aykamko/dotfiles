@@ -33,6 +33,7 @@ NeoBundle 'junegunn/vim-easy-align'
 NeoBundle 'Lokaltog/vim-easymotion'
 NeoBundle 'tpope/vim-fugitive'
 NeoBundle 'airblade/vim-gitgutter'
+NeoBundle 'Glench/Vim-Jinja2-Syntax'
 NeoBundle 'jason0x43/vim-js-indent'
 NeoBundle 'christoomey/vim-tmux-navigator'
 NeoBundle 'leafgarland/typescript-vim'
@@ -121,8 +122,8 @@ set backspace=indent,eol,start
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Filetype
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-autocmd FileType sh setlocal textwidth=0
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
+autocmd FileType html setl sw=2 ts=2 sts=2 et
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Line Numbering
