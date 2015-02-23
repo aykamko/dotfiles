@@ -111,21 +111,6 @@ highlight Search cterm=NONE ctermbg=NONE
 highlight SignColumn cterm=NONE ctermbg=NONE
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Indentation
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set shiftwidth=4
-set tabstop=4
-set softtabstop=4
-set expandtab
-set backspace=indent,eol,start
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Filetype
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-autocmd BufNewFile,BufReadPost *.md set filetype=markdown
-autocmd FileType html setl sw=2 ts=2 sts=2 et
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Line Numbering
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
@@ -298,6 +283,7 @@ endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " LaTeX-Box
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:LatexBox_custom_indent=0
 let g:LatexBox_latexmk_preview_continuously=1
 let g:LatexBox_show_warnings=2
 map <silent> <leader>ll :Latexmk<CR>
@@ -339,6 +325,8 @@ let g:syntastic_java_javac_custom_classpath_command =
     \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
 let g:syntastic_stl_format = '%E{!(%e) → %fe}%B{, }%W{?(%w) → %fw}'
 
+let g:syntastic_disabled_filetypes=['tex']
+
 " hack to get syntastic to update lightline on syntax check
 let g:syntastic_mode_map = { "mode": "passive" }
 augroup SyntasticLightline
@@ -374,3 +362,19 @@ endfunction
 function! CtrlPStatusFunc_2(str)
   return lightline#statusline(0)
 endfunction
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Indentation
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set shiftwidth=4
+set tabstop=4
+set softtabstop=4
+set expandtab
+set backspace=indent,eol,start
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Filetype
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" autocmd BufNewFile,BufReadPost *.md set filetype=markdown
+autocmd FileType html setl sw=4 ts=4 sts=4 et
+

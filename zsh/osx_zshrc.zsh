@@ -24,3 +24,7 @@ function dsclean() {
 # tab completion in school directory
 cds() { cd $HOME/Documents/School/$1; }
 compctl -f -W $HOME/Documents/School/ cds
+
+# tab completion in project directory
+cdp() { cd $HOME/Projects/$1; }
+compctl -f -W $HOME/Projects/ cdp

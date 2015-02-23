@@ -1,3 +1,9 @@
+# ssh aliases
+#------------------------------------------------------------------------------
+alias ssh164='ssh -X cs164-em@pentagon.cs.berkeley.edu'
+alias ssh61b='ssh -X cs61b@cs61b.eecs.berkeley.edu'
+alias ssh188='ssh -X cs188-hz@pentagon.cs.berkeley.edu'
+
 ###############################################################################
 # Autostart TMUX
 ###############################################################################
@@ -100,12 +106,6 @@ alias vimrc="vi ~/.vimrc"
 function swpclean() {
     find . -name "*.sw*" -exec /bin/rm -rf {} \;
 }
-
-# ssh aliases
-#------------------------------------------------------------------------------
-alias ssh164='ssh -X cs164-em@pentagon.cs.berkeley.edu'
-alias ssh61b='ssh -X cs61b@cs61b.eecs.berkeley.edu'
-alias ssh188='ssh -X cs188-hz@pentagon.cs.berkeley.edu'
 
 # python
 #------------------------------------------------------------------------------
