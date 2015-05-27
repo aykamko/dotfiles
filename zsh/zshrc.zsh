@@ -1,24 +1,13 @@
-# ssh aliases
+# vim
 #------------------------------------------------------------------------------
-alias ssh164='ssh -X cs164-em@pentagon.cs.berkeley.edu'
-alias ssh61b='ssh -X cs61b@cs61b.eecs.berkeley.edu'
-alias ssh188='ssh -X cs188-hz@pentagon.cs.berkeley.edu'
-
-###############################################################################
-# Autostart TMUX
-###############################################################################
-if [[ ! -f "$HOME/.notmux" && -z "$TMUX" ]]; then
-    echo "Not in tmux session. Won't load rest of zshrc."
-    tmux attach || tmux
-    return
-fi
-
-###############################################################################
-# Prezto
-###############################################################################
-if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
-  source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
-fi
+alias vimclean="realrm -f ~/.zcompdump* && exec zsh"
+alias rvim="/usr/local/bin/vim"
+alias vim="nvim"
+alias vi="vim"
+alias vimrc="vi ~/.vimrc"
+function swpclean() {
+    find . -name "*.sw*" -exec /bin/rm -rf {} \;
+}
 
 ###############################################################################
 # Aliases & Functions
@@ -38,6 +27,7 @@ alias zpreztorc="vi ~/.zpreztorc"
 #------------------------------------------------------------------------------
 alias realtmux="/usr/local/bin/tmux"
 function tmux() {
+
     # if given more than one argument, run tmux program with args normally
     if [[ $# -gt 0 ]]; then
         realtmux ${*:1}
@@ -45,25 +35,22 @@ function tmux() {
     fi
 
     local sessions
-    sessions=$(realtmux ls 2>/dev/null)
+    sessions=`realtmux ls 2>/dev/null`
     if [[ -z $sessions ]]; then 
         # if no tmux sessions open, start a new one
         realtmux
     else
         # else, do useful things
         local num_sess
-        num_sess=$(echo $sessions | wc -l)
-        if [[ -z $TMUX ]]; then 
-            # not in tmux already
+        num_sess=`echo $sessions | wc -l`
+        if [[ -z $TMUX ]]; then # not in tmux already
             if [[ $num_sess -gt 1 ]]; then
-                # sessions > 1
                 realtmux a \; choose-session
             else
                 # sessions == 1
                 realtmux a
             fi
-        elif [[ $num_sess -gt 1 ]]; then 
-            # already in tmux, sessions > 1
+        elif [[ $num_sess -gt 1 ]]; then # already in tmux, sessions > 1
             realtmux choose-session
         else
             # already in tmux, sessions == 1
@@ -98,18 +85,9 @@ alias tl='tmux ls'
 alias detach='tmux detach'
 alias tconf="vi ~/.tmux.conf"
 
-# vim
-#------------------------------------------------------------------------------
-alias vimclean="realrm -f ~/.zcompdump* && exec zsh"
-alias vi="vim"
-alias vimrc="vi ~/.vimrc"
-function swpclean() {
-    find . -name "*.sw*" -exec /bin/rm -rf {} \;
-}
 
 # python
 #------------------------------------------------------------------------------
-eval "$(pyenv init -)"
 alias py="python"
 alias py3="python3"
 alias venvwrapper="source /usr/local/bin/virtualenvwrapper.sh"
@@ -126,6 +104,29 @@ if [[ -n $VIRTUAL_ENV ]]; then
     workon ${VIRTUAL_ENV:t}
 fi
 
+# modified from http://unix.stackexchange.com/questions/13464
+function _upsearch() {
+    local curdir
+    curdir="$PWD"
+    while : ; do
+        test -e "$curdir/$1" && echo "$curdir/$1" && return
+        [[ "$curdir" == "/" ]] && return
+        curdir=`dirname "$curdir"`
+    done
+}
+alias upsearch=_upsearch
+
+function _dmake() { # django
+    local django
+    django=`upsearch manage.py`
+    if [[ -z "$django" ]]; then
+        echo "Couldn't find manage.py" && return
+    else
+        python -W ignore "$django" $*
+    fi
+}
+alias dmake=_dmake # django
+
 # ruby
 #------------------------------------------------------------------------------
 function _loadrvm() {
@@ -141,23 +142,6 @@ eval "$(rbenv init -)"
 #------------------------------------------------------------------------------
 alias realrm='/bin/rm'
 alias rm='trash'
-
-# builtin overrides and misc
-#------------------------------------------------------------------------------
-# override cd to do ls and vi when necessary
-function _better_cd() {
-    if [[ -f $1 ]]; then
-        local -a fdir
-        fdir="${${1}%/*}"
-        if [[ -d $fdir ]]; then
-            builtin cd "$fdir" && ls
-        fi
-        vim "${${1}##*/}" ${*:2}
-    else
-        builtin cd $* && ls
-    fi
-}
-alias cd=_better_cd
 
 # fall back to use built in cd
 function cs() {
@@ -185,3 +169,44 @@ fi
 if [[ -f "$HOME/.tmp_zshrc" ]]; then
     source "$HOME/.tmp_zshrc";
 fi
+
+###############################################################################
+# Autostart TMUX
+###############################################################################
+if [[ ! -f "$HOME/.notmux" && -z "$TMUX" ]]; then
+    echo "Not in tmux session. Won't load rest of zshrc."
+    tmux attach || tmux
+    return
+fi
+
+###############################################################################
+# Prezto
+###############################################################################
+if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+  source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+fi
+
+
+###############################################################################
+# Better CD
+###############################################################################
+# override cd to do ls and vi when necessary
+function _better_cd() {
+    if [[ -f $1 ]]; then
+        local fdir
+        fdir=`dirname $1`
+        if [[ -d $fdir ]]; then
+            builtin cd "$fdir" && ls
+        fi
+        vim `basename $1` ${*:2}
+    else
+        builtin cd $* && ls
+    fi
+}
+alias cd=_better_cd
+
+# disable autocorrect suggestions for commands
+unsetopt CORRECT
+
+# pass bad match to command
+setopt NO_NOMATCH
