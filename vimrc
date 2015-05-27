@@ -27,7 +27,6 @@ NeoBundle 'itchyny/lightline.vim'
 NeoBundle 'majutsushi/tagbar'
 NeoBundle 'tComment'
 NeoBundle 'scrooloose/syntastic'
-NeoBundle 'altercation/vim-colors-solarized'
 NeoBundle 'kchmck/vim-coffee-script'
 NeoBundle 'junegunn/vim-easy-align'
 NeoBundle 'Lokaltog/vim-easymotion'
@@ -37,7 +36,7 @@ NeoBundle 'Glench/Vim-Jinja2-Syntax'
 NeoBundle 'jason0x43/vim-js-indent'
 NeoBundle 'christoomey/vim-tmux-navigator'
 NeoBundle 'leafgarland/typescript-vim'
-NeoBundle 'Valloric/YouCompleteMe'
+" NeoBundle 'Valloric/YouCompleteMe'
 
 call neobundle#end()
 filetype plugin indent on " required
@@ -97,7 +96,7 @@ autocmd BufEnter * execute 'sign place 9999 line=1 name=dummy buffer=' .
 " Colorscheme
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:hybrid_use_iTerm_colors = 1
-colorscheme hybrid-ayk
+" colorscheme hybrid-ayk
 set t_Co=256            " tell vim that terminal supports 256 colors
 
 " highlight columns 80, 81, 120, 121
@@ -377,4 +376,5 @@ set backspace=indent,eol,start
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd FileType html setl sw=4 ts=4 sts=4 et
+autocmd FileType ruby setl sw=2 ts=2 sts=2 et
 

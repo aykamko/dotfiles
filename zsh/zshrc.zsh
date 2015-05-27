@@ -135,6 +135,8 @@ function _loadrvm() {
 }
 alias rvm=_loadrvm
 
+eval "$(rbenv init -)"
+
 # alias for rm (requires trash script)
 #------------------------------------------------------------------------------
 alias realrm='/bin/rm'
