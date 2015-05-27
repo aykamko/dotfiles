@@ -65,8 +65,3 @@ export WORKON_HOME=$HOME/.pyvirtualenvs
 # Latex
 export TEXMFHOME=texmf
 
-# disable autocorrect suggestions for commands
-unsetopt CORRECT
-
-# pass bad match to command
-setopt NO_NOMATCH

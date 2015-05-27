@@ -15,30 +15,30 @@ endif
 call neobundle#begin(expand('~/.vim/bundle/'))
 
 NeoBundleFetch 'Shougo/neobundle.vim'
+NeoBundle 'Glench/Vim-Jinja2-Syntax'
+NeoBundle 'LaTeX-Box-Team/LaTeX-Box'
+NeoBundle 'Lokaltog/vim-easymotion'
+NeoBundle 'Valloric/YouCompleteMe'
 NeoBundle 'a.vim'
-NeoBundle 'rking/ag.vim'
-NeoBundle 'tpope/vim-abolish'
-NeoBundle 'kien/ctrlp.vim'
+NeoBundle 'airblade/vim-gitgutter'
+NeoBundle 'altercation/vim-colors-solarized'
+NeoBundle 'christoomey/vim-tmux-navigator'
+NeoBundle 'itchyny/lightline.vim'
 NeoBundle 'jalcine/cmake.vim'
+NeoBundle 'jason0x43/vim-js-indent'
+NeoBundle 'junegunn/vim-easy-align'
+NeoBundle 'kchmck/vim-coffee-script'
+NeoBundle 'kien/ctrlp.vim'
+NeoBundle 'klen/python-mode'
+NeoBundle 'leafgarland/typescript-vim'
+NeoBundle 'majutsushi/tagbar'
 NeoBundle 'mattn/emmet-vim'
 NeoBundle 'nono/vim-handlebars'
-NeoBundle 'LaTeX-Box-Team/LaTeX-Box'
-NeoBundle 'itchyny/lightline.vim'
-NeoBundle 'majutsushi/tagbar'
-NeoBundle 'tComment'
+NeoBundle 'rking/ag.vim'
 NeoBundle 'scrooloose/syntastic'
-NeoBundle 'altercation/vim-colors-solarized'
-NeoBundle 'kchmck/vim-coffee-script'
-NeoBundle 'junegunn/vim-easy-align'
-NeoBundle 'Lokaltog/vim-easymotion'
+NeoBundle 'tComment'
+NeoBundle 'tpope/vim-abolish'
 NeoBundle 'tpope/vim-fugitive'
-NeoBundle 'airblade/vim-gitgutter'
-NeoBundle 'Glench/Vim-Jinja2-Syntax'
-NeoBundle 'jason0x43/vim-js-indent'
-NeoBundle 'christoomey/vim-tmux-navigator'
-NeoBundle 'leafgarland/typescript-vim'
-NeoBundle 'Valloric/YouCompleteMe'
-
 call neobundle#end()
 filetype plugin indent on " required
 NeoBundleCheck " check for uninstalled bundles
@@ -100,15 +100,19 @@ let g:hybrid_use_iTerm_colors = 1
 colorscheme hybrid-ayk
 set t_Co=256            " tell vim that terminal supports 256 colors
 
-" highlight columns 80, 81, 120, 121
+" highlight columns 79, 80, 119, 120
 highlight ColorColumn ctermbg=235
-set colorcolumn=80,81,120,121
+set colorcolumn=79,80,119,120
 
 " unhighlight search terms
 highlight Search cterm=NONE ctermbg=NONE
 
 " unhighlight sign column
 highlight SignColumn cterm=NONE ctermbg=NONE
+
+" highlight some extra keywords
+syn match extraTodo contained "\<\(HACK\|INFO\|NOTE\):"
+hi! def link extraTodo Todo
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Line Numbering
@@ -196,9 +200,22 @@ if g:update_modifiable
   autocmd BufReadPost * call <SID>UpdateModifiable()
 endif
 
-" auto quickfix window
-autocmd QuickFixCmdPost [^l]* nested cwindow
-autocmd QuickFixCmdPost    l* nested lwindow
+" quickfix toggle
+command -bang -nargs=? QFix call QFixToggle(<bang>0)
+function! QFixToggle(forced)
+  if exists("g:qfix_win") && a:forced == 0
+    cclose
+  else
+    copen 10
+  endif
+endfunction
+" used to track the quickfix window per buffer
+augroup QFixToggle
+ autocmd!
+ autocmd BufWinEnter quickfix let g:qfix_win = bufnr("$")
+ autocmd BufWinLeave * if exists("g:qfix_win") && expand("<abuf>") == g:qfix_win | unlet! g:qfix_win | endif
+augroup END
+nmap <leader>q :QFix<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " tComment
@@ -217,11 +234,11 @@ let g:lightline = {
                 \ 'left': [ [ 'mode', 'paste' ],
                 \           [ 'fileinfo', 'syntastic' ],
                 \           [ 'ctrlpmark' ] ],
-                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ] ] 
+                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ] 
             \ },
             \ 'inactive': {
                 \ 'left': [ [ 'fileinfo' ] ],
-                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ] ] 
+                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ] 
             \ },
             \ 'component': {
                 \ 'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}'
@@ -313,6 +330,7 @@ nnoremap <Leader>a :A<CR>
 let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_min_num_identifier_candidate_chars = 4
 let g:ycm_confirm_extra_conf = 0
+let g:ycm_global_ycm_extra_conf = '/Users/Aleks/.vim/ycm_extra_conf.py'
 nnoremap <leader>y :YcmForceCompileAndDiagnostics<cr>
 nnoremap <leader>fg :YcmCompleter GoToDefinitionElseDeclaration<CR>
 nnoremap <leader>ff :YcmCompleter GoToDefinition<CR>
@@ -325,7 +343,10 @@ let g:syntastic_java_javac_custom_classpath_command =
     \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
 let g:syntastic_stl_format = '%E{!(%e) → %fe}%B{, }%W{?(%w) → %fw}'
 
-let g:syntastic_disabled_filetypes=['tex']
+" disable tex because its annoying
+" disable python because pythonmode
+let g:syntastic_tex_checkers=[]
+let g:syntastic_python_checkers=[]
 
 " hack to get syntastic to update lightline on syntax check
 let g:syntastic_mode_map = { "mode": "passive" }
@@ -337,6 +358,10 @@ function! s:syntastic_lightline()
     SyntasticCheck
     call lightline#update()
 endfunction
+
+" highlights
+hi SpellBad ctermbg=NONE guibg=#1d1f21
+hi SpellCap ctermbg=NONE guibg=#1d1f21
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " CtrlP
@@ -364,6 +389,21 @@ function! CtrlPStatusFunc_2(str)
 endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" pymode
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:pymode_lint_signs = 1
+let g:pymode_lint_on_write = 1
+let g:pymode_lint_cwindow = 0
+let g:pymode_rope_completion = 0
+let g:pymode_folding = 0
+let g:pymode_lint_ignore = "E501" " ignore 80 char limit
+
+function! _PylintToggle()
+    let g:pymode_lint = !g:pymode_lint
+endfunction
+:command! PylintToggle call _PylintToggle()
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Indentation
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set shiftwidth=4
@@ -376,5 +416,14 @@ set backspace=indent,eol,start
 " Filetype
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " autocmd BufNewFile,BufReadPost *.md set filetype=markdown
+autocmd BufNewFile,BufReadPost *.hn set filetype=horn
 autocmd FileType html setl sw=4 ts=4 sts=4 et
+autocmd FileType jinja setl sw=4 ts=4 sts=4 et
 
+" """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" " tmux-navigator
+" """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <c-j> <NOP>
+nnoremap <c-k> <NOP>
+nnoremap <c-h> <NOP>
+nnoremap <c-l> <NOP>

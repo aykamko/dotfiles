@@ -21,10 +21,13 @@ function dsclean() {
     find . -name ".DS_Store" -exec /bin/rm -rf {} \;
 }
 
+export SCHOOL="$HOME/Documents/School/"
+export PROJECTS="$HOME/Projects/"
+
 # tab completion in school directory
-cds() { cd $HOME/Documents/School/$1; }
-compctl -f -W $HOME/Documents/School/ cds
+cds() { cd $SCHOOL/$1; }
+compctl -f -W $SCHOOL cds
 
 # tab completion in project directory
-cdp() { cd $HOME/Projects/$1; }
-compctl -f -W $HOME/Projects/ cdp
+cdp() { cd $PROJECTS/$1; }
+compctl -f -W $PROJECTS cdp
