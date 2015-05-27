@@ -104,7 +104,7 @@ autocmd BufEnter * execute 'sign place 9999 line=1 name=dummy buffer=' .
 " Colorscheme
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:hybrid_use_iTerm_colors = 1
-" colorscheme hybrid-ayk
+colorscheme hybrid-ayk
 set t_Co=256            " tell vim that terminal supports 256 colors
 
 " highlight columns 79, 80, 119, 120
