@@ -1,3 +1,7 @@
+# Custom
+.agignore
+.ruby-version
+
 # Created by http://www.gitignore.io
 
 ### vim ###

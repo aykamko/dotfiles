@@ -1,0 +1,5 @@
+[user]
+    name = Aleks Kamko
+    email = akamko@twitch.tv
+[credential]
+	helper = osxkeychain

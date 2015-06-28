@@ -56,6 +56,7 @@
 
     # log
     l = log --graph --date=short
+    ls = log --graph --date=short -n 10
     changes = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\" --name-status
     short = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\"
     simple = log --pretty=format:\" * %s\"
@@ -137,8 +138,3 @@
     enabled = true
 [include]
     path = .gitconfig.user
-[user]
-    name = Aleks Kamko
-    email = aykamko@gmail.com
-[credential]
-	helper = osxkeychain

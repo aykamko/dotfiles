@@ -1,8 +1,6 @@
 # vim
 #------------------------------------------------------------------------------
 alias vimclean="realrm -f ~/.zcompdump* && exec zsh"
-alias rvim="/usr/local/bin/vim"
-alias vim="nvim"
 alias vi="vim"
 alias vimrc="vi ~/.vimrc"
 function swpclean() {
@@ -131,43 +129,58 @@ alias dmake=_dmake # django
 #------------------------------------------------------------------------------
 function _loadrvm() {
     echo 'Loading RVM. Run command again to use it.'
-    unalias rvm
     [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 }
 alias rvm=_loadrvm
 
 eval "$(rbenv init -)"
 
+# node
+#------------------------------------------------------------------------------
+export NVM_DIR=~/.nvm
+source $(brew --prefix nvm)/nvm.sh
+
 # alias for rm (requires trash script)
 #------------------------------------------------------------------------------
 alias realrm='/bin/rm'
 alias rm='trash'
 
-# fall back to use built in cd
-function cs() {
-    builtin cd $*
-}
+# git
+#------------------------------------------------------------------------------
+alias g='git'
 
 # go to root of git directory
 function groot() {
     cd "$(git rev-parse --show-toplevel)"
+}
+alias gr=groot
+
+# other
+#------------------------------------------------------------------------------
+# fall back to use built in cd
+function cs() {
+    builtin cd $*
 }
 
 # go to temp dir
 alias temp="cs $HOME/temp"
 
 ###############################################################################
-# Mac OSX
+# Special Settings
 ###############################################################################
+# Mac OSX
 if [[ "$OSTYPE" == darwin* && -f "$HOME/.osx_zshrc" ]]; then
     source "$HOME/.osx_zshrc";
 fi
 
-###############################################################################
 # Temporary
-###############################################################################
 if [[ -f "$HOME/.tmp_zshrc" ]]; then
     source "$HOME/.tmp_zshrc";
+fi
+
+# Secret!
+if [[ -f "$HOME/.secret_zshrc" ]]; then
+    source "$HOME/.secret_zshrc";
 fi
 
 ###############################################################################

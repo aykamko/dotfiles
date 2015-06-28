@@ -7,7 +7,6 @@ if has('vim_starting')
   if &compatible
     set nocompatible " be iMproved
   endif
-
   set runtimepath+=~/.vim/bundle/neobundle.vim/ " init NeoBundle
   set encoding=utf-8 " necessary to show Unicode glyphs
 endif
@@ -15,18 +14,19 @@ endif
 call neobundle#begin(expand('~/.vim/bundle/'))
 
 NeoBundleFetch 'Shougo/neobundle.vim'
-" NeoBundle 'Valloric/YouCompleteMe'
 NeoBundle 'Glench/Vim-Jinja2-Syntax'
 NeoBundle 'Glench/Vim-Jinja2-Syntax'
 NeoBundle 'LaTeX-Box-Team/LaTeX-Box'
 NeoBundle 'Lokaltog/vim-easymotion'
 NeoBundle 'Lokaltog/vim-easymotion'
+NeoBundle 'Valloric/YouCompleteMe'
 NeoBundle 'a.vim'
 NeoBundle 'airblade/vim-gitgutter'
 NeoBundle 'airblade/vim-gitgutter'
 NeoBundle 'altercation/vim-colors-solarized'
 NeoBundle 'christoomey/vim-tmux-navigator'
 NeoBundle 'christoomey/vim-tmux-navigator'
+NeoBundle 'fatih/vim-go'
 NeoBundle 'itchyny/lightline.vim'
 NeoBundle 'jalcine/cmake.vim'
 NeoBundle 'jason0x43/vim-js-indent'
@@ -44,7 +44,10 @@ NeoBundle 'mattn/emmet-vim'
 NeoBundle 'nono/vim-handlebars'
 NeoBundle 'rking/ag.vim'
 NeoBundle 'scrooloose/syntastic'
+NeoBundle 'tomtom/tcomment_vim'
+NeoBundle 'tpope/vim-abolish'
 NeoBundle 'tpope/vim-fugitive'
+NeoBundle 'tpope/vim-sleuth'
 
 call neobundle#end()
 filetype plugin indent on " required
@@ -120,6 +123,17 @@ highlight SignColumn cterm=NONE ctermbg=NONE
 " highlight some extra keywords
 syn match extraTodo contained "\<\(HACK\|INFO\|NOTE\):"
 hi! def link extraTodo Todo
+
+" change cursor color on insert mode (iTerm only)
+if $TERM_PROGRAM =~ 'iTerm'
+  if !empty($TMUX)
+    let &t_EI = "\033Ptmux;\033\033]Plc4c8c6\033\\"
+    let &t_SI = "\033Ptmux;\033\033]Plc8a0d1\033\\"
+  else
+    let &t_EI = "\033]Plc4c8c6\033\\"
+    let &t_SI = "\033]Plc8a0d1\033\\"
+  endif
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Line Numbering
@@ -422,11 +436,8 @@ set backspace=indent,eol,start
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Filetype
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" autocmd BufNewFile,BufReadPost *.md set filetype=markdown
+autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
-autocmd FileType html setl sw=4 ts=4 sts=4 et
-autocmd FileType ruby setl sw=2 ts=2 sts=2 et
-autocmd FileType jinja setl sw=4 ts=4 sts=4 et
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " tmux-navigator
