@@ -20,14 +20,3 @@ alias fuckyouappletv='sudo killall coreaudiod'
 function dsclean() {
     find . -name ".DS_Store" -exec /bin/rm -rf {} \;
 }
-
-export SCHOOL="$HOME/Documents/School/"
-export PROJECTS="$HOME/Projects/"
-
-# tab completion in school directory
-cds() { cd $SCHOOL/$1; }
-compctl -f -W $SCHOOL cds
-
-# tab completion in project directory
-cdp() { cd $PROJECTS/$1; }
-compctl -f -W $PROJECTS cdp
