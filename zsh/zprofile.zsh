@@ -65,3 +65,5 @@ export WORKON_HOME=$HOME/.pyvirtualenvs
 # Latex
 export TEXMFHOME=texmf
 
+# Reduce command line vim delay
+export KEYTIMEOUT=1

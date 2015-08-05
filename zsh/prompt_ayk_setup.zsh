@@ -69,6 +69,12 @@ function prompt_ayk_setup {
     # Add hook for calling vcs_info before each command.
     add-zsh-hook precmd prompt_ayk_precmd
 
+    # Set editor-info parameters.
+    zstyle ':prezto:module:editor:info:completing' format '%B%F{red}...%f%b'
+    zstyle ':prezto:module:editor:info:keymap:primary' format '🐼 '
+    zstyle ':prezto:module:editor:info:keymap:alternate' format '🐷 '
+    zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format '%B%F{red}!%f%b'
+
     # Set vcs_info parameters.
     zstyle ':vcs_info:*' enable git hg svn
     zstyle ':vcs_info:*' check-for-changes true
@@ -82,8 +88,8 @@ function prompt_ayk_setup {
     zstyle ':vcs_info:git*+set-message:*' hooks git_remote git_changes_fmt
 
     # Define prompts.
-    PROMPT='${_pwd}${_prompt_ayk_venv}${vcs_info_msg_0_} 🐼  '
-    RPROMPT='%(?:: %F{red}⏎%f)'
+    PROMPT='${_pwd}${_prompt_ayk_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
+    RPROMPT='%(?:: %F{yellow}⏎%f)'
 }
 
 prompt_ayk_setup "$@"

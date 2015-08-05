@@ -151,10 +151,20 @@ alias rm='trash'
 # git
 #------------------------------------------------------------------------------
 alias g='git'
+alias rgit='/usr/local/bin/git'
+
+# capture output of last git command from Facebook Path Picker
+export git_capture=''
+function capturegit() {
+    rgit $* | read -d EOF git_capture
+    echo $git_capture
+}
+alias git=capturegit
+alias gpp='echo $git_capture | fpp'
 
 # go to root of git directory
 function groot() {
-    cd "$(git rev-parse --show-toplevel)"
+    cd "$(rgit rev-parse --show-toplevel)"
 }
 alias gr=groot
 

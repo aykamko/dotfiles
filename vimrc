@@ -1,5 +1,5 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" NeoBundle
+" vim-plug
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Skip initialization for vim-tiny or vim-small.
 if !1 | finish | endif
@@ -7,46 +7,49 @@ if has('vim_starting')
   if &compatible
     set nocompatible " be iMproved
   endif
-  set runtimepath+=~/.vim/bundle/neobundle.vim/ " init NeoBundle
   set encoding=utf-8 " necessary to show Unicode glyphs
 endif
 
-call neobundle#begin(expand('~/.vim/bundle/'))
-NeoBundleFetch 'Shougo/neobundle.vim'
+function! BuildYCM(info)
+  if a:info.status == 'installed' || a:info.force
+    !./install.sh --clang-completer --gocode-completer
+  endif
+endfunction
 
-NeoBundle 'Glench/Vim-Jinja2-Syntax'
-NeoBundle 'LaTeX-Box-Team/LaTeX-Box'
-NeoBundle 'Lokaltog/vim-easymotion'
-NeoBundle 'Valloric/YouCompleteMe'
-NeoBundle 'a.vim'
-NeoBundle 'airblade/vim-gitgutter'
-NeoBundle 'christoomey/vim-tmux-navigator'
-NeoBundle 'fatih/vim-go'
-NeoBundle 'itchyny/lightline.vim'
-NeoBundle 'jalcine/cmake.vim'
-NeoBundle 'jason0x43/vim-js-indent'
-NeoBundle 'junegunn/vim-easy-align'
-NeoBundle 'aykamko/vim-sneak'
-NeoBundle 'kchmck/vim-coffee-script'
-NeoBundle 'kien/ctrlp.vim'
-NeoBundle 'klen/python-mode'
-NeoBundle 'leafgarland/typescript-vim'
-NeoBundle 'mattn/emmet-vim'
-NeoBundle 'nono/vim-handlebars'
-NeoBundle 'rking/ag.vim'
-NeoBundle 'scrooloose/syntastic'
-NeoBundle 'tomtom/tcomment_vim'
-NeoBundle 'tpope/vim-abolish'
-NeoBundle 'tpope/vim-fugitive'
-NeoBundle 'tpope/vim-rails'
-NeoBundle 'tpope/vim-sleuth'
+call plug#begin('~/.vim/bundle/')
 
+Plug 'Lokaltog/vim-easymotion'
+Plug 'Valloric/YouCompleteMe', { 'do': function('BuildYCM') }
+Plug 'airblade/vim-gitgutter'
+Plug 'aykamko/vim-sneak'
+Plug 'christoomey/vim-tmux-navigator'
+Plug 'itchyny/lightline.vim'
+Plug 'junegunn/vim-easy-align'
+Plug 'kien/ctrlp.vim'
+Plug 'scrooloose/syntastic'
+Plug 'tomtom/tcomment_vim'
+Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-sleuth'
 " remove when gosu
-NeoBundle 'takac/vim-hardtime'
+Plug 'takac/vim-hardtime'
 
-call neobundle#end()
+Plug 'rking/ag.vim',       { 'on': 'Ag' }
+Plug 'tpope/vim-fugitive', { 'on': 'Gdiff' }
+
+Plug 'Glench/Vim-Jinja2-Syntax',   { 'for': 'jinja' }
+Plug 'LaTeX-Box-Team/LaTeX-Box',   { 'for': 'tex' }
+Plug 'a.vim',                      { 'for': ['c', 'cpp'] }
+Plug 'fatih/vim-go',               { 'for': 'go' }
+Plug 'jason0x43/vim-js-indent',    { 'for': 'javascript' }
+Plug 'kchmck/vim-coffee-script',   { 'for': 'coffeescript' }
+Plug 'klen/python-mode',           { 'for': 'python' }
+Plug 'leafgarland/typescript-vim', { 'for': 'typescript' }
+Plug 'mattn/emmet-vim',            { 'for': ['jinja', 'html'] }
+Plug 'nono/vim-handlebars',        { 'for': ['jinja', 'html'] }
+Plug 'tpope/vim-rails',            { 'for': 'ruby' }
+
+call plug#end()
 filetype plugin indent on " required
-NeoBundleCheck " check for uninstalled bundles
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " General Settings
@@ -345,14 +348,14 @@ nnoremap <Leader>a :A<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " You Complete Me
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:ycm_autoclose_preview_window_after_completion = 1
-" let g:ycm_min_num_identifier_candidate_chars = 4
-" let g:ycm_confirm_extra_conf = 0
-" let g:ycm_global_ycm_extra_conf = '/Users/Aleks/.vim/ycm_extra_conf.py'
-" nnoremap <leader>y :YcmForceCompileAndDiagnostics<cr>
-" nnoremap <leader>fg :YcmCompleter GoToDefinitionElseDeclaration<CR>
-" nnoremap <leader>ff :YcmCompleter GoToDefinition<CR>
-" nnoremap <leader>fc :YcmCompleter GoToDeclaration<CR>
+let g:ycm_autoclose_preview_window_after_completion = 1
+let g:ycm_min_num_identifier_candidate_chars = 4
+let g:ycm_confirm_extra_conf = 0
+let g:ycm_global_ycm_extra_conf = '/Users/Aleks/.vim/ycm_extra_conf.py'
+nnoremap <leader>y :YcmForceCompileAndDiagnostics<cr>
+nnoremap <leader>fg :YcmCompleter GoToDefinitionElseDeclaration<CR>
+nnoremap <leader>ff :YcmCompleter GoToDefinition<CR>
+nnoremap <leader>fc :YcmCompleter GoToDeclaration<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntastic
@@ -448,12 +451,12 @@ xmap T <Plug>Sneak_T
 omap t <Plug>Sneak_t
 omap T <Plug>Sneak_T
 
-hi! customSneakStreakTarget ctermfg=yellow ctermbg=NONE cterm=underline
+hi! customSneakStreakTarget ctermfg=yellow ctermbg=NONE
 hi! customSneakPluginTarget ctermfg=201 ctermbg=NONE cterm=underline
 hi! link SneakPluginTarget customSneakPluginTarget
 hi! link SneakStreakTarget customSneakStreakTarget
-hi! link SneakStreakShade SignColumn
-hi! link SneakStreakMask SignColumn
+hi! link SneakStreakShade Comment
+hi! link SneakStreakMask Comment
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-hardtime
@@ -461,6 +464,14 @@ hi! link SneakStreakMask SignColumn
 let g:hardtime_default_on = 1
 let g:hardtime_showmsg = 1
 let g:hardtime_maxcount = 1
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" vim-go
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! <SID>VimGoBindings()
+  nnoremap <leader>f :GoDef<CR>
+endfunction
+au FileType go :call <SID>VimGoBindings()
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Filetype
