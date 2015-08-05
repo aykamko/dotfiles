@@ -6,6 +6,9 @@ alias vimrc="vi ~/.vimrc"
 function swpclean() {
     find . -name "*.sw*" -exec /bin/rm -rf {} \;
 }
+function vreplace() {
+  vim -c "bufdo %s/$1/$2/gec | update" -c "q" ${*:3}
+}
 
 ###############################################################################
 # Aliases & Functions
@@ -13,6 +16,10 @@ function swpclean() {
 # basics
 #------------------------------------------------------------------------------
 alias c="clear"
+
+# Facebook Path Picker
+#------------------------------------------------------------------------------
+alias pp="fpp"
 
 # zsh
 #------------------------------------------------------------------------------
@@ -66,14 +73,6 @@ function ta() {
     fi
 }
 
-function exit() {
-    if [[ -n $TMUX ]]; then
-        tmux detach
-    else
-        builtin exit
-    fi
-}
-
 function tkill() {
     [[ -n $TMUX ]] && exit
     tmux ls | awk '{print $1}' | sed 's/:.*$//' | xargs -I{} tmux kill-session -t {}
@@ -83,6 +82,10 @@ alias tl='tmux ls'
 alias detach='tmux detach'
 alias tconf="vi ~/.tmux.conf"
 
+function tpp() {
+  [[ -z $TMUX ]] && echo 'Not in tmux!' && return
+  realtmux capture-pane -pe | fpp
+}
 
 # python
 #------------------------------------------------------------------------------
@@ -205,6 +208,7 @@ fi
 ###############################################################################
 # override cd to do ls and vi when necessary
 function _better_cd() {
+    set -- ${1//,/.} # replace commas (,) with periods (.)
     if [[ -f $1 ]]; then
         local fdir
         fdir=`dirname $1`

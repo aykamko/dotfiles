@@ -12,34 +12,25 @@ if has('vim_starting')
 endif
 
 call neobundle#begin(expand('~/.vim/bundle/'))
-
 NeoBundleFetch 'Shougo/neobundle.vim'
-NeoBundle 'Glench/Vim-Jinja2-Syntax'
+
 NeoBundle 'Glench/Vim-Jinja2-Syntax'
 NeoBundle 'LaTeX-Box-Team/LaTeX-Box'
-NeoBundle 'Lokaltog/vim-easymotion'
 NeoBundle 'Lokaltog/vim-easymotion'
 NeoBundle 'Valloric/YouCompleteMe'
 NeoBundle 'a.vim'
 NeoBundle 'airblade/vim-gitgutter'
-NeoBundle 'airblade/vim-gitgutter'
-NeoBundle 'altercation/vim-colors-solarized'
-NeoBundle 'christoomey/vim-tmux-navigator'
 NeoBundle 'christoomey/vim-tmux-navigator'
 NeoBundle 'fatih/vim-go'
 NeoBundle 'itchyny/lightline.vim'
 NeoBundle 'jalcine/cmake.vim'
 NeoBundle 'jason0x43/vim-js-indent'
-NeoBundle 'jason0x43/vim-js-indent'
 NeoBundle 'junegunn/vim-easy-align'
-NeoBundle 'junegunn/vim-easy-align'
-NeoBundle 'kchmck/vim-coffee-script'
+NeoBundle 'aykamko/vim-sneak'
 NeoBundle 'kchmck/vim-coffee-script'
 NeoBundle 'kien/ctrlp.vim'
 NeoBundle 'klen/python-mode'
 NeoBundle 'leafgarland/typescript-vim'
-NeoBundle 'leafgarland/typescript-vim'
-NeoBundle 'majutsushi/tagbar'
 NeoBundle 'mattn/emmet-vim'
 NeoBundle 'nono/vim-handlebars'
 NeoBundle 'rking/ag.vim'
@@ -47,7 +38,11 @@ NeoBundle 'scrooloose/syntastic'
 NeoBundle 'tomtom/tcomment_vim'
 NeoBundle 'tpope/vim-abolish'
 NeoBundle 'tpope/vim-fugitive'
+NeoBundle 'tpope/vim-rails'
 NeoBundle 'tpope/vim-sleuth'
+
+" remove when gosu
+NeoBundle 'takac/vim-hardtime'
 
 call neobundle#end()
 filetype plugin indent on " required
@@ -56,10 +51,8 @@ NeoBundleCheck " check for uninstalled bundles
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " General Settings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-syntax enable
-
 " Leader Key
-let mapleader = ","
+let mapleader = " "
 
 " Display
 set ruler           " show cursor position
@@ -99,13 +92,17 @@ set viminfo='50,"50   " '=marks for x files, "=registers for x files
 set modelines=0       " modelines are bad for your health
 
 " hack to always display sign column
-autocmd BufEnter * sign define dummy
-autocmd BufEnter * execute 'sign place 9999 line=1 name=dummy buffer=' . 
-            \ bufnr('')
+augroup DisplaySignCol
+  au!
+  au BufEnter * sign define dummy
+  au BufEnter * exe 'sign place 9999 line=1 name=dummy buffer='.bufnr('')
+augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Colorscheme
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+syntax enable
+
 let g:hybrid_use_iTerm_colors = 1
 colorscheme hybrid-ayk
 set t_Co=256            " tell vim that terminal supports 256 colors
@@ -120,9 +117,12 @@ highlight Search cterm=NONE ctermbg=NONE
 " unhighlight sign column
 highlight SignColumn cterm=NONE ctermbg=NONE
 
-" highlight some extra keywords
-syn match extraTodo contained "\<\(HACK\|INFO\|NOTE\):"
-hi! def link extraTodo Todo
+" add some extra keywords to Todo highlight group
+augroup ExtraKeywords
+  au!
+  au BufEnter * syn keyword extraTodo HACK INFO NOTE containedin=.*Comment.*
+augroup END
+hi def link extraTodo Todo
 
 " change cursor color on insert mode (iTerm only)
 if $TERM_PROGRAM =~ 'iTerm'
@@ -145,25 +145,22 @@ autocmd InsertEnter * :set invrelativenumber
 autocmd InsertLeave * :set invrelativenumber
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Indentation
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set shiftwidth=4
+set tabstop=4
+set softtabstop=4
+set expandtab
+set backspace=indent,eol,start
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Useful commands and mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " because I suck
-:command! WQ wq
-:command! Wq wq
-:command! W w
-:command! Q q
-
-" vimrc
-:command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
-:command! Vso so ~/.vimrc     " source vimrc
-
-" useful 61B macros
-:command! Make !make
-
-" quick Python script testing
-:command! Pint  w | !python3 -i '%:p'
-:command! Pdocv w | !python3 -m doctest -v '%:p'
-:command! Pdoc  w | !python3 -m doctest '%:p'
+command! WQ wq
+command! Wq wq
+command! W w
+command! Q q
 
 " copy to xclip with Control-C
 map <C-C> :w !xsel<CR><CR>
@@ -174,16 +171,16 @@ vnoremap < <gv
 vnoremap > >gv
 
 " prettify JSON
-:command! Prettify %!python -m json.tool
+command! Prettify %!python -m json.tool
 
 " remove small delay when leaving insert mode
 if !has('gui_running')
-    set ttimeoutlen=10
-    augroup FastEscape
-        autocmd!
-        au InsertEnter * set timeoutlen=0
-        au InsertLeave * set timeoutlen=1000
-    augroup END
+  set ttimeoutlen=10
+  augroup FastEscape
+    autocmd!
+    au InsertEnter * set timeoutlen=0
+    au InsertLeave * set timeoutlen=1000
+  augroup END
 endif
 
 " kill any trailing whitespace on save (Credit to Facebook)
@@ -195,9 +192,9 @@ if g:fb_kill_whitespace
     %s/\s\+$//e
     call cursor(l, c)
   endfu
-  au FileType c,cabal,cpp,haskell,javascript,php,python,ruby,readme,tex,text
-    \ au BufWritePre <buffer>
-    \ :call <SID>StripTrailingWhitespaces()
+  au FileType c,cabal,cpp,haskell,javascript,php,python,ruby,readme,tex,text,vim
+        \ au BufWritePre <buffer>
+        \ :call <SID>StripTrailingWhitespaces()
 endif
 
 " set buffer to unmodifiable if read-only
@@ -232,9 +229,9 @@ function! QFixToggle(forced)
 endfunction
 " used to track the quickfix window per buffer
 augroup QFixToggle
- autocmd!
- autocmd BufWinEnter quickfix let g:qfix_win = bufnr("$")
- autocmd BufWinLeave * if exists("g:qfix_win") && expand("<abuf>") == g:qfix_win | unlet! g:qfix_win | endif
+  autocmd!
+  autocmd BufWinEnter quickfix let g:qfix_win = bufnr("$")
+  autocmd BufWinLeave * if exists("g:qfix_win") && expand("<abuf>") == g:qfix_win | unlet! g:qfix_win | endif
 augroup END
 nmap <leader>q :QFix<CR>
 
@@ -250,59 +247,59 @@ vmap <leader>c :TComment<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set laststatus=2   " Always show the statusline
 let g:lightline = {
-            \ 'colorscheme': 'Tomorrow_Night',
-            \ 'active': {
-                \ 'left': [ [ 'mode', 'paste' ],
-                \           [ 'fileinfo', 'syntastic' ],
-                \           [ 'ctrlpmark' ] ],
-                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ] 
-            \ },
-            \ 'inactive': {
-                \ 'left': [ [ 'fileinfo' ] ],
-                \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ] 
-            \ },
-            \ 'component': {
-                \ 'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}'
-            \ },
-            \ 'component_function' : {
-                \ 'mode': 'LLMode',
-                \ 'fileinfo': 'LLFileinfo',
-                \ 'ctrlpmark': 'CtrlPMark',
-            \ },
-            \ 'component_expand' : {
-                \ 'syntastic': 'SyntasticStatuslineFlag',
-            \ },
-            \ 'component_type': {
-                \ 'syntastic': 'error',
-            \ },
-            \ }
+      \ 'colorscheme': 'Tomorrow_Night',
+      \ 'active': {
+      \ 'left': [ [ 'mode', 'paste' ],
+      \           [ 'fileinfo', 'syntastic' ],
+      \           [ 'ctrlpmark' ] ],
+      \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
+      \ },
+      \ 'inactive': {
+      \ 'left': [ [ 'fileinfo' ] ],
+      \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
+      \ },
+      \ 'component': {
+      \ 'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}'
+      \ },
+      \ 'component_function' : {
+      \ 'mode': 'LLMode',
+      \ 'fileinfo': 'LLFileinfo',
+      \ 'ctrlpmark': 'CtrlPMark',
+      \ },
+      \ 'component_expand' : {
+      \ 'syntastic': 'SyntasticStatuslineFlag',
+      \ },
+      \ 'component_type': {
+      \ 'syntastic': 'error',
+      \ },
+      \ }
 
 " mode
 function! LLMode()
-    let fname = expand('%:t')
-    return fname == 'ControlP' ? 'CtrlP' :
-                \ winwidth(0) > 60 ? lightline#mode() : ''
+  let fname = expand('%:t')
+  return fname == 'ControlP' ? 'CtrlP' :
+        \ winwidth(0) > 60 ? lightline#mode() : ''
 endfunction
 
 " filename and fileinfo
 let g:pathname_depth = 3
 function! LLModified()
-    return &ft =~ 'help' ? '' : &modified ? '+' : &modifiable ? '' : '-'
+  return &ft =~ 'help' ? '' : &modified ? '+' : &modifiable ? '' : '-'
 endfunction
 function! LLReadonly()
-    return &ft !~? 'help' && &readonly ? 'RO' : ''
+  return &ft !~? 'help' && &readonly ? 'RO' : ''
 endfunction
 function! LLTrucatedFilePath()
-    let depth = g:pathname_depth ? g:pathname_depth : 10
-    let fullpath = expand('%:p:~')
-    let truncpath = matchstr(fullpath, 
-        \ printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$', 
+  let depth = g:pathname_depth ? g:pathname_depth : 10
+  let fullpath = expand('%:p:~')
+  let truncpath = matchstr(fullpath,
+        \ printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$',
         \ depth))
-    return truncpath
+  return truncpath
 endfunction
 function! LLFileinfo()
-    let fname = expand('%:t')
-    return fname == 'ControlP' ? g:lightline.ctrlp_item :
+  let fname = expand('%:t')
+  return fname == 'ControlP' ? g:lightline.ctrlp_item :
         \ ('' != LLReadonly() ? LLReadonly() . ' ' : '') .
         \ ('' != LLTrucatedFilePath() ? LLTrucatedFilePath() : '[No Name]') .
         \ ('' != LLModified() ? ' ' . LLModified() : '')
@@ -312,8 +309,8 @@ endfunction
 function! CtrlPMark()
   if expand('%:t') =~ 'ControlP'
     call lightline#link('iR'[g:lightline.ctrlp_regex])
-    return lightline#concatenate([g:lightline.ctrlp_prev, 
-                \ g:lightline.ctrlp_item , g:lightline.ctrlp_next], 0)
+    return lightline#concatenate([g:lightline.ctrlp_prev,
+          \ g:lightline.ctrlp_item , g:lightline.ctrlp_next], 0)
   endif
   return ''
 endfunction
@@ -326,9 +323,9 @@ let g:LatexBox_latexmk_preview_continuously=1
 let g:LatexBox_show_warnings=2
 map <silent> <leader>ll :Latexmk<CR>
 map <silent> <Leader>ls :silent
-        \ !/Applications/Skim.app/Contents/SharedSupport/displayline
-        \ <C-R>=line('.')<CR> "<C-R>=LatexBox_GetOutputFile()<CR>"
-        \ "%:p" <CR>
+      \ !/Applications/Skim.app/Contents/SharedSupport/displayline
+      \ <C-R>=line('.')<CR> "<C-R>=LatexBox_GetOutputFile()<CR>"
+      \ "%:p" <CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-easyalign
@@ -361,7 +358,7 @@ nnoremap <Leader>a :A<CR>
 " Syntastic
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:syntastic_java_javac_custom_classpath_command =
-    \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
+      \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
 let g:syntastic_stl_format = '%E{!(%e) → %fe}%B{, }%W{?(%w) → %fw}'
 
 " disable tex because its annoying
@@ -372,12 +369,12 @@ let g:syntastic_python_checkers=[]
 " hack to get syntastic to update lightline on syntax check
 let g:syntastic_mode_map = { "mode": "passive" }
 augroup SyntasticLightline
-    autocmd!
-    autocmd BufWritePost * call s:syntastic_lightline()
+  autocmd!
+  autocmd BufWritePost * call s:syntastic_lightline()
 augroup END
 function! s:syntastic_lightline()
-    SyntasticCheck
-    call lightline#update()
+  SyntasticCheck
+  call lightline#update()
 endfunction
 
 " highlights
@@ -389,13 +386,13 @@ hi SpellCap ctermbg=NONE guibg=#1d1f21
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 nnoremap <leader>m :CtrlP<CR>
 let g:ctrlp_custom_ignore = {
-  \ 'dir':  '\v[\/]\.(git|hg|svn)$',
-  \ 'file': '\v\.(exe|so|dll|class)$',
-  \ }
+      \ 'dir':  '\v[\/]\.(git|hg|svn)$',
+      \ 'file': '\v\.(exe|so|dll|class)$',
+      \ }
 let g:ctrlp_status_func = {
-  \ 'main': 'CtrlPStatusFunc_1',
-  \ 'prog': 'CtrlPStatusFunc_2',
-  \ }
+      \ 'main': 'CtrlPStatusFunc_1',
+      \ 'prog': 'CtrlPStatusFunc_2',
+      \ }
 
 function! CtrlPStatusFunc_1(focus, byfname, regex, prev, item, next, marked)
   let g:lightline.ctrlp_regex = a:regex
@@ -420,29 +417,53 @@ let g:pymode_folding = 0
 let g:pymode_lint_ignore = "E501" " ignore 80 char limit
 
 function! _PylintToggle()
-    let g:pymode_lint = !g:pymode_lint
+  let g:pymode_lint = !g:pymode_lint
 endfunction
-:command! PylintToggle call _PylintToggle()
+command! PylintToggle call _PylintToggle()
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Indentation
+" vim-easymotion
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set shiftwidth=4
-set tabstop=4
-set softtabstop=4
-set expandtab
-set backspace=indent,eol,start
+" enable easymotion with one leaderkey press
+map <Leader> <Plug>(easymotion-prefix)
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" vim-sneak
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:sneak#streak = 1
+let g:sneak#use_ic_scs = 1
+let g:sneak#streak_clear_syntax = 0
+"replace 'f' with 1-char Sneak
+nmap f <Plug>Sneak_f
+nmap F <Plug>Sneak_F
+xmap f <Plug>Sneak_f
+xmap F <Plug>Sneak_F
+omap f <Plug>Sneak_f
+omap F <Plug>Sneak_F
+"replace 't' with 1-char Sneak
+nmap t <Plug>Sneak_t
+nmap T <Plug>Sneak_T
+xmap t <Plug>Sneak_t
+xmap T <Plug>Sneak_T
+omap t <Plug>Sneak_t
+omap T <Plug>Sneak_T
+
+hi! customSneakStreakTarget ctermfg=yellow ctermbg=NONE cterm=underline
+hi! customSneakPluginTarget ctermfg=201 ctermbg=NONE cterm=underline
+hi! link SneakPluginTarget customSneakPluginTarget
+hi! link SneakStreakTarget customSneakStreakTarget
+hi! link SneakStreakShade SignColumn
+hi! link SneakStreakMask SignColumn
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" vim-hardtime
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:hardtime_default_on = 1
+let g:hardtime_showmsg = 1
+let g:hardtime_maxcount = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Filetype
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" tmux-navigator
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <c-j> <NOP>
-nnoremap <c-k> <NOP>
-nnoremap <c-h> <NOP>
-nnoremap <c-l> <NOP>

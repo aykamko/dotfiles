@@ -1,5 +1,5 @@
 [color]
-    ui = true
+    ui = always
 [color "branch"]
     current = yellow reverse
     local = yellow
@@ -39,6 +39,7 @@
     amend = commit --amend            # ammend your last commit
     ammend = commit --amend           # ammend your last commit
     oops = commit --amend --no-edit   # ammend your last commit without editing commit message
+    empty = commit --allow-empty -m   # empty commit
 
     # checkout
     co = checkout                     # checkout
@@ -70,6 +71,7 @@
 
     # push
     ps = push                         # push
+    sync = "!git push -u ${1-origin} `git rev-parse --abbrev-ref HEAD`"
 
     # rebase
     rc = rebase --continue            # continue rebase
