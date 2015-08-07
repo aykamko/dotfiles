@@ -42,6 +42,8 @@ export VIRTUAL_ENV_DISABLE_PROMPT=1
 function prompt_ayk_venv {
     if [[ -n ${VIRTUAL_ENV} ]]; then
         _prompt_ayk_venv="%F{$_secondary_color}[%f%F{white}${VIRTUAL_ENV:t}%f%F{$_secondary_color}]%f"
+    else
+        unset _prompt_ayk_venv
     fi
 }
 

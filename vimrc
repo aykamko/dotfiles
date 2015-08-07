@@ -208,6 +208,10 @@ command! Wq wq
 command! W w
 command! Q q
 
+" vimrc
+command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
+command! Vso so ~/.vimrc     " source vimrc
+
 " copy to xclip with Control-C
 map <C-C> :w !xsel<CR><CR>
 vmap <C-C> "*y
@@ -265,7 +269,7 @@ if g:update_modifiable
 endif
 
 " quickfix toggle
-command -bang -nargs=? QFix call QFixToggle(<bang>0)
+command! -bang -nargs=? QFix call QFixToggle(<bang>0)
 function! QFixToggle(forced)
   if exists("g:qfix_win") && a:forced == 0
     cclose
