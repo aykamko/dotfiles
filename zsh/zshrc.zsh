@@ -147,12 +147,14 @@ function _loadrvm() {
 }
 alias rvm=_loadrvm
 
-eval "$(rbenv init -)"
+if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
 
 # node
 #------------------------------------------------------------------------------
-export NVM_DIR=~/.nvm
-source $(brew --prefix nvm)/nvm.sh
+if which nvm > /dev/null; then
+  export NVM_DIR=~/.nvm
+  source $(brew --prefix nvm)/nvm.sh
+fi
 
 # alias for rm (requires trash script)
 #------------------------------------------------------------------------------
@@ -175,7 +177,7 @@ alias rgit='/usr/local/bin/git'
 
 # go to root of git directory
 function groot() {
-    cd "$(rgit rev-parse --show-toplevel)"
+cd "$(rgit rev-parse --show-toplevel)"
 }
 alias gr=groot
 
@@ -183,7 +185,7 @@ alias gr=groot
 #------------------------------------------------------------------------------
 # fall back to use built in cd
 function cs() {
-    builtin cd $*
+builtin cd $*
 }
 
 # go to temp dir
@@ -194,26 +196,26 @@ alias temp="cs $HOME/temp"
 ###############################################################################
 # Mac OSX
 if [[ "$OSTYPE" == darwin* && -f "$HOME/.osx_zshrc" ]]; then
-    source "$HOME/.osx_zshrc";
+  source "$HOME/.osx_zshrc";
 fi
 
 # Temporary
 if [[ -f "$HOME/.tmp_zshrc" ]]; then
-    source "$HOME/.tmp_zshrc";
+  source "$HOME/.tmp_zshrc";
 fi
 
 # Secret!
 if [[ -f "$HOME/.secret_zshrc" ]]; then
-    source "$HOME/.secret_zshrc";
+  source "$HOME/.secret_zshrc";
 fi
 
 ###############################################################################
 # Autostart TMUX
 ###############################################################################
 if [[ ! -f "$HOME/.notmux" && -z "$TMUX" ]]; then
-    echo "Not in tmux session. Won't load rest of zshrc."
-    tmux attach || tmux
-    return
+  echo "Not in tmux session. Won't load rest of zshrc."
+  tmux attach || tmux
+  return
 fi
 
 ###############################################################################
@@ -229,17 +231,17 @@ fi
 ###############################################################################
 # override cd to do ls and vi when necessary
 function _better_cd() {
-    set -- ${1//,/.} # replace commas (,) with periods (.)
-    if [[ -f $1 ]]; then
-        local fdir
-        fdir=`dirname $1`
-        if [[ -d $fdir ]]; then
-            builtin cd "$fdir" && ls
-        fi
-        vim `basename $1` ${*:2}
-    else
-        builtin cd $* && ls
-    fi
+set -- ${1//,/.} # replace commas (,) with periods (.)
+if [[ -f $1 ]]; then
+  local fdir
+  fdir=`dirname $1`
+  if [[ -d $fdir ]]; then
+    builtin cd "$fdir" && ls
+  fi
+  vim `basename $1` ${*:2}
+else
+  builtin cd $* && ls
+fi
 }
 alias cd=_better_cd
 
@@ -253,7 +255,7 @@ setopt NO_NOMATCH
 # sport
 ###############################################################################
 function sport() {
-    lsof -i :$1
+lsof -i :$1
 }
 
 ###############################################################################
