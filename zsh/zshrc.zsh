@@ -7,7 +7,18 @@ function swpclean() {
     find . -name "*.sw*" -exec /bin/rm -rf {} \;
 }
 function vreplace() {
-  vim -c "bufdo %s/$1/$2/gec | update" -c "q" ${*:3}
+  if [[ $# < 2 ]]; then
+    echo 'Not enough arguments!'
+    return 1
+  fi
+
+  local files
+  if [[ $# == 2 ]]; then
+    files=`find .`
+  else
+    files=${*:3}
+  fi
+  vim -c "bufdo \%s/$1/$2/gec | update" -c "q" $files
 }
 
 ###############################################################################
@@ -153,14 +164,14 @@ alias rm='trash'
 alias g='git'
 alias rgit='/usr/local/bin/git'
 
-# capture output of last git command from Facebook Path Picker
-export git_capture=''
-function capturegit() {
-    rgit $* | read -d EOF git_capture
-    echo $git_capture
-}
-alias git=capturegit
-alias gpp='echo $git_capture | fpp'
+# # capture output of last git command from Facebook Path Picker
+# export git_capture=''
+# function capturegit() {
+#     rgit $* | read -d EOF git_capture
+#     echo $git_capture
+# }
+# alias git=capturegit
+# alias gpp='echo $git_capture | fpp'
 
 # go to root of git directory
 function groot() {
@@ -237,3 +248,16 @@ unsetopt CORRECT
 
 # pass bad match to command
 setopt NO_NOMATCH
+
+###############################################################################
+# sport
+###############################################################################
+function sport() {
+    lsof -i :$1
+}
+
+###############################################################################
+# vim fzf
+###############################################################################
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export FZF_COMPLETION_TRIGGER='jk'

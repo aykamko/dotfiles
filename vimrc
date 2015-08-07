@@ -24,12 +24,14 @@ Plug 'airblade/vim-gitgutter'
 Plug 'aykamko/vim-sneak'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'itchyny/lightline.vim'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 Plug 'junegunn/vim-easy-align'
-Plug 'kien/ctrlp.vim'
 Plug 'scrooloose/syntastic'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-sleuth'
+Plug 'tpope/vim-surround'
+Plug 'ConradIrwin/vim-bracketed-paste'
 " remove when gosu
 Plug 'takac/vim-hardtime'
 
@@ -146,6 +148,47 @@ set number
 set relativenumber
 autocmd InsertEnter * :set invrelativenumber
 autocmd InsertLeave * :set invrelativenumber
+
+" TODO: make a pull request to NeoVim
+" " incredibly convoluted way to set non-relative line numbering when entering
+" " cmdline mode
+" let w:prev_cmdline_key = ':'
+" let w:prev_histbuf = 'cmd'
+" function! SetCmdlineHistbuf(key, histbuf)
+"   set invrelativenumber
+"   let w:prev_cmdline_key = a:key
+"   let w:prev_histbuf = a:histbuf
+" endfunction
+" nnoremap : :call SetCmdlineHistbuf(':', 'cmd')<CR>:
+" nnoremap / :call SetCmdlineHistbuf('/', 'search')<CR>/
+" nnoremap ? :call SetCmdlineHistbuf('?', 'search')<CR>?
+"
+" let w:last_hist_cmd = 0
+" function! CmdlineExit()
+"   let escapechars = []
+"   while 1
+"     let c = getchar(0)
+"     if c == 0
+"       break
+"     endif
+"     call add(escapechars, c)
+"   endwhile
+"   if len(escapechars) != 0
+"     if escapechars[-1] == 65
+"       let w:last_hist_cmd -= 1
+"     elseif escapechars[-1] == 66 && w:last_hist_cmd < 0
+"       let w:last_hist_cmd += 1
+"     endif
+"     " call feedkeys(':'.(histget('cmd', w:last_hist_cmd)), 'n')
+"     call feedkeys((w:prev_cmdline_key).(histget(w:prev_histbuf, w:last_hist_cmd)), 'n')
+"   else
+"     set invrelativenumber
+"     let w:last_hist_cmd = 0
+"   endif
+" endfunction
+" cnoremap <silent> <Esc> <C-c>:call CmdlineExit()<CR>
+" cnoremap <silent> <CR>  <CR> :call CmdlineExit()<CR>
+" cnoremap <silent> <C-c> <C-c>:call CmdlineExit()<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Indentation
@@ -385,9 +428,10 @@ hi SpellBad ctermbg=NONE guibg=#1d1f21
 hi SpellCap ctermbg=NONE guibg=#1d1f21
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" CtrlP
+" fzf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <leader>m :CtrlP<CR>
+nnoremap <leader>m :FZF<CR>
+nnoremap <C-P> :FZF<CR>
 let g:ctrlp_custom_ignore = {
       \ 'dir':  '\v[\/]\.(git|hg|svn)$',
       \ 'file': '\v\.(exe|so|dll|class)$',
@@ -478,3 +522,4 @@ au FileType go :call <SID>VimGoBindings()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
+autocmd FileType javascript setl sw=2 sts=2 et
