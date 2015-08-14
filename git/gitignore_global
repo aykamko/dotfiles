@@ -1,6 +1,8 @@
 # Custom
+.ptignore
 .agignore
 .ruby-version
+node_modules/
 
 # Created by http://www.gitignore.io
 

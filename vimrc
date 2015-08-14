@@ -1,6 +1,6 @@
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-plug
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Skip initialization for vim-tiny or vim-small.
 if !1 | finish | endif
 if has('vim_starting')
@@ -10,33 +10,39 @@ if has('vim_starting')
   set encoding=utf-8 " necessary to show Unicode glyphs
 endif
 
-function! BuildYCM(info)
-  if a:info.status == 'installed' || a:info.force
-    !./install.sh --clang-completer --gocode-completer
-  endif
-endfunction
+" autoinstall vim-plug
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall
+endif
 
 call plug#begin('~/.vim/bundle/')
 
-Plug 'Lokaltog/vim-easymotion'
-Plug 'Valloric/YouCompleteMe', { 'do': function('BuildYCM') }
-Plug 'airblade/vim-gitgutter'
-Plug 'aykamko/vim-sneak'
-Plug 'christoomey/vim-tmux-navigator'
-Plug 'itchyny/lightline.vim'
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
-Plug 'junegunn/vim-easy-align'
-Plug 'scrooloose/syntastic'
-Plug 'tomtom/tcomment_vim'
-Plug 'tpope/vim-abolish'
-Plug 'tpope/vim-sleuth'
-Plug 'tpope/vim-surround'
-Plug 'ConradIrwin/vim-bracketed-paste'
-" remove when gosu
+" TODO: test
 Plug 'takac/vim-hardtime'
 
-Plug 'rking/ag.vim',       { 'on': 'Ag' }
-Plug 'tpope/vim-fugitive', { 'on': 'Gdiff' }
+Plug 'ConradIrwin/vim-bracketed-paste'
+Plug 'Lokaltog/vim-easymotion'
+Plug 'airblade/vim-gitgutter'
+Plug 'christoomey/vim-tmux-navigator'
+Plug 'itchyny/lightline.vim'
+Plug 'kana/vim-textobj-user'
+Plug 'nathanaelkane/vim-indent-guides'
+Plug 'tomtom/tcomment_vim'
+Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-sleuth'
+Plug 'tpope/vim-surround'
+Plug 'unblevable/quick-scope'
+Plug 'wellle/targets.vim'
+
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
+
+Plug 'mattn/webapi-vim' | Plug 'mattn/gist-vim', { 'on': 'Gist' }
+
+Plug 'junegunn/vim-easy-align',    { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
+Plug 'rking/ag.vim'
 
 Plug 'Glench/Vim-Jinja2-Syntax',   { 'for': 'jinja' }
 Plug 'LaTeX-Box-Team/LaTeX-Box',   { 'for': 'tex' }
@@ -49,6 +55,36 @@ Plug 'leafgarland/typescript-vim', { 'for': 'typescript' }
 Plug 'mattn/emmet-vim',            { 'for': ['jinja', 'html'] }
 Plug 'nono/vim-handlebars',        { 'for': ['jinja', 'html'] }
 Plug 'tpope/vim-rails',            { 'for': 'ruby' }
+Plug 'vim-scripts/sh.vim--Cla',    { 'for': ['sh', 'zsh', 'bash'] }
+
+" load on InsertEnter
+Plug 'Valloric/YouCompleteMe', { 'on': [], 'do': './install.sh --clang-compiler --gocode-compiler' }
+fu! <SID>LoadYCM()
+  hi! YCMLoadingLine ctermfg=red
+  let curline = line('.')
+  let loadline = matchaddpos('YCMLoadingLine', [curline - 1, curline, curline + 1], 12)
+  redraw
+  echo "Loading YCM..."
+  call plug#load('YouCompleteMe')
+  call youcompleteme#Enable()
+  silent! call matchdelete(loadline)
+  redraw!
+endfu
+augroup plug_on_insertenter
+  autocmd!
+  autocmd InsertEnter * call <SID>LoadYCM() | autocmd! plug_on_insertenter
+augroup END
+
+" load on BufWritePre
+Plug 'scrooloose/syntastic' , { 'on': [] }
+augroup plug_on_bufwritepre
+  autocmd!
+  " BUG: must load extraTodo syntax from here again, because loading Syntastic
+  " will clear the extraTodo syn group
+  autocmd BufWritePre *
+        \  call plug#load('syntastic') | call ExtraTodoHi()
+        \| autocmd! plug_on_bufwritepre
+augroup END
 
 call plug#end()
 filetype plugin indent on " required
@@ -56,8 +92,7 @@ filetype plugin indent on " required
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " General Settings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Leader Key
-let mapleader = " "
+let mapleader = ' '
 
 " Display
 set ruler           " show cursor position
@@ -81,7 +116,7 @@ set incsearch       " search with typeahead
 set autoindent      " carry indent over to new lines
 
 " Clipboard
-set clipboard=unnamed  " set unnamedplus to copy to system clipboard
+set clipboard=unnamed,unnamedplus  " set unnamed to copy to system clipboard
 
 " Mouse
 set mouse=a           " enable mouse movement
@@ -123,11 +158,14 @@ highlight Search cterm=NONE ctermbg=NONE
 highlight SignColumn cterm=NONE ctermbg=NONE
 
 " add some extra keywords to Todo highlight group
-augroup ExtraKeywords
+fu! ExtraTodoHi()
+  syn keyword extraTodo HACK INFO BUG NOTE containedin=.*Comment.*
+  hi def link extraTodo Todo
+endfu
+augroup extraTodoHi
   au!
-  au BufEnter * syn keyword extraTodo HACK INFO NOTE containedin=.*Comment.*
+  au BufEnter * call ExtraTodoHi() | autocmd! extraTodoHi
 augroup END
-hi def link extraTodo Todo
 
 " change cursor color on insert mode (iTerm only)
 if $TERM_PROGRAM =~ 'iTerm'
@@ -149,47 +187,6 @@ set relativenumber
 autocmd InsertEnter * :set invrelativenumber
 autocmd InsertLeave * :set invrelativenumber
 
-" TODO: make a pull request to NeoVim
-" " incredibly convoluted way to set non-relative line numbering when entering
-" " cmdline mode
-" let w:prev_cmdline_key = ':'
-" let w:prev_histbuf = 'cmd'
-" function! SetCmdlineHistbuf(key, histbuf)
-"   set invrelativenumber
-"   let w:prev_cmdline_key = a:key
-"   let w:prev_histbuf = a:histbuf
-" endfunction
-" nnoremap : :call SetCmdlineHistbuf(':', 'cmd')<CR>:
-" nnoremap / :call SetCmdlineHistbuf('/', 'search')<CR>/
-" nnoremap ? :call SetCmdlineHistbuf('?', 'search')<CR>?
-"
-" let w:last_hist_cmd = 0
-" function! CmdlineExit()
-"   let escapechars = []
-"   while 1
-"     let c = getchar(0)
-"     if c == 0
-"       break
-"     endif
-"     call add(escapechars, c)
-"   endwhile
-"   if len(escapechars) != 0
-"     if escapechars[-1] == 65
-"       let w:last_hist_cmd -= 1
-"     elseif escapechars[-1] == 66 && w:last_hist_cmd < 0
-"       let w:last_hist_cmd += 1
-"     endif
-"     " call feedkeys(':'.(histget('cmd', w:last_hist_cmd)), 'n')
-"     call feedkeys((w:prev_cmdline_key).(histget(w:prev_histbuf, w:last_hist_cmd)), 'n')
-"   else
-"     set invrelativenumber
-"     let w:last_hist_cmd = 0
-"   endif
-" endfunction
-" cnoremap <silent> <Esc> <C-c>:call CmdlineExit()<CR>
-" cnoremap <silent> <CR>  <CR> :call CmdlineExit()<CR>
-" cnoremap <silent> <C-c> <C-c>:call CmdlineExit()<CR>
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Indentation
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -198,6 +195,13 @@ set tabstop=4
 set softtabstop=4
 set expandtab
 set backspace=indent,eol,start
+
+" vim-indent-guides
+let g:indent_guides_enable_on_vim_startup = 1
+let g:indent_guides_auto_colors = 0
+let g:indent_guides_start_level = 2
+hi IndentGuidesOdd ctermbg=NONE
+hi IndentGuidesEven ctermbg=234
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Useful commands and mappings
@@ -215,6 +219,13 @@ vmap <C-C> "*y
 " reselects visual box after shift
 vnoremap < <gv
 vnoremap > >gv
+
+" repeat macro in register q
+nnoremap Q @q
+
+" paste in insert mode
+" (depends on clipboard setting)
+inoremap <C-p> <C-R>+
 
 " prettify JSON
 command! Prettify %!python -m json.tool
@@ -238,9 +249,9 @@ if g:fb_kill_whitespace
     %s/\s\+$//e
     call cursor(l, c)
   endfu
-  au FileType c,cabal,cpp,haskell,javascript,php,python,ruby,readme,tex,text,vim
-        \ au BufWritePre <buffer>
-        \ :call <SID>StripTrailingWhitespaces()
+  let g:fb_kill_whitespace_blacklist = []
+  au BufWritePre <buffer> if index(g:fb_kill_whitespace_blacklist, &ft) < 0
+        \| :call <SID>StripTrailingWhitespaces()
 endif
 
 " set buffer to unmodifiable if read-only
@@ -281,6 +292,42 @@ augroup QFixToggle
 augroup END
 nmap <leader>q :QFix<CR>
 
+" vim-tmux aware killpane
+fu! TmuxAwareKillpane()
+  if $TMUX == '' || winnr('$') > 1
+    silent :q
+  else
+    call system('tmux kill-pane')
+  endif
+endfu
+nmap <silent> <C-X> :call TmuxAwareKillpane()<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" quick-scope
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Source: https://gist.github.com/cszentkiralyi/dc61ee28ab81d23a67aa
+" Only enable the quick-scope plugin's highlighting when using the f/F/t/T movements
+let g:qs_enable = 0
+let g:qs_enable_char_list = [ 'f', 'F', 't', 'T' ]
+
+function! Quick_scope_selective(movement)
+    let needs_disabling = 0
+    if !g:qs_enable
+        QuickScopeToggle
+        redraw
+        let needs_disabling = 1
+    endif
+    let letter = nr2char(getchar())
+    if needs_disabling
+        QuickScopeToggle
+    endif
+    return a:movement . letter
+endfunction
+
+for i in g:qs_enable_char_list
+  execute 'noremap <expr> <silent>' . i . " Quick_scope_selective('". i . "')"
+endfor
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " tComment
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -293,38 +340,34 @@ vmap <leader>c :TComment<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set laststatus=2   " Always show the statusline
 let g:lightline = {
-      \ 'colorscheme': 'Tomorrow_Night',
-      \ 'active': {
-      \ 'left': [ [ 'mode', 'paste' ],
-      \           [ 'fileinfo', 'syntastic' ],
-      \           [ 'ctrlpmark' ] ],
-      \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
-      \ },
-      \ 'inactive': {
-      \ 'left': [ [ 'fileinfo' ] ],
-      \ 'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
-      \ },
-      \ 'component': {
-      \ 'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}'
-      \ },
-      \ 'component_function' : {
-      \ 'mode': 'LLMode',
-      \ 'fileinfo': 'LLFileinfo',
-      \ 'ctrlpmark': 'CtrlPMark',
-      \ },
-      \ 'component_expand' : {
-      \ 'syntastic': 'SyntasticStatuslineFlag',
-      \ },
-      \ 'component_type': {
-      \ 'syntastic': 'error',
-      \ },
+      \   'colorscheme': 'Tomorrow_Night',
+      \   'active': {
+      \     'left': [ [ 'mode', 'paste' ], [ 'fileinfo', 'syntastic' ] ],
+      \     'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
+      \   },
+      \   'inactive': {
+      \     'left': [ [ 'fileinfo' ] ],
+      \     'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
+      \   },
+      \   'component': {
+      \     'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}'
+      \   },
+      \   'component_function' : {
+      \     'mode': 'LLMode',
+      \     'fileinfo': 'LLFileinfo',
+      \   },
+      \   'component_expand' : {
+      \     'syntastic': 'SyntasticStatuslineFlag',
+      \   },
+      \   'component_type': {
+      \     'syntastic': 'error',
+      \   },
       \ }
 
 " mode
 function! LLMode()
   let fname = expand('%:t')
-  return fname == 'ControlP' ? 'CtrlP' :
-        \ winwidth(0) > 60 ? lightline#mode() : ''
+  return winwidth(0) > 60 ? lightline#mode() : ''
 endfunction
 
 " filename and fileinfo
@@ -345,20 +388,9 @@ function! LLTrucatedFilePath()
 endfunction
 function! LLFileinfo()
   let fname = expand('%:t')
-  return fname == 'ControlP' ? g:lightline.ctrlp_item :
-        \ ('' != LLReadonly() ? LLReadonly() . ' ' : '') .
+  return ('' != LLReadonly() ? LLReadonly() . ' ' : '') .
         \ ('' != LLTrucatedFilePath() ? LLTrucatedFilePath() : '[No Name]') .
         \ ('' != LLModified() ? ' ' . LLModified() : '')
-endfunction
-
-" ctrlpmark
-function! CtrlPMark()
-  if expand('%:t') =~ 'ControlP'
-    call lightline#link('iR'[g:lightline.ctrlp_regex])
-    return lightline#concatenate([g:lightline.ctrlp_prev,
-          \ g:lightline.ctrlp_item , g:lightline.ctrlp_next], 0)
-  endif
-  return ''
 endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -395,7 +427,7 @@ let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_min_num_identifier_candidate_chars = 4
 let g:ycm_confirm_extra_conf = 0
 let g:ycm_global_ycm_extra_conf = '/Users/Aleks/.vim/ycm_extra_conf.py'
-nnoremap <leader>y :YcmForceCompileAndDiagnostics<cr>
+nnoremap <leader>yy :YcmForceCompileAndDiagnostics<cr>
 nnoremap <leader>fg :YcmCompleter GoToDefinitionElseDeclaration<CR>
 nnoremap <leader>ff :YcmCompleter GoToDefinition<CR>
 nnoremap <leader>fc :YcmCompleter GoToDeclaration<CR>
@@ -405,7 +437,7 @@ nnoremap <leader>fc :YcmCompleter GoToDeclaration<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:syntastic_java_javac_custom_classpath_command =
       \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
-let g:syntastic_stl_format = '%E{!(%e) → %fe}%B{, }%W{?(%w) → %fw}'
+let g:syntastic_stl_format = '%E{✖ %e, ␤:%fe}%B{; }%W{♺ %w, ␤:%fw}'
 
 " disable tex because its annoying
 " disable python because pythonmode
@@ -430,28 +462,7 @@ hi SpellCap ctermbg=NONE guibg=#1d1f21
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " fzf
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <leader>m :FZF<CR>
-nnoremap <C-P> :FZF<CR>
-let g:ctrlp_custom_ignore = {
-      \ 'dir':  '\v[\/]\.(git|hg|svn)$',
-      \ 'file': '\v\.(exe|so|dll|class)$',
-      \ }
-let g:ctrlp_status_func = {
-      \ 'main': 'CtrlPStatusFunc_1',
-      \ 'prog': 'CtrlPStatusFunc_2',
-      \ }
-
-function! CtrlPStatusFunc_1(focus, byfname, regex, prev, item, next, marked)
-  let g:lightline.ctrlp_regex = a:regex
-  let g:lightline.ctrlp_prev = a:prev
-  let g:lightline.ctrlp_item = a:item
-  let g:lightline.ctrlp_next = a:next
-  return lightline#statusline(0)
-endfunction
-
-function! CtrlPStatusFunc_2(str)
-  return lightline#statusline(0)
-endfunction
+nnoremap <silent> <C-P> :FZF<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " pymode
@@ -469,53 +480,170 @@ endfunction
 command! PylintToggle call _PylintToggle()
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" ag.vim
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:ag_working_path_mode='r'
+
+" source: http://stackoverflow.com/a/6271254
+fu! GetVisualSelection()
+  let [lnum1, col1] = getpos("'<")[1:2]
+  let [lnum2, col2] = getpos("'>")[1:2]
+  let lines = getline(lnum1, lnum2)
+  let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
+  let lines[0] = lines[0][col1 - 1:]
+  return join(lines, "\n")
+endfu
+
+" redefine Ag to accept visual selections
+fu! AgSelection(bang, args, hasrange)
+  if a:hasrange > 0
+    let selection = GetVisualSelection()
+    call ag#Ag(a:bang, a:args == '' ? selection : a:args.' '.selection) | return
+  endif
+  call ag#Ag(a:bang, a:args)
+endfu
+augroup plug_on_insertenter
+  autocmd!
+  autocmd InsertEnter * call <SID>LoadYCM() | autocmd! plug_on_insertenter
+augroup END
+
+augroup redefine_ag
+  autocmd!
+  autocmd! VimEnter *
+        \  exec "command! -bang -nargs=* -range=0 -complete=file Ag call AgSelection('grep<bang>', <q-args>, <count>)"
+        \| autocmd! redefine_ag
+augroup END
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-easymotion
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " enable easymotion with one leaderkey press
 map <Leader> <Plug>(easymotion-prefix)
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-sneak
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:sneak#streak = 1
-let g:sneak#use_ic_scs = 1
-let g:sneak#streak_clear_syntax = 0
-"replace 'f' with 1-char Sneak
-nmap f <Plug>Sneak_f
-nmap F <Plug>Sneak_F
-xmap f <Plug>Sneak_f
-xmap F <Plug>Sneak_F
-omap f <Plug>Sneak_f
-omap F <Plug>Sneak_F
-"replace 't' with 1-char Sneak
-nmap t <Plug>Sneak_t
-nmap T <Plug>Sneak_T
-xmap t <Plug>Sneak_t
-xmap T <Plug>Sneak_T
-omap t <Plug>Sneak_t
-omap T <Plug>Sneak_T
+fu! EasyMotion_S_Secondchar()
+  call EasyMotion#S(2,1,2)
+  normal l
+endfu
 
-hi! customSneakStreakTarget ctermfg=yellow ctermbg=NONE
-hi! customSneakPluginTarget ctermfg=201 ctermbg=NONE cterm=underline
-hi! link SneakPluginTarget customSneakPluginTarget
-hi! link SneakStreakTarget customSneakStreakTarget
-hi! link SneakStreakShade Comment
-hi! link SneakStreakMask Comment
+nmap s <Plug>(easymotion-s2)
+nmap <silent> S :call EasyMotion_S_Secondchar()<CR>
+
+nmap <Leader>s <Plug>(easymotion-sn)
+
+" blue and green ayyy lmao
+hi EasyMotionTarget ctermfg=39
+hi EasyMotionTarget2First ctermfg=40
+hi link EasyMotionTarget2Second EasyMotionTarget2First
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Text Objects
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" targets.vim
+let g:targets_argTrigger = ','
+
+" vim-textobj-user.vim
+" textobj for current line
+" Copied from: https://github.com/kana/vim-textobj-user
+call textobj#user#plugin('line', {
+      \   '-': {
+      \     'select-a': 'al', 'select-a-function': 'TextobjCurrentLineA',
+      \     'select-i': 'il', 'select-i-function': 'TextobjCurrentLineI',
+      \   },
+      \ })
+
+function! TextObjCurrentLineA()
+  normal! 0
+  let head_pos = getpos('.')
+  normal! $
+  let tail_pos = getpos('.')
+  return ['v', head_pos, tail_pos]
+endfunction
+
+function! TextobjCurrentLineI()
+  normal! ^
+  let head_pos = getpos('.')
+  normal! g_
+  let tail_pos = getpos('.')
+  let non_blank_char_exists_p = getline('.')[head_pos[2] - 1] !~# '\s'
+  return
+  \ non_blank_char_exists_p
+  \ ? ['v', head_pos, tail_pos]
+  \ : 0
+endfunction
+
+" textobj to turn foo_bar_baz into foo_baz *and* quuxSpamEggs into quuxEggs
+" Copied from: https://github.com/Julian/vim-textobj-variable-segment/blob/master/plugin/textobj/variable-segment.vim
+call textobj#user#plugin('variable', {
+    \ '-': {
+    \     'select-a': 'as',  'select-a-function': 'TextobjSelectSegmentA',
+    \     'select-i': 'is',  'select-i-function': 'TextobjSelectSegmentI',
+    \ }})
+
+function! TextobjSelectSegment(object_type, right_boundary)
+    let left_boundaries = ['_\+\i', '\<', '\l\u', '\u\u\ze\l', '\a\d', '\d\a']
+    call search(join(left_boundaries, '\|'), 'bce')
+    let start_position = getpos('.')
+
+    call search('\>', 'c')
+    let word_end = getpos('.')
+    call setpos('.', start_position)
+
+    call search(a:right_boundary, 'c')
+    for _ in range(v:count1 - 1)
+        if getpos('.') != word_end
+            call search(a:right_boundary)
+        endif
+    endfor
+    let end_position = getpos('.')
+
+    return ['v', start_position, end_position]
+endfunction
+
+function! TextobjSelectSegmentA()
+    let right_boundaries = ['_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
+    let right_boundary = join(right_boundaries, '\|')
+    let [type, start_position, end_position] = TextobjSelectSegment('a', right_boundary)
+    let [_, start_line, start_column, _] = start_position
+
+    call search('\i\>', 'c')
+    if end_position == getpos('.') &&
+     \ getline(start_line)[start_column - 2] =~# '_'
+        let start_position[2] -= 1
+    endif
+
+    let was_small_camel = match(expand('<cword>'), '^_*\l.*\u') != -1
+    if was_small_camel
+        call search('\<', 'bc')
+        let [_, _, word_start, _] = getpos('.')
+
+        if start_column - 2 <= word_start ||
+         \ getline(start_line)[:start_column - 2] =~# '^_*$'
+            call setpos('.', end_position)
+            normal! l~
+        endif
+    endif
+
+    return [type, start_position, end_position]
+endfunction
+
+function! TextobjSelectSegmentI()
+    let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
+    return TextobjSelectSegment('i', join(right_boundaries, '\|'))
+endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-hardtime
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:hardtime_default_on = 1
-let g:hardtime_showmsg = 1
-let g:hardtime_maxcount = 1
+let g:hardtime_default_on = 0
+let g:hardtime_maxcount = 2
+let g:hardtime_timeout = 5000
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-go
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! <SID>VimGoBindings()
-  nnoremap <leader>f :GoDef<CR>
-endfunction
-au FileType go :call <SID>VimGoBindings()
+au FileType go
+      \ exec "nnoremap <leader>gf :GoDef<CR>"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Filetype

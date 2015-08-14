@@ -4,7 +4,7 @@ alias vimclean="realrm -f ~/.zcompdump* && exec zsh"
 alias vi="vim"
 alias vimrc="vi ~/.vimrc"
 function swpclean() {
-    find . -name "*.sw*" -exec /bin/rm -rf {} \;
+  find . -name "*.sw*" -exec /bin/rm -rf {} \;
 }
 function vreplace() {
   if [[ $# < 2 ]]; then
@@ -44,49 +44,49 @@ alias zpreztorc="vi ~/.zpreztorc"
 alias realtmux="/usr/local/bin/tmux"
 function tmux() {
 
-    # if given more than one argument, run tmux program with args normally
-    if [[ $# -gt 0 ]]; then
-        realtmux ${*:1}
-        return
-    fi
+  # if given more than one argument, run tmux program with args normally
+  if [[ $# -gt 0 ]]; then
+    realtmux ${*:1}
+    return
+  fi
 
-    local sessions
-    sessions=`realtmux ls 2>/dev/null`
-    if [[ -z $sessions ]]; then 
-        # if no tmux sessions open, start a new one
-        realtmux
+  local sessions
+  sessions=`realtmux ls 2>/dev/null`
+  if [[ -z $sessions ]]; then
+    # if no tmux sessions open, start a new one
+    realtmux
+  else
+    # else, do useful things
+    local num_sess
+    num_sess=`echo $sessions | wc -l`
+    if [[ -z $TMUX ]]; then # not in tmux already
+      if [[ $num_sess -gt 1 ]]; then
+        realtmux a \; choose-session
+      else
+        # sessions == 1
+        realtmux a
+      fi
+    elif [[ $num_sess -gt 1 ]]; then # already in tmux, sessions > 1
+      realtmux choose-session
     else
-        # else, do useful things
-        local num_sess
-        num_sess=`echo $sessions | wc -l`
-        if [[ -z $TMUX ]]; then # not in tmux already
-            if [[ $num_sess -gt 1 ]]; then
-                realtmux a \; choose-session
-            else
-                # sessions == 1
-                realtmux a
-            fi
-        elif [[ $num_sess -gt 1 ]]; then # already in tmux, sessions > 1
-            realtmux choose-session
-        else
-            # already in tmux, sessions == 1
-            echo 'Only running tmux session.\nExit tmux and use tnew to create a new one.'
-        fi
+      # already in tmux, sessions == 1
+      echo 'Only running tmux session.\nExit tmux and use tnew to create a new one.'
     fi
+  fi
 }
 
 # tmux attach
 function ta() {
-    if [[ -z $TMUX ]]; then
-        tmux attach -t $*
-    else
-        tmux switch -t $*
-    fi
+  if [[ -z $TMUX ]]; then
+    tmux attach -t $*
+  else
+    tmux switch -t $*
+  fi
 }
 
 function tkill() {
-    [[ -n $TMUX ]] && exit
-    tmux ls | awk '{print $1}' | sed 's/:.*$//' | xargs -I{} tmux kill-session -t {}
+  [[ -n $TMUX ]] && exit
+  tmux ls | awk '{print $1}' | sed 's/:.*$//' | xargs -I{} tmux kill-session -t {}
 }
 
 alias tl='tmux ls'
@@ -104,46 +104,46 @@ alias py="python"
 alias py3="python3"
 alias venvwrapper="source /usr/local/bin/virtualenvwrapper.sh"
 function venv() {
-    if [[ -n $VIRTUAL_ENV ]]; then
-        workon $*
-    else
-        venvwrapper
-        workon $*
-    fi
+  if [[ -n $VIRTUAL_ENV ]]; then
+    workon $*
+  else
+    venvwrapper
+    workon $*
+  fi
 }
 if [[ -n $VIRTUAL_ENV ]]; then
-    venvwrapper
-    workon ${VIRTUAL_ENV:t}
+  venvwrapper
+  workon ${VIRTUAL_ENV:t}
 fi
 
 # modified from http://unix.stackexchange.com/questions/13464
 function _upsearch() {
-    local curdir
-    curdir="$PWD"
-    while : ; do
-        test -e "$curdir/$1" && echo "$curdir/$1" && return
-        [[ "$curdir" == "/" ]] && return
-        curdir=`dirname "$curdir"`
-    done
+  local curdir
+  curdir="$PWD"
+  while : ; do
+    test -e "$curdir/$1" && echo "$curdir/$1" && return
+    [[ "$curdir" == "/" ]] && return
+    curdir=`dirname "$curdir"`
+  done
 }
 alias upsearch=_upsearch
 
 function _dmake() { # django
-    local django
-    django=`upsearch manage.py`
-    if [[ -z "$django" ]]; then
-        echo "Couldn't find manage.py" && return
-    else
-        python -W ignore "$django" $*
-    fi
+  local django
+  django=`upsearch manage.py`
+  if [[ -z "$django" ]]; then
+    echo "Couldn't find manage.py" && return
+  else
+    python -W ignore "$django" $*
+  fi
 }
 alias dmake=_dmake # django
 
 # ruby
 #------------------------------------------------------------------------------
 function _loadrvm() {
-    echo 'Loading RVM. Run command again to use it.'
-    [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
+  echo 'Loading RVM. Run command again to use it.'
+  [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 }
 alias rvm=_loadrvm
 
@@ -164,6 +164,7 @@ alias rm='trash'
 alias g='git'
 alias rgit='/usr/local/bin/git'
 
+# TODO
 # # capture output of last git command from Facebook Path Picker
 # export git_capture=''
 # function capturegit() {
@@ -173,9 +174,15 @@ alias rgit='/usr/local/bin/git'
 # alias git=capturegit
 # alias gpp='echo $git_capture | fpp'
 
-# go to root of git directory
+# context from root of git directory
 function groot() {
-    cd "$(rgit rev-parse --show-toplevel)"
+  local root
+  root=$(rgit rev-parse --show-toplevel)
+  if [[ $# == 0 ]]; then
+    cd $root
+  else
+    (builtin cd $root && $*)
+  fi
 }
 alias gr=groot
 
@@ -183,7 +190,7 @@ alias gr=groot
 #------------------------------------------------------------------------------
 # fall back to use built in cd
 function cs() {
-    builtin cd $*
+  builtin cd $*
 }
 
 # go to temp dir
@@ -194,26 +201,26 @@ alias temp="cs $HOME/temp"
 ###############################################################################
 # Mac OSX
 if [[ "$OSTYPE" == darwin* && -f "$HOME/.osx_zshrc" ]]; then
-    source "$HOME/.osx_zshrc";
+  source "$HOME/.osx_zshrc";
 fi
 
 # Temporary
 if [[ -f "$HOME/.tmp_zshrc" ]]; then
-    source "$HOME/.tmp_zshrc";
+  source "$HOME/.tmp_zshrc";
 fi
 
 # Secret!
 if [[ -f "$HOME/.secret_zshrc" ]]; then
-    source "$HOME/.secret_zshrc";
+  source "$HOME/.secret_zshrc";
 fi
 
 ###############################################################################
 # Autostart TMUX
 ###############################################################################
 if [[ ! -f "$HOME/.notmux" && -z "$TMUX" ]]; then
-    echo "Not in tmux session. Won't load rest of zshrc."
-    tmux attach || tmux
-    return
+  echo "Not in tmux session. Won't load rest of zshrc."
+  tmux attach || tmux
+  return
 fi
 
 ###############################################################################
@@ -223,23 +230,22 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
-
 ###############################################################################
 # Better CD
 ###############################################################################
 # override cd to do ls and vi when necessary
 function _better_cd() {
-    set -- ${1//,/.} # replace commas (,) with periods (.)
-    if [[ -f $1 ]]; then
-        local fdir
-        fdir=`dirname $1`
-        if [[ -d $fdir ]]; then
-            builtin cd "$fdir" && ls
-        fi
-        vim `basename $1` ${*:2}
-    else
-        builtin cd $* && ls
+  set -- ${1//,/.} # replace commas (,) with periods (.)
+  if [[ -f $1 ]]; then
+    local fdir
+    fdir=`dirname $1`
+    if [[ -d $fdir ]]; then
+      builtin cd "$fdir" && ls
     fi
+    vim `basename $1` ${*:2}
+  else
+    builtin cd $* && ls
+  fi
 }
 alias cd=_better_cd
 
@@ -249,15 +255,25 @@ unsetopt CORRECT
 # pass bad match to command
 setopt NO_NOMATCH
 
+# tab completion in dotfiles directory
+dotfiles() { cd $HOME/dotfiles/$1; }
+compctl -f -W $HOME/dotfiles/ dotfiles
+
 ###############################################################################
-# sport
+# z
 ###############################################################################
-function sport() {
-    lsof -i :$1
-}
+if [ -f ~/dotfiles/z/z.sh ]; then
+  source ~/dotfiles/z/z.sh
+fi
 
 ###############################################################################
 # vim fzf
 ###############################################################################
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-export FZF_COMPLETION_TRIGGER='jk'
+if [ -f ~/.fzf.zsh ]; then
+  source ~/.fzf.zsh
+  [ -f ~/dotfiles/zsh/fzf_commands.zsh ] && source ~/dotfiles/zsh/fzf_commands.zsh
+  export FZF_COMPLETION_TRIGGER='jk'
+  export FZF_DEFAULT_COMMAND='pt -l "" `git rev-parse --show-toplevel 2>/dev/null`'
+  export FZF_CTRL_T_COMMAND='pt -l ""'
+  export FZF_DEFAULT_OPTS='--ansi -m --bind=alt-k:up,alt-j:down'
+fi
