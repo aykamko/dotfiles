@@ -513,7 +513,7 @@ augroup END
 
 augroup redefine_ag
   autocmd!
-  autocmd! VimEnter *
+  autocmd! BufEnter *
         \  exec "command! -bang -nargs=* -range=0 -complete=file Ag call AgSelection('grep<bang>', <q-args>, <count>)"
         \| autocmd! redefine_ag
 augroup END
