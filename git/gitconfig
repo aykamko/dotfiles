@@ -9,6 +9,10 @@
     frag = magenta bold
     old = red
     new = green
+[color "status"]
+    added = green
+    changed = yellow
+    untracked = red
 [alias]
     # add
     a = add                           # add

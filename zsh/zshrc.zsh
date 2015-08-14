@@ -147,12 +147,14 @@ function _loadrvm() {
 }
 alias rvm=_loadrvm
 
-eval "$(rbenv init -)"
+if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
 
 # node
 #------------------------------------------------------------------------------
-export NVM_DIR=~/.nvm
-source $(brew --prefix nvm)/nvm.sh
+if which nvm > /dev/null; then
+  export NVM_DIR=~/.nvm
+  source $(brew --prefix nvm)/nvm.sh
+fi
 
 # alias for rm (requires trash script)
 #------------------------------------------------------------------------------
