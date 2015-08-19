@@ -95,7 +95,7 @@
     sl = stash list                   # list stashes
     sa = stash apply                  # apply stash (restore changes)
     sd = stash drop                   # drop stashes (destory changes)
-    stashf = "!f() { [ -f $HOME/dotfiles/git/git_stash_fzf.zsh ] && zsh $HOME/dotfiles/git/git_stash_fzf.zsh || echo 'Stash search script not found!'; }; f"
+    stashf = "!f() { [ -f $HOME/dotfiles/bin/git_stash_fzf.zsh ] && zsh $HOME/dotfiles/bin/git_stash_fzf.zsh || echo 'Stash search script not found!'; }; f"
 
     # status
     s = status                        # status

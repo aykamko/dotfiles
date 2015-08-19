@@ -1,7 +1,7 @@
 # vim
 #------------------------------------------------------------------------------
 alias vimclean="realrm -f ~/.zcompdump* && exec zsh"
-alias vi="vim"
+alias vi="nvim"
 alias vimrc="vi ~/.vimrc"
 function swpclean() {
   find . -name "*.sw*" -exec /bin/rm -rf {} \;
@@ -188,6 +188,10 @@ function groot() {
 }
 alias gr=groot
 
+# thefuck
+#------------------------------------------------------------------------------
+eval "$(thefuck --alias)"
+
 # other
 #------------------------------------------------------------------------------
 # fall back to use built in cd
@@ -206,9 +210,9 @@ if [[ "$OSTYPE" == darwin* && -f "$HOME/.osx_zshrc" ]]; then
   source "$HOME/.osx_zshrc";
 fi
 
-# Temporary
-if [[ -f "$HOME/.tmp_zshrc" ]]; then
-  source "$HOME/.tmp_zshrc";
+# Local
+if [[ -f "$HOME/.local_zshrc" ]]; then
+  source "$HOME/.local_zshrc";
 fi
 
 # Secret!
@@ -275,7 +279,7 @@ if [ -f ~/.fzf.zsh ]; then
   source ~/.fzf.zsh
   [ -f ~/dotfiles/zsh/fzf_commands.zsh ] && source ~/dotfiles/zsh/fzf_commands.zsh
   export FZF_COMPLETION_TRIGGER='jk'
-  export FZF_DEFAULT_COMMAND='pt -l "" `git rev-parse --show-toplevel 2>/dev/null`'
-  export FZF_CTRL_T_COMMAND='pt -l ""'
+  export FZF_DEFAULT_COMMAND='ag -g "" `git rev-parse --show-toplevel 2>/dev/null`'
+  export FZF_CTRL_T_COMMAND='ag -g ""'
   export FZF_DEFAULT_OPTS='--ansi -m --bind=alt-k:up,alt-j:down'
 fi

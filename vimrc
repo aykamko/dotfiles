@@ -19,11 +19,10 @@ endif
 
 call plug#begin('~/.vim/bundle/')
 
-" TODO: test
 Plug 'takac/vim-hardtime'
 
 Plug 'ConradIrwin/vim-bracketed-paste'
-Plug 'Lokaltog/vim-easymotion'
+Plug 'easymotion/vim-easymotion' | Plug 'aykamko/vim-easyoperator-line'
 Plug 'airblade/vim-gitgutter'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'itchyny/lightline.vim'
@@ -116,7 +115,7 @@ set incsearch       " search with typeahead
 set autoindent      " carry indent over to new lines
 
 " Clipboard
-set clipboard=unnamed,unnamedplus  " set unnamed to copy to system clipboard
+set clipboard=unnamed " set unnamed to copy to system clipboard
 
 " Mouse
 set mouse=a           " enable mouse movement
@@ -166,17 +165,6 @@ augroup extraTodoHi
   au!
   au BufEnter * call ExtraTodoHi() | autocmd! extraTodoHi
 augroup END
-
-" change cursor color on insert mode (iTerm only)
-if $TERM_PROGRAM =~ 'iTerm'
-  if !empty($TMUX)
-    let &t_EI = "\033Ptmux;\033\033]Plc4c8c6\033\\"
-    let &t_SI = "\033Ptmux;\033\033]Plc8a0d1\033\\"
-  else
-    let &t_EI = "\033]Plc4c8c6\033\\"
-    let &t_SI = "\033]Plc8a0d1\033\\"
-  endif
-endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Line Numbering
@@ -229,7 +217,8 @@ nnoremap Q @q
 
 " paste in insert mode
 " (depends on clipboard setting)
-inoremap <C-p> <C-R>+
+set pastetoggle=<F2>
+inoremap <silent> <Esc>p <F2><C-R>+<F2>
 
 " prettify JSON
 command! Prettify %!python -m json.tool
@@ -304,7 +293,7 @@ fu! TmuxAwareKillpane()
     call system('tmux kill-pane')
   endif
 endfu
-nmap <silent> <C-X> :call TmuxAwareKillpane()<CR>
+nmap <silent> <C-x> :call TmuxAwareKillpane()<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " quick-scope
@@ -403,8 +392,8 @@ endfunction
 let g:LatexBox_custom_indent=0
 let g:LatexBox_latexmk_preview_continuously=1
 let g:LatexBox_show_warnings=2
-map <silent> <leader>ll :Latexmk<CR>
-map <silent> <Leader>ls :silent
+nmap <silent> <leader>ll :Latexmk<CR>
+nmap <silent> <Leader>ls :silent
       \ !/Applications/Skim.app/Contents/SharedSupport/displayline
       \ <C-R>=line('.')<CR> "<C-R>=LatexBox_GetOutputFile()<CR>"
       \ "%:p" <CR>
@@ -540,6 +529,14 @@ hi EasyMotionTarget ctermfg=39
 hi EasyMotionTarget2First ctermfg=40
 hi link EasyMotionTarget2Second EasyMotionTarget2First
 
+" vim-easyoperator-line
+let g:EasyOperator_line_do_mapping = 0
+let g:EasyOperator_line_first = 'CursorLine'
+omap <silent>  <leader>l <Plug>(easyoperator-line-select)
+xmap <silent>  <leader>l <Plug>(easyoperator-line-select)
+nmap <silent> d<leader>l <Plug>(easyoperator-line-delete)
+nmap <silent> y<leader>l <Plug>(easyoperator-line-yank)
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Text Objects
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -556,7 +553,7 @@ call textobj#user#plugin('line', {
       \   },
       \ })
 
-function! TextObjCurrentLineA()
+function! TextobjCurrentLineA()
   normal! 0
   let head_pos = getpos('.')
   normal! $
@@ -654,4 +651,4 @@ au FileType go
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
-autocmd FileType javascript setl sw=2 sts=2 et
+autocmd FileType javascript,html,jinja setl sw=2 sts=2 et
