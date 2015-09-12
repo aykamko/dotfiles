@@ -1,0 +1,92 @@
+- clean: ['~']
+
+# ----- zsh -----
+- clean: ['~/.zprezto/modules/prompt/functions']
+
+- shell:
+    - description: Clone zprezto from Github
+      command: |
+
+        if [ ! -d "${ZDOTDIR:-$HOME}/.zprezto" ]; then
+            git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto";
+                for rcfile in $(find "${ZDOTDIR:-$HOME}"/.zprezto/runcoms -not -path '*\.md' -type f); do
+                ln -s "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}";
+            done
+        fi
+
+- link:
+    ~/.zshrc:
+        path: zsh/zshrc
+        force: true
+    ~/.zprofile:
+        path: zsh/zprofile
+        force: true
+    ~/.zpreztorc:
+        path: zsh/zpreztorc
+        force: true
+    ~/.zprezto/modules/prompt/functions/prompt_ayk_setup:
+        path: zsh/zprezto/modules/prompt/functions/prompt_ayk_setup
+        relink: true
+
+- shell:
+    - description: Linking OS specific zsh configs
+      command: |
+
+        for f in $(find "$HOME/dotfiles/zsh" -maxdepth 1 -type f | grep "zshrc.os"); do
+            if [[ "$OSTYPE" =~ "${f##*/zshrc.os.}" ]]; then
+                ln -s "${f}" "$HOME/.zshrc.os";
+                break;
+            fi
+        done
+
+
+# ----- vim -----
+- clean:
+  - '~/.vim'
+  - '~/.vim/colors'
+
+- link:
+    ~/.vimrc: vim/vimrc
+    ~/.vim/ycm_extra_conf.py:
+        path: vim/vim/ycm_extra_conf.py
+        create: true
+    ~/.vim/colors/hybrid-ayk.vim:
+        path: vim/vim/colors/hybrid-ayk.vim
+        create: true
+
+- shell:
+    - description: Link neovim to vim
+      command: |
+
+        ln -sf "$HOME/.vimrc" "$HOME/.nvimrc";
+        ln -sf "$HOME/.vim" "$HOME/.nvim";
+
+
+# ----- git -----
+- link:
+    ~/.gitconfig: git/gitconfig
+    ~/.gitconfig.user: git/gitconfig.user
+    ~/.gitignore_global: git/gitignore_global
+
+- shell:
+    - description: Linking os specific git configs
+      command: |
+
+        for f in $(find "$HOME/dotfiles/git" -maxdepth 1 -type f | grep "gitconfig.os"); do
+            if [[ "$OSTYPE" =~ "${f##*/gitconfig.os.}" ]]; then
+                ln -s "${f}" "$HOME/.gitconfig.os";
+                break;
+            fi
+        done
+
+
+# ----- tmux -----
+- link:
+    ~/.tmux.conf: tmux.conf
+
+
+# ----- virtualenv -----
+- clean: ['~/.pyvirtualenvs']
+- link:
+    ~/.pyvirtualenvs/postactivate: virtualenv/postactivate
+    ~/.pyvirtualenvs/postdeactivate: virtualenv/postdeactivate

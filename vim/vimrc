@@ -1,5 +1,6 @@
+" vim: set foldmethod=marker foldlevel=0:
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" vim-plug
+" {{{ vim-plue
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Skip initialization for vim-tiny or vim-small.
 if !1 | finish | endif
@@ -33,8 +34,10 @@ Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
+Plug 'tpope/vim-surround'
 Plug 'unblevable/quick-scope'
 Plug 'wellle/targets.vim'
+Plug 'haya14busa/incsearch.vim'
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 
@@ -48,17 +51,19 @@ Plug 'LaTeX-Box-Team/LaTeX-Box',   { 'for': 'tex' }
 Plug 'a.vim',                      { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',               { 'for': 'go' }
 Plug 'jason0x43/vim-js-indent',    { 'for': 'javascript' }
-Plug 'kchmck/vim-coffee-script',   { 'for': 'coffeescript' }
-Plug 'klen/python-mode',           { 'for': 'python' }
+Plug 'kchmck/vim-coffee-script',   { 'for': 'coffee' }
+" Plug 'klen/python-mode',           { 'for': 'python' }
+Plug 'hynek/vim-python-pep8-indent', { 'for': 'python' }
 Plug 'leafgarland/typescript-vim', { 'for': 'typescript' }
 Plug 'mattn/emmet-vim',            { 'for': ['jinja', 'html'] }
 Plug 'nono/vim-handlebars',        { 'for': ['jinja', 'html'] }
 Plug 'tpope/vim-rails',            { 'for': 'ruby' }
+Plug 'slim-template/vim-slim',     { 'for': 'slim' }
 Plug 'vim-scripts/sh.vim--Cla',    { 'for': ['sh', 'zsh', 'bash'] }
 
 " load on InsertEnter
-Plug 'Valloric/YouCompleteMe', { 'on': [], 'do': './install.sh --clang-compiler --gocode-compiler' }
-fu! <SID>LoadYCM()
+Plug 'Valloric/YouCompleteMe', { 'on': [], 'do': './install.sh --clang-completer --gocode-completer' }
+fu! s:LoadYCM()
   hi! YCMLoadingLine ctermfg=red
   let curline = line('.')
   let loadline = matchaddpos('YCMLoadingLine', [curline - 1, curline, curline + 1], 12)
@@ -71,27 +76,38 @@ fu! <SID>LoadYCM()
 endfu
 augroup plug_on_insertenter
   autocmd!
-  autocmd InsertEnter * call <SID>LoadYCM() | autocmd! plug_on_insertenter
+  autocmd InsertEnter * call s:LoadYCM() | autocmd! plug_on_insertenter
 augroup END
 
 " load on BufWritePre
-Plug 'scrooloose/syntastic' , { 'on': [] }
+if has('nvim')
+  let syntax_checker = 'neomake'
+  let g:syncheck_cmd = ':Neomake'
+  Plug 'benekastah/neomake', { 'on': [] }
+else
+  let syntax_checker = 'syntastic'
+  let g:syncheck_cmd = ':SyntasticCheck'
+  Plug 'scrooloose/syntastic', { 'on': [] }
+endif
 augroup plug_on_bufwritepre
   autocmd!
   " BUG: must load extraTodo syntax from here again, because loading Syntastic
   " will clear the extraTodo syn group
   autocmd BufWritePre *
-        \  call plug#load('syntastic') | call ExtraTodoHi()
+        \  call plug#load(syntax_checker) | call ExtraTodoHi()
         \| autocmd! plug_on_bufwritepre
 augroup END
 
 call plug#end()
 filetype plugin indent on " required
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" General Settings
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" General Settings {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let mapleader = ' '
+
+" Don't use virtualenv python
+let g:python_host_prog='/usr/local/bin/python'
 
 " Display
 set ruler           " show cursor position
@@ -108,8 +124,11 @@ set scrolljump=5    " scroll five lines at a time vertically
 set sidescroll=10   " minumum columns to scroll horizontally
 
 " Search
-set nohlsearch      " don't persist search highlighting
+set nohlsearch        " persist search highlighting, initially
 set incsearch       " search with typeahead
+" clears search pattern on textchange
+" autocmd TextChanged *  exec "normal \<Plug>(incsearch-nohl0)"
+" autocmd TextChangedI * exec "normal \<Plug>(incsearch-nohl0)"
 
 " Indent
 set autoindent      " carry indent over to new lines
@@ -120,6 +139,13 @@ set clipboard=unnamed " set unnamed to copy to system clipboard
 " Mouse
 set mouse=a           " enable mouse movement
 
+" Backups
+set backupdir=/tmp//,.
+set directory=/tmp//,.
+if v:version >= 703
+  set undodir=/tmp//,.
+endif
+
 " Other
 set noerrorbells      " no bells in terminal
 
@@ -127,8 +153,7 @@ set tags=tags;/       " search up the directory tree for tags
 
 set undolevels=1000   " number of undos stored
 set viminfo='50,"50   " '=marks for x files, "=registers for x files
-
-set modelines=0       " modelines are bad for your health
+set foldlevelstart=99
 
 " hack to always display sign column
 augroup DisplaySignCol
@@ -137,9 +162,9 @@ augroup DisplaySignCol
   au BufEnter * exe 'sign place 9999 line=1 name=dummy buffer='.bufnr('')
 augroup END
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Colorscheme
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Colorscheme {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax enable
 
 let g:hybrid_use_iTerm_colors = 1
@@ -147,11 +172,11 @@ colorscheme hybrid-ayk
 set t_Co=256            " tell vim that terminal supports 256 colors
 
 " highlight columns 79, 80, 119, 120
-highlight ColorColumn ctermbg=235
+highlight ColorColumn ctermbg=236
 set colorcolumn=79,80,119,120
 
 " unhighlight search terms
-highlight Search cterm=NONE ctermbg=NONE
+highlight Search ctermbg=236
 
 " unhighlight sign column
 highlight SignColumn cterm=NONE ctermbg=NONE
@@ -166,18 +191,18 @@ augroup extraTodoHi
   au BufEnter * call ExtraTodoHi() | autocmd! extraTodoHi
 augroup END
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Line Numbering
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Line Numbering {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
 set number
 set relativenumber
 autocmd InsertEnter * :set invrelativenumber
 autocmd InsertLeave * :set invrelativenumber
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Indentation
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Indentation {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set shiftwidth=4
 set tabstop=4
 set softtabstop=4
@@ -191,9 +216,9 @@ let g:indent_guides_start_level = 2
 hi IndentGuidesOdd ctermbg=NONE
 hi IndentGuidesEven ctermbg=234
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Useful commands and mappings
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Commands/Mappings {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " because I suck
 command! WQ wq
 command! Wq wq
@@ -208,6 +233,10 @@ command! Vso so ~/.vimrc     " source vimrc
 map <C-C> :w !xsel<CR><CR>
 vmap <C-C> "*y
 
+" remap indent to use single >/<
+noremap > >>
+noremap < <<
+
 " reselects visual box after shift
 vnoremap < <gv
 vnoremap > >gv
@@ -215,13 +244,31 @@ vnoremap > >gv
 " repeat macro in register q
 nnoremap Q @q
 
+" toggle fold more easily
+nnoremap z<Space> za
+
 " paste in insert mode
 " (depends on clipboard setting)
 set pastetoggle=<F2>
-inoremap <silent> <Esc>p <F2><C-R>+<F2>
+inoremap <silent> <C-P> <F2><C-R>+<F2>
 
 " prettify JSON
 command! Prettify %!python -m json.tool
+
+" page up/page down remapped to -/+
+map  <silent> _ :exec 'normal '.(winheight('.')/2).'k'<CR>
+vmap <silent> _ :exec 'normal '.(winheight('.')/2).'k'<CR>
+map  <silent> + :exec 'normal '.(winheight('.')/2).'j'<CR>
+vmap <silent> + :exec 'normal '.(winheight('.')/2).'j'<CR>
+
+" search/replace visual selection
+fu! ReplaceSelection(hasrange)
+  if a:hasrange > 0
+    call feedkeys(':%s/'.GetVisualSelection().'/', 'm')
+  endif
+endfu
+command! -range=0 ReplaceSelection call ReplaceSelection(<count>)
+vnoremap <leader>s :ReplaceSelection<CR>
 
 " remove small delay when leaving insert mode
 if !has('gui_running')
@@ -294,10 +341,18 @@ fu! TmuxAwareKillpane()
   endif
 endfu
 nmap <silent> <C-x> :call TmuxAwareKillpane()<CR>
+" TODO: look this up
+" run this command in shell if vim-tmux-navigator isn't working in nvim
+" $ infocmp $TERM | sed 's/kbs=^[hH]/kbs=\\177/' > $TERM.ti
+" $ tic $TERM.ti
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" quick-scope
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" tmux pane title
+autocmd BufReadPost,FileReadPost,BufNewFile * let &titlestring=expand("%:t")
+set title
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" quick-scope {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Source: https://gist.github.com/cszentkiralyi/dc61ee28ab81d23a67aa
 " Only enable the quick-scope plugin's highlighting when using the f/F/t/T movements
 let g:qs_enable = 0
@@ -321,21 +376,21 @@ for i in g:qs_enable_char_list
   execute 'noremap <expr> <silent>' . i . " Quick_scope_selective('". i . "')"
 endfor
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" tComment
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" tComment {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Use <leader>c to comment lines of code
 map <leader>c :TComment<CR>
 vmap <leader>c :TComment<CR>
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Lightline
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Lightline {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set laststatus=2   " Always show the statusline
 let g:lightline = {
       \   'colorscheme': 'Tomorrow_Night',
       \   'active': {
-      \     'left': [ [ 'mode', 'paste' ], [ 'fileinfo', 'syntastic' ] ],
+      \     'left': [ [ 'mode', 'paste' ], [ 'fileinfo', 'syntax'] ],
       \     'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
       \   },
       \   'inactive': {
@@ -350,12 +405,19 @@ let g:lightline = {
       \     'fileinfo': 'LLFileinfo',
       \   },
       \   'component_expand' : {
-      \     'syntastic': 'SyntasticStatuslineFlag',
+      \     'syntax': 'Syntax',
       \   },
       \   'component_type': {
-      \     'syntastic': 'error',
+      \     'syntax': 'error',
       \   },
       \ }
+
+" syntax
+function! Syntax()
+  return exists('*neomake#statusline#LoclistStatus') ? neomake#statusline#LoclistStatus() :
+        \ exists('*SyntasticStatuslineFlag') ? SyntasticStatuslineFlag() :
+        \ ''
+endfunction
 
 " mode
 function! LLMode()
@@ -386,48 +448,48 @@ function! LLFileinfo()
         \ ('' != LLModified() ? ' ' . LLModified() : '')
 endfunction
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" LaTeX-Box
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" LaTeX-Box {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:LatexBox_custom_indent=0
 let g:LatexBox_latexmk_preview_continuously=1
 let g:LatexBox_show_warnings=2
 nmap <silent> <leader>ll :Latexmk<CR>
-nmap <silent> <Leader>ls :silent
+nmap <silent> <leader>ls :silent
       \ !/Applications/Skim.app/Contents/SharedSupport/displayline
       \ <C-R>=line('.')<CR> "<C-R>=LatexBox_GetOutputFile()<CR>"
       \ "%:p" <CR>
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" vim-easyalign
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-easyalign {{{L:
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Start interactive EasyAlign in visual mode (e.g. vip<Enter>)
 vmap <Enter> <Plug>(EasyAlign)
 
-" Start interactive EasyAlign for a motion/text object (e.g. <Leader>aip)
-nmap <Leader>a <Plug>(EasyAlign)
+" Start interactive EasyAlign for a motion/text object (e.g. <leader>aip)
+nmap <leader>a <Plug>(EasyAlign)
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" a.vim
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" a.vim {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle between .h and .c with <leader>a
-nnoremap <Leader>a :A<CR>
+nnoremap <leader>a :A<CR>
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" You Complete Me
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" YouCompleteMe {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_min_num_identifier_candidate_chars = 4
 let g:ycm_confirm_extra_conf = 0
 let g:ycm_global_ycm_extra_conf = '/Users/Aleks/.vim/ycm_extra_conf.py'
-nnoremap <leader>yy :YcmForceCompileAndDiagnostics<cr>
-nnoremap <leader>fg :YcmCompleter GoToDefinitionElseDeclaration<CR>
-nnoremap <leader>ff :YcmCompleter GoToDefinition<CR>
-nnoremap <leader>fc :YcmCompleter GoToDeclaration<CR>
+nnoremap <leader>yd :YcmForceCompileAndDiagnostics<cr>
+nnoremap <leader>yo :YcmCompleter GoToDefinitionElseDeclaration<CR>
+nnoremap <leader>yf :YcmCompleter GoToDefinition<CR>
+nnoremap <leader>yc :YcmCompleter GoToDeclaration<CR>
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Syntastic
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Syntastic {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:syntastic_java_javac_custom_classpath_command =
       \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
 let g:syntastic_stl_format = '%E{✖ %e, ␤:%fe}%B{; }%W{♺ %w, ␤:%fw}'
@@ -439,27 +501,43 @@ let g:syntastic_python_checkers=[]
 
 " hack to get syntastic to update lightline on syntax check
 let g:syntastic_mode_map = { "mode": "passive" }
-augroup SyntasticLightline
+augroup SyntaxLightline
   autocmd!
-  autocmd BufWritePost * call s:syntastic_lightline()
+  autocmd BufWritePost * call s:syntax_lightline()
 augroup END
-function! s:syntastic_lightline()
-  SyntasticCheck
+function! s:syntax_lightline()
+  exe g:syncheck_cmd
   call lightline#update()
 endfunction
 
 " highlights
-hi SpellBad ctermbg=NONE guibg=#1d1f21
-hi SpellCap ctermbg=NONE guibg=#1d1f21
+hi SpellBad ctermbg=NONE
+hi SpellCap ctermbg=NONE
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" fzf
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <silent> <C-P> :FZF<CR>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Neomake {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:neomake_verbose = 0
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" pymode
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+hi NeomakeError ctermfg=red
+hi NeomakeWarning ctermfg=yellow
+let g:neomake_error_sign = {
+      \ 'text': '✖',
+      \ 'texthl': 'NeomakeError',
+      \ }
+let g:neomake_warning_sign = {
+      \ 'text': '⚠',
+      \ 'texthl': 'NeomakeWarning',
+      \ }
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" fzf {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <silent> <leader><leader> :FZF<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" pymode {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:pymode_lint_signs = 1
 let g:pymode_lint_on_write = 1
 let g:pymode_lint_cwindow = 0
@@ -472,9 +550,9 @@ function! _PylintToggle()
 endfunction
 command! PylintToggle call _PylintToggle()
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" ag.vim
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" ag.vim {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ag_working_path_mode='r'
 
 " source: http://stackoverflow.com/a/6271254
@@ -495,10 +573,6 @@ fu! AgSelection(bang, args, hasrange)
   endif
   call ag#Ag(a:bang, a:args)
 endfu
-augroup plug_on_insertenter
-  autocmd!
-  autocmd InsertEnter * call <SID>LoadYCM() | autocmd! plug_on_insertenter
-augroup END
 
 augroup redefine_ag
   autocmd!
@@ -507,11 +581,11 @@ augroup redefine_ag
         \| autocmd! redefine_ag
 augroup END
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" vim-easymotion
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-easymotion {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " enable easymotion with one leaderkey press
-map <Leader> <Plug>(easymotion-prefix)
+map <leader> <Plug>(easymotion-prefix)
 
 " vim-sneak
 fu! EasyMotion_S_Secondchar()
@@ -522,12 +596,12 @@ endfu
 nmap s <Plug>(easymotion-s2)
 nmap <silent> S :call EasyMotion_S_Secondchar()<CR>
 
-nmap <Leader>s <Plug>(easymotion-sn)
+nmap <leader>s <Plug>(easymotion-sn)
 
 " blue and green ayyy lmao
 hi EasyMotionTarget ctermfg=39
 hi EasyMotionTarget2First ctermfg=40
-hi link EasyMotionTarget2Second EasyMotionTarget2First
+hi EasyMotionTarget2Second ctermfg=28
 
 " vim-easyoperator-line
 let g:EasyOperator_line_do_mapping = 0
@@ -537,11 +611,10 @@ xmap <silent>  <leader>l <Plug>(easyoperator-line-select)
 nmap <silent> d<leader>l <Plug>(easyoperator-line-delete)
 nmap <silent> y<leader>l <Plug>(easyoperator-line-yank)
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Text Objects
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Text Objects {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " targets.vim
-let g:targets_argTrigger = ','
 
 " vim-textobj-user.vim
 " textobj for current line
@@ -633,22 +706,41 @@ function! TextobjSelectSegmentI()
     return TextobjSelectSegment('i', join(right_boundaries, '\|'))
 endfunction
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" vim-hardtime
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-hardtime {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:hardtime_default_on = 0
 let g:hardtime_maxcount = 2
 let g:hardtime_timeout = 5000
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" vim-go
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" incsearch.vim {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+map /  <Plug>(incsearch-forward)
+map ?  <Plug>(incsearch-backward)
+map g/ <Plug>(incsearch-stay)
+
+" stay on *
+map <silent> g* :let @/='\<'.expand('<cword>').'\>'<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-go {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 au FileType go
       \ exec "nnoremap <leader>gf :GoDef<CR>"
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Filetype
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Filetype {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
+autocmd BufNewFile,BufReadPost *.slim set filetype=slim
+autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
 autocmd FileType javascript,html,jinja setl sw=2 sts=2 et
+
+autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
+      \ set textwidth=72 |
+      \ set colorcolumn=71,72 |
+      \ call matchaddpos('ColorColumn', [[1, 49, 2]])
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

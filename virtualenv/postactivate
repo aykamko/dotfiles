@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 # This hook is sourced after every virtualenv is activated.
 
 tmux setenv VIRTUAL_ENV $VIRTUAL_ENV

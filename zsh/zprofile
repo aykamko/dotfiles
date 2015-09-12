@@ -30,7 +30,6 @@ export POSTGRES_CLTOOLS=/Applications/Postgres.app/Contents/Versions/9.4/bin
 
 path=(
   $PYENV_ROOT
-  $HOME/.rvm/bin
   /usr/local/{bin,sbin}
   /usr/{bin,sbin}
   /bin
@@ -44,6 +43,14 @@ path=(
 
 if [ -d $HOME/dotfiles/bin ]; then
   path+=($HOME/dotfiles/bin)
+
+  # source platform specific binaries
+  local d
+  for d in $(find $HOME/dotfiles/bin -type d -mindepth 1 -maxdepth 1); do
+    if [[ "$OSTYPE" =~ "${d##*/}" ]]; then
+      path+=(${d})
+    fi
+  done
 fi
 
 ###############################################################################

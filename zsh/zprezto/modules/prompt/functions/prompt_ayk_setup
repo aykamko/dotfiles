@@ -1,3 +1,4 @@
+# vim: set ft=zsh:
 #
 # A cool theme, yo.
 #
@@ -7,6 +8,7 @@
 
 _primary_color='cyan'
 _secondary_color='blue'
+_third_color='magenta'
 
 # Git: remote status (number of commits behind and after remote)
 function +vi-git_remote {
@@ -53,10 +55,28 @@ function prompt_ayk_pwd {
     [[ -n ${vcs_info_msg_0_} || -n ${_prompt_ayk_venv} ]] && _pwd+=" "
 }
 
+# xterm: set pane title
+function xterm_title {
+    local xtermpwd
+    xtermpwd=$(echo "${PWD/#$HOME/~}" | egrep -o '[^/]*(\/[^/]*(\/[^/]*)?)?$')
+    echo -ne "\033]2;${xtermpwd}\033\\"
+}
+
+# tmux: show marker if not in tmux
+function has_tmux {
+    if [[ -z "$TMUX" ]]; then
+        _has_tmux="%F{$_third_color}[No TMUX] %f"
+    else
+        unset _has_tmux
+    fi
+}
+
 function prompt_ayk_precmd {
     prompt_ayk_venv
     vcs_info
     prompt_ayk_pwd
+    xterm_title
+    has_tmux
 }
 
 function prompt_ayk_setup {
@@ -72,25 +92,25 @@ function prompt_ayk_setup {
     add-zsh-hook precmd prompt_ayk_precmd
 
     # Set editor-info parameters.
-    zstyle ':prezto:module:editor:info:completing' format '%B%F{red}...%f%b'
-    zstyle ':prezto:module:editor:info:keymap:primary' format '🐼 '
-    zstyle ':prezto:module:editor:info:keymap:alternate' format '🐷 '
-    zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format '%B%F{red}!%f%b'
+    zstyle ':prezto:module:editor:info:completing' format "%B%F{red}...%f%b"
+    zstyle ':prezto:module:editor:info:keymap:primary' format "🐼 "
+    zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 "
+    zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{red}!%f%b"
 
     # Set vcs_info parameters.
     zstyle ':vcs_info:*' enable git hg svn
     zstyle ':vcs_info:*' check-for-changes true
-    zstyle ':vcs_info:*' stagedstr '%F{green}●%f'
-    zstyle ':vcs_info:*' unstagedstr '%F{yellow}●%f'
-    zstyle ':vcs_info:git:*' formats '%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m'
-    zstyle ':vcs_info:git:*' actionformats '%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m'
-    zstyle ':vcs_info:*' formats '%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f'
-    zstyle ':vcs_info:*' actionformats '%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f'
-    zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b|%F{cyan}%r%f'
+    zstyle ':vcs_info:*' stagedstr "%F{green}●%f"
+    zstyle ':vcs_info:*' unstagedstr "%F{yellow}●%f"
+    zstyle ':vcs_info:git:*' formats "%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m"
+    zstyle ':vcs_info:git:*' actionformats "%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m"
+    zstyle ':vcs_info:*' formats "%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f"
+    zstyle ':vcs_info:*' actionformats "%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f"
+    zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat "%b|%F{cyan}%r%f"
     zstyle ':vcs_info:git*+set-message:*' hooks git_remote git_changes_fmt
 
     # Define prompts.
-    PROMPT='${_pwd}${_prompt_ayk_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
+    PROMPT='${_has_tmux}${_pwd}${_prompt_ayk_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
     RPROMPT='%(?:: %F{yellow}⏎%f)'
 }
 

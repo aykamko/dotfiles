@@ -1,1 +1,0 @@
-export NOTMUX=1

@@ -1,0 +1,10 @@
+#!/bin/zsh
+local SCRIPT_SOURCE
+SCRIPT_SOURCE=$(dirname ${BASH_SOURCE:-$0})
+
+if [[ -z $TMUX || ! -f "$SCRIPT_SOURCE/iterm_new_tab.scpt" ]]; then
+    tmux detach
+    return 0
+fi
+echo $PWD >! $HOME/.no_tmux
+osascript "$SCRIPT_SOURCE/iterm_new_tab.scpt" > /dev/null

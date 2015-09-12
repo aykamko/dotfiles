@@ -1,0 +1,12 @@
+# copy to mac osx clipboard
+function copy() {
+    cat $1 | pbcopy
+}
+
+# core audio restart because apple tv sucks
+alias fuckyouappletv='sudo killall coreaudiod'
+
+# clean .DS_Store
+function dsclean() {
+    find . -name ".DS_Store" -exec /bin/rm -rf {} \;
+}
