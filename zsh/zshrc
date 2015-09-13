@@ -73,14 +73,26 @@ function ta() {
 }
 
 function tkill() {
-  command tmux kill-session -a
-  command tmux kill-session
+  declare option
+  option="$1"
+  if [ "$#" -gt 0 ]; then shift; fi
+
+  case "$option" in
+    (-a|--all)
+      command tmux kill-session -a;
+      command tmux kill-session;
+      ;;
+    (*)
+      command tmux kill-session;
+      ;;
+  esac
 }
 
 alias tl='tmux ls'
 alias detach='tmux detach'
 alias tmuxconf="vi ~/.tmux.conf"
 alias tconf='tmuxconf'
+alias tname='tmux rename-session'
 
 function tpp() {
   [[ -z $TMUX ]] && echo 'Not in tmux!' && return
