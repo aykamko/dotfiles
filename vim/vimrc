@@ -15,10 +15,11 @@ endif
 if empty(glob('~/.vim/autoload/plug.vim'))
   silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
     \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-  autocmd VimEnter * PlugInstall
+  autocmd VimEnter * PlugInstall | PlugUpdate
 endif
 
-call plug#begin('~/.vim/bundle/')
+let g:plug_dir = '~/.vim/bundle/'
+call plug#begin(g:plug_dir)
 
 Plug 'takac/vim-hardtime'
 
@@ -61,23 +62,26 @@ Plug 'tpope/vim-rails',            { 'for': 'ruby' }
 Plug 'slim-template/vim-slim',     { 'for': 'slim' }
 Plug 'vim-scripts/sh.vim--Cla',    { 'for': ['sh', 'zsh', 'bash'] }
 
-" load on InsertEnter
-Plug 'Valloric/YouCompleteMe', { 'on': [], 'do': './install.sh --clang-completer --gocode-completer' }
-fu! s:LoadYCM()
-  hi! YCMLoadingLine ctermfg=red
-  let curline = line('.')
-  let loadline = matchaddpos('YCMLoadingLine', [curline - 1, curline, curline + 1], 12)
-  redraw
-  echo "Loading YCM..."
-  call plug#load('YouCompleteMe')
-  call youcompleteme#Enable()
-  silent! call matchdelete(loadline)
-  redraw!
-endfu
-augroup plug_on_insertenter
-  autocmd!
-  autocmd InsertEnter * call s:LoadYCM() | autocmd! plug_on_insertenter
-augroup END
+" YouCompleteMe must be cloned manually
+if !empty(glob(g:plug_dir.'YouCompleteMe'))
+  " load on InsertEnter
+  Plug 'Valloric/YouCompleteMe', { 'on': [], 'do': './install.sh --clang-completer --gocode-completer' }
+  fu! s:LoadYCM()
+    hi! YCMLoadingLine ctermfg=red
+    let curline = line('.')
+    let loadline = matchaddpos('YCMLoadingLine', [curline - 1, curline, curline + 1], 12)
+    redraw
+    echo "Loading YCM..."
+    call plug#load('YouCompleteMe')
+    call youcompleteme#Enable()
+    silent! call matchdelete(loadline)
+    redraw!
+  endfu
+  augroup plug_on_insertenter
+    autocmd!
+    autocmd InsertEnter * call s:LoadYCM() | autocmd! plug_on_insertenter
+  augroup END
+endif
 
 " load on BufWritePre
 if has('nvim')
@@ -614,97 +618,97 @@ nmap <silent> y<leader>l <Plug>(easyoperator-line-yank)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Text Objects {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" targets.vim
-
 " vim-textobj-user.vim
-" textobj for current line
-" Copied from: https://github.com/kana/vim-textobj-user
-call textobj#user#plugin('line', {
-      \   '-': {
-      \     'select-a': 'al', 'select-a-function': 'TextobjCurrentLineA',
-      \     'select-i': 'il', 'select-i-function': 'TextobjCurrentLineI',
-      \   },
-      \ })
+if exists("*textobj#user#plugin")
+  " textobj for current line
+  " Copied from: https://github.com/kana/vim-textobj-user
+  call textobj#user#plugin('line', {
+        \   '-': {
+        \     'select-a': 'al', 'select-a-function': 'TextobjCurrentLineA',
+        \     'select-i': 'il', 'select-i-function': 'TextobjCurrentLineI',
+        \   },
+        \ })
 
-function! TextobjCurrentLineA()
-  normal! 0
-  let head_pos = getpos('.')
-  normal! $
-  let tail_pos = getpos('.')
-  return ['v', head_pos, tail_pos]
-endfunction
+  function! TextobjCurrentLineA()
+    normal! 0
+    let head_pos = getpos('.')
+    normal! $
+    let tail_pos = getpos('.')
+    return ['v', head_pos, tail_pos]
+  endfunction
 
-function! TextobjCurrentLineI()
-  normal! ^
-  let head_pos = getpos('.')
-  normal! g_
-  let tail_pos = getpos('.')
-  let non_blank_char_exists_p = getline('.')[head_pos[2] - 1] !~# '\s'
-  return
-  \ non_blank_char_exists_p
-  \ ? ['v', head_pos, tail_pos]
-  \ : 0
-endfunction
+  function! TextobjCurrentLineI()
+    normal! ^
+    let head_pos = getpos('.')
+    normal! g_
+    let tail_pos = getpos('.')
+    let non_blank_char_exists_p = getline('.')[head_pos[2] - 1] !~# '\s'
+    return
+    \ non_blank_char_exists_p
+    \ ? ['v', head_pos, tail_pos]
+    \ : 0
+  endfunction
 
-" textobj to turn foo_bar_baz into foo_baz *and* quuxSpamEggs into quuxEggs
-" Copied from: https://github.com/Julian/vim-textobj-variable-segment/blob/master/plugin/textobj/variable-segment.vim
-call textobj#user#plugin('variable', {
-    \ '-': {
-    \     'select-a': 'as',  'select-a-function': 'TextobjSelectSegmentA',
-    \     'select-i': 'is',  'select-i-function': 'TextobjSelectSegmentI',
-    \ }})
+  " textobj to turn foo_bar_baz into foo_baz *and* quuxSpamEggs into quuxEggs
+  " Copied from: https://github.com/Julian/vim-textobj-variable-segment/blob/master/plugin/textobj/variable-segment.vim
+  call textobj#user#plugin('variable', {
+      \ '-': {
+      \     'select-a': 'as',  'select-a-function': 'TextobjSelectSegmentA',
+      \     'select-i': 'is',  'select-i-function': 'TextobjSelectSegmentI',
+      \ }})
 
-function! TextobjSelectSegment(object_type, right_boundary)
-    let left_boundaries = ['_\+\i', '\<', '\l\u', '\u\u\ze\l', '\a\d', '\d\a']
-    call search(join(left_boundaries, '\|'), 'bce')
-    let start_position = getpos('.')
+  function! TextobjSelectSegment(object_type, right_boundary)
+      let left_boundaries = ['_\+\i', '\<', '\l\u', '\u\u\ze\l', '\a\d', '\d\a']
+      call search(join(left_boundaries, '\|'), 'bce')
+      let start_position = getpos('.')
 
-    call search('\>', 'c')
-    let word_end = getpos('.')
-    call setpos('.', start_position)
+      call search('\>', 'c')
+      let word_end = getpos('.')
+      call setpos('.', start_position)
 
-    call search(a:right_boundary, 'c')
-    for _ in range(v:count1 - 1)
-        if getpos('.') != word_end
-            call search(a:right_boundary)
-        endif
-    endfor
-    let end_position = getpos('.')
+      call search(a:right_boundary, 'c')
+      for _ in range(v:count1 - 1)
+          if getpos('.') != word_end
+              call search(a:right_boundary)
+          endif
+      endfor
+      let end_position = getpos('.')
 
-    return ['v', start_position, end_position]
-endfunction
+      return ['v', start_position, end_position]
+  endfunction
 
-function! TextobjSelectSegmentA()
-    let right_boundaries = ['_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
-    let right_boundary = join(right_boundaries, '\|')
-    let [type, start_position, end_position] = TextobjSelectSegment('a', right_boundary)
-    let [_, start_line, start_column, _] = start_position
+  function! TextobjSelectSegmentA()
+      let right_boundaries = ['_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
+      let right_boundary = join(right_boundaries, '\|')
+      let [type, start_position, end_position] = TextobjSelectSegment('a', right_boundary)
+      let [_, start_line, start_column, _] = start_position
 
-    call search('\i\>', 'c')
-    if end_position == getpos('.') &&
-     \ getline(start_line)[start_column - 2] =~# '_'
-        let start_position[2] -= 1
-    endif
+      call search('\i\>', 'c')
+      if end_position == getpos('.') &&
+       \ getline(start_line)[start_column - 2] =~# '_'
+          let start_position[2] -= 1
+      endif
 
-    let was_small_camel = match(expand('<cword>'), '^_*\l.*\u') != -1
-    if was_small_camel
-        call search('\<', 'bc')
-        let [_, _, word_start, _] = getpos('.')
+      let was_small_camel = match(expand('<cword>'), '^_*\l.*\u') != -1
+      if was_small_camel
+          call search('\<', 'bc')
+          let [_, _, word_start, _] = getpos('.')
 
-        if start_column - 2 <= word_start ||
-         \ getline(start_line)[:start_column - 2] =~# '^_*$'
-            call setpos('.', end_position)
-            normal! l~
-        endif
-    endif
+          if start_column - 2 <= word_start ||
+           \ getline(start_line)[:start_column - 2] =~# '^_*$'
+              call setpos('.', end_position)
+              normal! l~
+          endif
+      endif
 
-    return [type, start_position, end_position]
-endfunction
+      return [type, start_position, end_position]
+  endfunction
 
-function! TextobjSelectSegmentI()
-    let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
-    return TextobjSelectSegment('i', join(right_boundaries, '\|'))
-endfunction
+  function! TextobjSelectSegmentI()
+      let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
+      return TextobjSelectSegment('i', join(right_boundaries, '\|'))
+  endfunction
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-hardtime {{{

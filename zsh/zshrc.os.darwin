@@ -1,3 +1,8 @@
+# alias for rm (requires trash script)
+if type trash > /dev/null; then
+    alias rm=trash
+fi
+
 # copy to mac osx clipboard
 function copy() {
     cat $1 | pbcopy

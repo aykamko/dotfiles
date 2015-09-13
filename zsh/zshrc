@@ -142,11 +142,6 @@ if which nvm > /dev/null; then
   source $(brew --prefix nvm)/nvm.sh
 fi
 
-# alias for rm (requires trash script)
-#------------------------------------------------------------------------------
-alias realrm='/bin/rm'
-alias rm='trash'
-
 # git
 #------------------------------------------------------------------------------
 if type hub > /dev/null; then

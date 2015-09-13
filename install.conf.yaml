@@ -1,3 +1,4 @@
+# vim: set sw=4:sts=4:et:
 - clean: ['~']
 
 # ----- zsh -----
@@ -88,5 +89,9 @@
 # ----- virtualenv -----
 - clean: ['~/.pyvirtualenvs']
 - link:
-    ~/.pyvirtualenvs/postactivate: virtualenv/postactivate
-    ~/.pyvirtualenvs/postdeactivate: virtualenv/postdeactivate
+    ~/.pyvirtualenvs/postactivate:
+        path: virtualenv/postactivate
+        create: true
+    ~/.pyvirtualenvs/postdeactivate:
+        path: virtualenv/postdeactivate
+        create: true
