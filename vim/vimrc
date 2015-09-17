@@ -1,16 +1,10 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " {{{ vim-plug
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Skip initialization for vim-tiny or vim-small.
-if !1 | finish | endif
-if has('vim_starting')
-  if &compatible
-    set nocompatible " be iMproved
-  endif
-  set encoding=utf-8 " necessary to show Unicode glyphs
-endif
+set nocompatible   " be iMproved
+set encoding=utf-8 " necessary to show Unicode glyphs
 
-" Special vimrc settings
+" vimrc folding
 autocmd VimEnter .vimrc
       \  set foldmethod=marker
       \| set foldlevel=0
@@ -116,7 +110,7 @@ filetype plugin indent on " required
 let mapleader = ' '
 
 " Don't use virtualenv python
-let g:python_host_prog='/usr/local/bin/python'
+let g:python_host_prog='/usr/bin/env python'
 
 " Display
 set ruler           " show cursor position
@@ -225,13 +219,22 @@ hi IndentGuidesEven ctermbg=234
 " Commands/Mappings {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " because I suck
-command! WQ wq
-command! Wq wq
-command! W w
-command! Q q
+cnoreabbrev W w
+cnoreabbrev Q q
+cnoreabbrev X x
+cnoreabbrev WQ wq
+cnoreabbrev Wq wq
+cnoreabbrev wQ wq
 
 " center screen horizontally
-nnoremap <expr> z\| winwidth(0)/2 . '\|'
+fu! HorizontalScroll(cols)
+  if a:cols > 0
+    exec "normal ".a:cols."zl"
+  elseif a:cols < 0
+    exec "normal ".-a:cols."zh"
+  endif
+endfu
+nnoremap <silent> z\| :call HorizontalScroll(wincol() - (winwidth(0)/2))<CR>
 
 " save to <leader>;
 noremap <silent> <leader>; :up<CR>
@@ -247,8 +250,8 @@ command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
 command! Vso so ~/.vimrc     " source vimrc
 
 " copy to xclip with Control-C
-map <C-C> :w !xsel<CR><CR>
-vmap <C-C> "*y
+nnoremap <C-y> :w !xsel<CR><CR>
+vnoremap <C-y> "*y
 
 " remap indent to use single >/<
 noremap > >>
@@ -641,8 +644,8 @@ nmap <silent> y<leader>l <Plug>(easyoperator-line-yank)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-textobj-user.vim
 augroup TextobjUserSetup
-  au!
-  au BufEnter * call TextobjUserSetup()
+  autocmd!
+  autocmd BufEnter * call TextobjUserSetup()
 augroup END
 function! TextobjUserSetup()
   if get(g:, 'textobj_user_loaded', 0)
@@ -753,12 +756,6 @@ map g/ <Plug>(incsearch-stay)
 
 " stay on *
 map <silent> g* :let @/='\<'.expand('<cword>').'\>'<CR>
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" vim-go {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-au FileType go
-      \ exec "nnoremap <leader>gf :GoDef<CR>"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
