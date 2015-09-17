@@ -1,6 +1,5 @@
-" vim: set foldmethod=marker foldlevel=0:
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" {{{ vim-plue
+" {{{ vim-plug
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Skip initialization for vim-tiny or vim-small.
 if !1 | finish | endif
@@ -10,6 +9,11 @@ if has('vim_starting')
   endif
   set encoding=utf-8 " necessary to show Unicode glyphs
 endif
+
+" Special vimrc settings
+autocmd VimEnter .vimrc
+      \  set foldmethod=marker
+      \| set foldlevel=0
 
 " autoinstall vim-plug
 if empty(glob('~/.vim/autoload/plug.vim'))
@@ -28,7 +32,7 @@ Plug 'easymotion/vim-easymotion' | Plug 'aykamko/vim-easyoperator-line'
 Plug 'airblade/vim-gitgutter'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'itchyny/lightline.vim'
-Plug 'kana/vim-textobj-user'
+Plug 'aykamko/vim-textobj-user'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
@@ -47,26 +51,27 @@ Plug 'mattn/webapi-vim' | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 Plug 'junegunn/vim-easy-align',    { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
 Plug 'rking/ag.vim'
 
-Plug 'Glench/Vim-Jinja2-Syntax',   { 'for': 'jinja' }
-Plug 'LaTeX-Box-Team/LaTeX-Box',   { 'for': 'tex' }
-Plug 'a.vim',                      { 'for': ['c', 'cpp'] }
-Plug 'fatih/vim-go',               { 'for': 'go' }
-Plug 'jason0x43/vim-js-indent',    { 'for': 'javascript' }
-Plug 'kchmck/vim-coffee-script',   { 'for': 'coffee' }
-" Plug 'klen/python-mode',           { 'for': 'python' }
+Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
+Plug 'LaTeX-Box-Team/LaTeX-Box',     { 'for': 'tex' }
+Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
+Plug 'fatih/vim-go',                 { 'for': 'go' }
+Plug 'jason0x43/vim-js-indent',      { 'for': 'javascript' }
+Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
 Plug 'hynek/vim-python-pep8-indent', { 'for': 'python' }
-Plug 'leafgarland/typescript-vim', { 'for': 'typescript' }
-Plug 'mattn/emmet-vim',            { 'for': ['jinja', 'html'] }
-Plug 'nono/vim-handlebars',        { 'for': ['jinja', 'html'] }
-Plug 'tpope/vim-rails',            { 'for': 'ruby' }
-Plug 'slim-template/vim-slim',     { 'for': 'slim' }
-Plug 'vim-scripts/sh.vim--Cla',    { 'for': ['sh', 'zsh', 'bash'] }
+Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
+Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
+Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
+Plug 'tpope/vim-rails',              { 'for': 'ruby' }
+Plug 'slim-template/vim-slim',       { 'for': 'slim' }
+Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 
-" YouCompleteMe must be cloned manually
+" YouCompleteMe should be cloned manually
 if !empty(glob(g:plug_dir.'YouCompleteMe'))
+  Plug 'rdnetto/YCM-Generator',  { 'branch': 'stable', 'for': ['c', 'cpp', 'make'] }
   " load on InsertEnter
   Plug 'Valloric/YouCompleteMe', { 'on': [], 'do': './install.sh --clang-completer --gocode-completer' }
   fu! s:LoadYCM()
+    if exists(":YcmCompleter") | return | endif
     hi! YCMLoadingLine ctermfg=red
     let curline = line('.')
     let loadline = matchaddpos('YCMLoadingLine', [curline - 1, curline, curline + 1], 12)
@@ -119,7 +124,6 @@ set nonumber        " hide line numbers
 set nolist          " hide tabs and EOL chars
 set showcmd         " show normal mode commands as they are entered
 set noshowmode      " don't show mode becase powerline already does it
-set showmatch       " flash matching delimiters
 set nowrap          " don't wrap long lines
 
 " Scrolling
@@ -130,9 +134,6 @@ set sidescroll=10   " minumum columns to scroll horizontally
 " Search
 set nohlsearch        " persist search highlighting, initially
 set incsearch       " search with typeahead
-" clears search pattern on textchange
-" autocmd TextChanged *  exec "normal \<Plug>(incsearch-nohl0)"
-" autocmd TextChangedI * exec "normal \<Plug>(incsearch-nohl0)"
 
 " Indent
 set autoindent      " carry indent over to new lines
@@ -229,6 +230,18 @@ command! Wq wq
 command! W w
 command! Q q
 
+" center screen horizontally
+nnoremap <expr> z\| winwidth(0)/2 . '\|'
+
+" save to <leader>;
+noremap <silent> <leader>; :up<CR>
+vnoremap <silent> <leader>; <Esc>:up<CR>gv
+
+" save+quit to <leader>:
+command! Upq update | q
+noremap <silent> <leader>: :Upq<CR>
+vnoremap <silent> <leader>: <Esc>:Upq<CR>
+
 " vimrc
 command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
 command! Vso so ~/.vimrc     " source vimrc
@@ -258,12 +271,6 @@ inoremap <silent> <C-P> <F2><C-R>+<F2>
 
 " prettify JSON
 command! Prettify %!python -m json.tool
-
-" page up/page down remapped to -/+
-map  <silent> _ :exec 'normal '.(winheight('.')/2).'k'<CR>
-vmap <silent> _ :exec 'normal '.(winheight('.')/2).'k'<CR>
-map  <silent> + :exec 'normal '.(winheight('.')/2).'j'<CR>
-vmap <silent> + :exec 'normal '.(winheight('.')/2).'j'<CR>
 
 " search/replace visual selection
 fu! ReplaceSelection(hasrange)
@@ -485,11 +492,25 @@ nnoremap <leader>a :A<CR>
 let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_min_num_identifier_candidate_chars = 4
 let g:ycm_confirm_extra_conf = 0
-let g:ycm_global_ycm_extra_conf = '/Users/Aleks/.vim/ycm_extra_conf.py'
-nnoremap <leader>yd :YcmForceCompileAndDiagnostics<cr>
-nnoremap <leader>yo :YcmCompleter GoToDefinitionElseDeclaration<CR>
-nnoremap <leader>yf :YcmCompleter GoToDefinition<CR>
-nnoremap <leader>yc :YcmCompleter GoToDeclaration<CR>
+let g:ycm_global_ycm_extra_conf = $HOME.'/.vim/ycm_extra_conf.py'
+
+" lazy load/exec ycm commands
+function! YcmLazy(...)
+  if !exists("*youcompleteme#Enable")
+    echo "Loading YCM..."
+    call plug#load('YouCompleteMe')
+  endif
+  if !exists(":YcmCompleter")
+    call youcompleteme#Enable()
+  endif
+  exe printf(':YcmCompleter %s', join(a:000, ' '))
+endfunction
+command! -nargs=* YcmLazy call YcmLazy(<f-args>)
+
+nnoremap <silent> <leader>yd :YcmForceCompileAndDiagnostics<cr>
+nnoremap <silent> <leader>yo :YcmLazy GoToDefinitionElseDeclaration<CR>
+nnoremap <silent> <leader>yf :YcmLazy GoToDefinition<CR>
+nnoremap <silent> <leader>yc :YcmLazy GoToDeclaration<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Syntastic {{{
@@ -510,7 +531,7 @@ augroup SyntaxLightline
   autocmd BufWritePost * call s:syntax_lightline()
 augroup END
 function! s:syntax_lightline()
-  exe g:syncheck_cmd
+  " exe g:syncheck_cmd
   call lightline#update()
 endfunction
 

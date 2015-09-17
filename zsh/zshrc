@@ -78,11 +78,14 @@ function tkill() {
   if [ "$#" -gt 0 ]; then shift; fi
 
   case "$option" in
-    (-a|--all)
-      command tmux kill-session -a;
+    (-1)
       command tmux kill-session;
       ;;
+    (-a|--all)
+      command tmux kill-session -a;
+      ;;
     (*)
+      command tmux kill-session -a;
       command tmux kill-session;
       ;;
   esac
@@ -160,12 +163,15 @@ if type hub > /dev/null; then
   alias git=hub
 fi
 alias g='git'
-alias rgit='/usr/local/bin/git'
 
 # context from root of git directory
 function groot() {
   local root
-  root=$(rgit rev-parse --show-toplevel)
+  root=$(command git rev-parse --show-toplevel 2> /dev/null)
+  if [[ $? != 0 ]]; then
+    cd $*
+    return
+  fi
   if [[ $# == 0 ]]; then
     cd $root
   else

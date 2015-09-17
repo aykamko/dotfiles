@@ -76,6 +76,7 @@
     # push
     ps = push                         # push
     sync = "!git push -u ${1-origin} `git rev-parse --abbrev-ref HEAD`"
+    upstream = branch -u
 
     # rebase
     rc = rebase --continue            # continue rebase
