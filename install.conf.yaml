@@ -48,6 +48,7 @@
 
 - link:
     ~/.vimrc: vim/vimrc
+    ~/.vim/UltiSnips: vim/vim/UltiSnips
     ~/.vim/ycm_extra_conf.py:
         path: vim/vim/ycm_extra_conf.py
         create: true
