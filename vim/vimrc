@@ -4,6 +4,7 @@
 set nocompatible   " be iMproved
 set encoding=utf-8 " necessary to show Unicode glyphs
 
+
 " vimrc folding
 autocmd VimEnter .vimrc
       \  set foldmethod=marker
@@ -37,6 +38,7 @@ Plug 'tpope/vim-surround'
 Plug 'unblevable/quick-scope'
 Plug 'wellle/targets.vim'
 Plug 'haya14busa/incsearch.vim'
+Plug 'SirVer/ultisnips'
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 
@@ -46,7 +48,8 @@ Plug 'junegunn/vim-easy-align',    { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
 Plug 'rking/ag.vim'
 
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
-Plug 'LaTeX-Box-Team/LaTeX-Box',     { 'for': 'tex' }
+" Plug 'LaTeX-Box-Team/LaTeX-Box',     { 'for': 'tex' }
+Plug 'lervag/vimtex',                { 'for': 'tex' }
 Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
 Plug 'jason0x43/vim-js-indent',      { 'for': 'javascript' }
@@ -57,6 +60,7 @@ Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
 Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
 Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'slim-template/vim-slim',       { 'for': 'slim' }
+Plug 'JuliaLang/julia-vim'
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 
 " YouCompleteMe should be cloned manually
@@ -110,7 +114,7 @@ filetype plugin indent on " required
 let mapleader = ' '
 
 " Don't use virtualenv python
-let g:python_host_prog='/usr/bin/env python'
+let g:python_host_prog='/usr/local/bin/python'
 
 " Display
 set ruler           " show cursor position
@@ -271,6 +275,12 @@ nnoremap z<Space> za
 " (depends on clipboard setting)
 set pastetoggle=<F2>
 inoremap <silent> <C-P> <F2><C-R>+<F2>
+
+" get highlight group under cursor
+" http://vim.wikia.com/wiki/Identify_the_syntax_highlighting_group_used_at_the_cursor
+nnoremap <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
+      \ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+      \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 
 " prettify JSON
 command! Prettify %!python -m json.tool
@@ -515,6 +525,13 @@ nnoremap <silent> <leader>yo :YcmLazy GoToDefinitionElseDeclaration<CR>
 nnoremap <silent> <leader>yf :YcmLazy GoToDefinition<CR>
 nnoremap <silent> <leader>yc :YcmLazy GoToDeclaration<CR>
 
+" semantic trigger for tex (suggested by :help vimtex)
+if !exists('g:ycm_semantic_triggers')
+  let g:ycm_semantic_triggers = {}
+endif
+let g:ycm_semantic_triggers.tex = [
+      \ 're!\\[A-Za-z]*(ref|cite)[A-Za-z]*([^]]*])?{([^}]*, ?)*'
+      \ ]
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Syntastic {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -534,7 +551,7 @@ augroup SyntaxLightline
   autocmd BufWritePost * call s:syntax_lightline()
 augroup END
 function! s:syntax_lightline()
-  " exe g:syncheck_cmd
+  exe g:syncheck_cmd
   call lightline#update()
 endfunction
 
@@ -622,7 +639,7 @@ fu! EasyMotion_S_Secondchar()
 endfu
 
 nmap s <Plug>(easymotion-s2)
-nmap <silent> S :call EasyMotion_S_Secondchar()<CR>
+" nmap <silent> S :call EasyMotion_S_Secondchar()<CR>
 
 nmap <leader>s <Plug>(easymotion-sn)
 
@@ -737,6 +754,48 @@ function! TextobjUserSetup()
         let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
         return TextobjSelectSegment('i', join(right_boundaries, '\|'))
     endfunction
+
+    " select entire file
+    " Source: https://github.com/kana/vim-textobj-entire
+    call textobj#user#plugin('entire', {
+    \      '-': {
+    \        '*sfile*': expand('<sfile>:p'),
+    \        'select-a': 'ae',  '*select-a-function*': 'TextobjSelectEntireA',
+    \        'select-i': 'ie',  '*select-i-function*': 'TextobjSelectEntireI'
+    \      }
+    \    })
+
+    function! TextobjSelectEntireA()
+      " To easily back to the last position after a command.
+      " For example: yae<C-o>
+      mark '
+
+      keepjumps normal! gg0
+      let start_pos = getpos('.')
+
+      keepjumps normal! G$
+      let end_pos = getpos('.')
+
+      return ['V', start_pos, end_pos]
+    endfunction
+
+    function! TextobjSelectEntireI()
+      " To easily back to the last position after a command.
+      " For example: yie<C-o>
+      mark '
+
+      keepjumps normal! gg0
+      call search('^.', 'cW')
+      let start_pos = getpos('.')
+
+      keepjumps normal! G$
+      call search('^.', 'bcW')
+      normal! $
+      let end_pos = getpos('.')
+
+      return ['V', start_pos, end_pos]
+    endfunction
+
   endif
 endfunction
 
@@ -758,6 +817,18 @@ map g/ <Plug>(incsearch-stay)
 map <silent> g* :let @/='\<'.expand('<cword>').'\>'<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Julia-Vim {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:latex_to_unicode_auto = 0
+let g:latex_to_unicode_tab = 0
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" UltiSnips
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:UltiSnipsEditSplit="horizontal"
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
@@ -770,5 +841,14 @@ autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
       \ set textwidth=72 |
       \ set colorcolumn=71,72 |
       \ call matchaddpos('ColorColumn', [[1, 49, 2]])
+
+autocmd Filetype markdown,tex,noft,text
+      \ set wrap |
+      \ set breakindent |
+      \ exe "nnoremap <silent> j gj" |
+      \ exe "nnoremap <silent> k gk" |
+      \ exe "nnoremap <silent> $ g$" |
+      \ exe "nnoremap <silent> ^ g^" |
+      \ exe "nnoremap <silent> 0 g0"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

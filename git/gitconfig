@@ -37,7 +37,8 @@
     b = branch -v                     # branch (verbose)
 
     # commit
-    c = commit -m                     # commit with message
+    c = commit
+    cm = commit -m                    # commit with message
     ca = commit -am                   # commit all with message
     ci = commit                       # commit
     amend = commit --amend            # ammend your last commit
@@ -126,8 +127,6 @@
     tool = mvimdiff
 [apply]
     whitespace = nowarn
-[branch]
-    autosetupmerge = true
 [push]
     # 'git push' will push the current branch to its tracking branch
     # the usual default is to push all branches

@@ -1,9 +1,10 @@
 # vim
 #------------------------------------------------------------------------------
-if ! type nvim > /dev/null; then
-  alias vi=vim
-else
+if type nvim > /dev/null 2>&1; then
   alias vi=nvim
+  alias vim=nvim
+else
+  alias vi=vim
 fi
 alias vimrc="vi ~/.vimrc"
 function swpclean() {
@@ -102,6 +103,10 @@ function tpp() {
   command tmux capture-pane -pe | fpp
 }
 
+# julia
+#------------------------------------------------------------------------------
+alias jl=julia
+
 # python
 #------------------------------------------------------------------------------
 alias ipy="ipython"
@@ -195,6 +200,9 @@ function cs() {
 
 # go to temp dir
 alias temp="cs $HOME/temp"
+
+# clean latexmk aux files
+alias texclean="rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null"
 
 ###############################################################################
 # Special Settings
