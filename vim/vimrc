@@ -248,14 +248,17 @@ fu! HorizontalScroll(cols)
 endfu
 nnoremap <silent> z\| :call HorizontalScroll(wincol() - (winwidth(0)/2))<CR>
 
-" save to <leader>;
+" save to <leader>; and save+quit to <leader>
 noremap <silent> <leader>; :up<CR>
 vnoremap <silent> <leader>; <Esc>:up<CR>gv
-
-" save+quit to <leader>:
 command! Upq update | q
-noremap <silent> <leader>: :Upq<CR>
-vnoremap <silent> <leader>: <Esc>:Upq<CR>
+noremap <silent> <leader>x :Upq<CR>
+vnoremap <silent> <leader>x <Esc>:Upq<CR>
+" TODO: remove these abbrevs (temporary to force using above macros)
+command! DontDoThat echo 'Use your custom mapping instead!'
+cabbrev w DontDoThat
+cabbrev wq DontDoThat
+cabbrev x DontDoThat
 
 " vimrc
 command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
