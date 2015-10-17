@@ -43,16 +43,10 @@ function +vi-git_changes_fmt {
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 function prompt_ayk_venv {
     if [[ -n ${VIRTUAL_ENV} ]]; then
-        _prompt_ayk_venv="%F{$_secondary_color}[%f%F{white}${VIRTUAL_ENV:t}%f%F{$_secondary_color}]%f"
+        _prompt_ayk_venv="%F{$_secondary_color}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_secondary_color}]%f"
     else
         unset _prompt_ayk_venv
     fi
-}
-
-# PWD: Add space before prompt extras, if they exist.
-function prompt_ayk_pwd {
-    _pwd="%F{$_primary_color}%3~%f"
-    [[ -n ${vcs_info_msg_0_} || -n ${_prompt_ayk_venv} ]] && _pwd+=" "
 }
 
 # xterm: set pane title
@@ -65,23 +59,50 @@ function xterm_title {
 # tmux: show marker if not in tmux
 function has_tmux {
     if [[ -z "$TMUX" ]]; then
-        _has_tmux="%F{$_third_color}[No TMUX] %f"
+        _has_tmux="%F{$_third_color}[No TMUX]%f "
     else
         unset _has_tmux
     fi
 }
 
+# docker: show marker if machine is mounted in env
+function docker_mounted {
+    if [[ -n ${DOCKER_MACHINE_NAME} ]]; then
+        local machine_name
+        [[ "${DOCKER_MACHINE_NAME}" = "default" ]] && unset machine_name || machine_name="$DOCKER_MACHINE_NAME"
+        _docker="%F{$_secondary_color}[%f🐳 %F{white}${machine_name}%f%F{$_secondary_color}]%f"
+    else
+        unset _docker
+    fi
+}
+
+# PWD: Add space before prompt extras, if they exist.
+function prompt_ayk_pwd {
+    _pwd="%F{$_primary_color}%3~%f"
+
+    local prompt_extras
+    prompt_extras=(
+        $vcs_info_msg_0_
+        $_prompt_ayk_venv
+        $_docker
+    )
+    [[ ${#prompt_extras[@]} -gt 0 ]] && _pwd+=" "
+}
+
 function prompt_ayk_precmd {
     prompt_ayk_venv
     vcs_info
-    prompt_ayk_pwd
+    docker_mounted
     xterm_title
     has_tmux
+    prompt_ayk_pwd
 }
 
 function prompt_ayk_setup {
     setopt LOCAL_OPTIONS
     unsetopt XTRACE KSH_ARRAYS
+    unsetopt CORRECT # disable autocorrect suggestions for commands
+    setopt NO_NOMATCH # pass bad match to command
     prompt_opts=(cr percent subst)
 
     # Load required functions.
@@ -110,7 +131,7 @@ function prompt_ayk_setup {
     zstyle ':vcs_info:git*+set-message:*' hooks git_remote git_changes_fmt
 
     # Define prompts.
-    PROMPT='${_has_tmux}${_pwd}${_prompt_ayk_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
+    PROMPT='${_has_tmux}${_pwd}${_docker}${_prompt_ayk_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
     RPROMPT='%(?:: %F{yellow}⏎%f)'
 }
 

@@ -205,6 +205,29 @@ alias temp="cs $HOME/temp"
 alias texclean="rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null"
 
 ###############################################################################
+# Better CD
+###############################################################################
+# override cd to do ls and vi when necessary
+function _better_cd() {
+  set -- ${1//,/.} # replace commas (,) with periods (.)
+  if [[ -f $1 ]]; then
+    local fdir
+    fdir=`dirname $1`
+    if [[ -d $fdir ]]; then
+      builtin cd "$fdir" && ls
+    fi
+    vim `basename $1` ${*:2}
+  else
+    builtin cd $* && ls
+  fi
+}
+alias cd=_better_cd
+
+# tab completion in dotfiles directory
+dotfiles() { cd $HOME/dotfiles/$1; }
+compctl -f -W $HOME/dotfiles/ dotfiles
+
+###############################################################################
 # Special Settings
 ###############################################################################
 # OS Specific
@@ -246,34 +269,11 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
-###############################################################################
-# Better CD
-###############################################################################
-# override cd to do ls and vi when necessary
-function _better_cd() {
-  set -- ${1//,/.} # replace commas (,) with periods (.)
-  if [[ -f $1 ]]; then
-    local fdir
-    fdir=`dirname $1`
-    if [[ -d $fdir ]]; then
-      builtin cd "$fdir" && ls
-    fi
-    vim `basename $1` ${*:2}
-  else
-    builtin cd $* && ls
-  fi
-}
-alias cd=_better_cd
-
 # disable autocorrect suggestions for commands
 unsetopt CORRECT
 
 # pass bad match to command
 setopt NO_NOMATCH
-
-# tab completion in dotfiles directory
-dotfiles() { cd $HOME/dotfiles/$1; }
-compctl -f -W $HOME/dotfiles/ dotfiles
 
 ###############################################################################
 # z

@@ -48,7 +48,6 @@ Plug 'junegunn/vim-easy-align',    { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
 Plug 'rking/ag.vim'
 
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
-" Plug 'LaTeX-Box-Team/LaTeX-Box',     { 'for': 'tex' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
 Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
@@ -112,6 +111,7 @@ filetype plugin indent on " required
 " General Settings {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let mapleader = ' '
+let maplocalleader = ' '
 
 " Don't use virtualenv python
 let g:python_host_prog='/usr/local/bin/python'
@@ -230,6 +230,14 @@ cnoreabbrev WQ wq
 cnoreabbrev Wq wq
 cnoreabbrev wQ wq
 
+" remap j/k for wrapped lines; add relative jumps to jumplist
+" Source: reddit.com/r/vim/comments/3npf1z/using_jk_for_wrapped_lines_and_adding_jk_with_a/cvq2k3x
+function! LineMotion(dir)
+    execute "normal! " . (v:count1 > 1 ? "m'" . v:count1 : "g") . a:dir
+endfunction
+nnoremap <silent> j :<c-u>call LineMotion("j")<cr>
+nnoremap <silent> k :<c-u>call LineMotion("k")<cr>
+
 " center screen horizontally
 fu! HorizontalScroll(cols)
   if a:cols > 0
@@ -278,7 +286,7 @@ inoremap <silent> <C-P> <F2><C-R>+<F2>
 
 " get highlight group under cursor
 " http://vim.wikia.com/wiki/Identify_the_syntax_highlighting_group_used_at_the_cursor
-nnoremap <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
+nnoremap <silent> <C-s> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
       \ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
       \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 
@@ -313,7 +321,7 @@ if g:fb_kill_whitespace
     %s/\s\+$//e
     call cursor(l, c)
   endfu
-  let g:fb_kill_whitespace_blacklist = []
+  let g:fb_kill_whitespace_blacklist = ["snippets"]
   au BufWritePre <buffer> if index(g:fb_kill_whitespace_blacklist, &ft) < 0
         \| :call <SID>StripTrailingWhitespaces()
 endif
@@ -473,16 +481,8 @@ function! LLFileinfo()
 endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" LaTeX-Box {{{
+" vimtex {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:LatexBox_custom_indent=0
-let g:LatexBox_latexmk_preview_continuously=1
-let g:LatexBox_show_warnings=2
-nmap <silent> <leader>ll :Latexmk<CR>
-nmap <silent> <leader>ls :silent
-      \ !/Applications/Skim.app/Contents/SharedSupport/displayline
-      \ <C-R>=line('.')<CR> "<C-R>=LatexBox_GetOutputFile()<CR>"
-      \ "%:p" <CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easyalign {{{L:
@@ -822,11 +822,11 @@ map <silent> g* :let @/='\<'.expand('<cword>').'\>'<CR>
 let g:latex_to_unicode_auto = 0
 let g:latex_to_unicode_tab = 0
 
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" UltiSnips
+" UltiSnips {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:UltiSnipsEditSplit="horizontal"
+let g:UltiSnipsExpandTrigger="<C-E>"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
@@ -845,10 +845,7 @@ autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
 autocmd Filetype markdown,tex,noft,text
       \ set wrap |
       \ set breakindent |
-      \ exe "nnoremap <silent> j gj" |
-      \ exe "nnoremap <silent> k gk" |
-      \ exe "nnoremap <silent> $ g$" |
-      \ exe "nnoremap <silent> ^ g^" |
-      \ exe "nnoremap <silent> 0 g0"
+      \ exec 'nnoremap <silent> $ g$' |
+      \ exec 'nnoremap <silent> ^ g^'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

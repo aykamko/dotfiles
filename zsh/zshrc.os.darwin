@@ -15,3 +15,12 @@ alias fuckyouappletv='sudo killall coreaudiod'
 function dsclean() {
     find . -name ".DS_Store" -exec /bin/rm -rf {} \;
 }
+
+# docker+tmux
+function docker-mount() {
+    eval "$(docker-machine env default)"
+    tmux setenv DOCKER_TLS_VERIFY $DOCKER_TLS_VERIFY
+    tmux setenv DOCKER_HOST $DOCKER_HOST
+    tmux setenv DOCKER_CERT_PATH $DOCKER_CERT_PATH
+    tmux setenv DOCKER_MACHINE_NAME $DOCKER_MACHINE_NAME
+}
