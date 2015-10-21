@@ -175,7 +175,7 @@ colorscheme hybrid-ayk
 set t_Co=256            " tell vim that terminal supports 256 colors
 
 " highlight columns 79, 80, 119, 120
-highlight ColorColumn ctermbg=236
+highlight ColorColumn ctermbg=234
 set colorcolumn=79,80,119,120
 
 " unhighlight search terms
@@ -248,17 +248,28 @@ fu! HorizontalScroll(cols)
 endfu
 nnoremap <silent> z\| :call HorizontalScroll(wincol() - (winwidth(0)/2))<CR>
 
-" save to <leader>; and save+quit to <leader>
+" save to <leader>;
 noremap <silent> <leader>; :up<CR>
 vnoremap <silent> <leader>; <Esc>:up<CR>gv
+
+" save+quit to <leader>
 command! Upq update | q
 noremap <silent> <leader>x :Upq<CR>
 vnoremap <silent> <leader>x <Esc>:Upq<CR>
+
+" quit/force-quit to <leader>q/Q
+noremap <silent> <leader>q :q<CR>
+vnoremap <silent> <leader>q <Esc>:q<CR>
+noremap <silent> <leader>Q :q!<CR>
+vnoremap <silent> <leader>Q <Esc>:q!<CR>
+
 " TODO: remove these abbrevs (temporary to force using above macros)
-command! DontDoThat echo 'Use your custom mapping instead!'
+command! DontDoThat echohl WarningMsg | echo 'Use your custom mapping instead!' | echohl None
 cabbrev w DontDoThat
 cabbrev wq DontDoThat
 cabbrev x DontDoThat
+cabbrev q DontDoThat
+cabbrev q! DontDoThat
 
 " vimrc
 command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
@@ -350,23 +361,6 @@ if g:update_modifiable
   autocmd BufReadPost * call <SID>UpdateModifiable()
 endif
 
-" quickfix toggle
-command! -bang -nargs=? QFix call QFixToggle(<bang>0)
-function! QFixToggle(forced)
-  if exists("g:qfix_win") && a:forced == 0
-    cclose
-  else
-    copen 10
-  endif
-endfunction
-" used to track the quickfix window per buffer
-augroup QFixToggle
-  autocmd!
-  autocmd BufWinEnter quickfix let g:qfix_win = bufnr("$")
-  autocmd BufWinLeave * if exists("g:qfix_win") && expand("<abuf>") == g:qfix_win | unlet! g:qfix_win | endif
-augroup END
-nmap <leader>q :QFix<CR>
-
 " vim-tmux aware killpane
 fu! TmuxAwareKillpane()
   if $TMUX == '' || winnr('$') > 1
@@ -392,6 +386,8 @@ set title
 " Only enable the quick-scope plugin's highlighting when using the f/F/t/T movements
 let g:qs_enable = 0
 let g:qs_enable_char_list = [ 'f', 'F', 't', 'T' ]
+let g:qs_first_occurrence_highlight_color = 39
+let g:qs_second_occurrence_highlight_color = 28
 
 function! Quick_scope_selective(movement)
     let needs_disabling = 0
@@ -845,10 +841,31 @@ autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
       \ set colorcolumn=71,72 |
       \ call matchaddpos('ColorColumn', [[1, 49, 2]])
 
+" auto-indending sucks for some files, but it's nice to choose the wrap width
+function! ManualFormat(type, ...)
+  let og_width = &textwidth
+  exec 'set textwidth='.get(b:, 'textwidth_manual', 79)
+
+  if a:0  " Invoked from Visual mode
+    silent exe "normal! '<v'>gq"
+  elseif a:type == 'line'
+    silent exe "normal! '[V']gq"
+  elseif a:type == 'block'
+    silent exe "normal! '[\<C-V>']gq"
+  else
+    silent exe "normal! '[v']gq"
+  endif
+
+  exec 'set textwidth='.og_width
+endfunction!
+
 autocmd Filetype markdown,tex,noft,text
       \ set wrap |
       \ set breakindent |
       \ exec 'nnoremap <silent> $ g$' |
-      \ exec 'nnoremap <silent> ^ g^'
+      \ exec 'nnoremap <silent> ^ g^' |
+      \ let b:textwidth_manual = 119 |
+      \ exec 'nnoremap <silent> gq :set opfunc=ManualFormat<CR>g@' |
+      \ exec 'vnoremap <silent> gq :<C-U>call ManualFormat(visualmode(), 1)<CR>'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
