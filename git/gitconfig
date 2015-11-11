@@ -77,6 +77,7 @@
     # push
     ps = push                         # push
     sync = "!git push -u ${1-origin} `git rev-parse --abbrev-ref HEAD`"
+    track = branch -u
     upstream = branch -u
     shove = push -f # use with caution
 

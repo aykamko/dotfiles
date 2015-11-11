@@ -115,7 +115,7 @@ function prompt_ayk_setup {
     # Set editor-info parameters.
     zstyle ':prezto:module:editor:info:completing' format "%B%F{red}...%f%b"
     zstyle ':prezto:module:editor:info:keymap:primary' format "🐼 "
-    zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 "
+    zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{14}"
     zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{red}!%f%b"
 
     # Set vcs_info parameters.

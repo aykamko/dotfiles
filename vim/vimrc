@@ -22,7 +22,9 @@ call plug#begin(g:plug_dir)
 Plug 'takac/vim-hardtime'
 
 Plug 'ConradIrwin/vim-bracketed-paste'
-Plug 'easymotion/vim-easymotion' | Plug 'aykamko/vim-easyoperator-line'
+Plug 'easymotion/vim-easymotion'
+      \ | Plug 'aykamko/vim-easyoperator-line'
+      \ | Plug 'aykamko/vim-easymotion-segments'
 Plug 'airblade/vim-gitgutter'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'itchyny/lightline.vim'
@@ -39,11 +41,13 @@ Plug 'wellle/targets.vim'
 Plug 'haya14busa/incsearch.vim'
 Plug 'SirVer/ultisnips'
 
+
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 
 Plug 'mattn/webapi-vim' | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 
-Plug 'junegunn/vim-easy-align',    { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
+Plug 'junegunn/vim-easy-align', { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
+Plug 'junegunn/goyo.vim',       { 'on': 'Goyo' }
 Plug 'rking/ag.vim'
 
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
@@ -161,7 +165,6 @@ set tags=tags;/       " search up the directory tree for tags
 
 set undolevels=1000   " number of undos stored
 set viminfo='50,"50   " '=marks for x files, "=registers for x files
-set foldlevelstart=99
 
 " hack to always display sign column
 augroup DisplaySignCol
@@ -181,7 +184,7 @@ set t_Co=256            " tell vim that terminal supports 256 colors
 
 " highlight columns 79, 80, 119, 120
 highlight ColorColumn ctermbg=234
-set colorcolumn=79,80,119,120
+set colorcolumn=79,80,99,100,119,120
 
 " unhighlight search terms
 highlight Search ctermbg=236
@@ -205,8 +208,8 @@ augroup END
 " toggle number/relativenumber on insert/normal mode
 set number
 set relativenumber
-autocmd InsertEnter * :set invrelativenumber
-autocmd InsertLeave * :set invrelativenumber
+autocmd InsertEnter * :if !b:goyo_enabled | set invrelativenumber | endif
+autocmd InsertLeave * :if !b:goyo_enabled | set invrelativenumber | endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Indentation {{{
@@ -258,9 +261,8 @@ noremap <silent> <leader>; :up<CR>
 vnoremap <silent> <leader>; <Esc>:up<CR>gv
 
 " save+quit to <leader>
-command! Upq update | q
-noremap <silent> <leader>x :Upq<CR>
-vnoremap <silent> <leader>x <Esc>:Upq<CR>
+noremap <silent> <leader>x :update \| q<CR>
+vnoremap <silent> <leader>x <Esc>:update \| q<CR>
 
 " quit/force-quit to <leader>q/Q
 noremap <silent> <leader>q :q<CR>
@@ -269,12 +271,34 @@ noremap <silent> <leader>Q :q!<CR>
 vnoremap <silent> <leader>Q <Esc>:q!<CR>
 
 " TODO: remove these abbrevs (temporary to force using above macros)
-command! DontDoThat echohl WarningMsg | echo 'Use your custom mapping instead!' | echohl None
-cabbrev w DontDoThat
-cabbrev wq DontDoThat
-cabbrev x DontDoThat
-cabbrev q DontDoThat
-cabbrev q! DontDoThat
+" command! DontDoThat echohl WarningMsg | echo 'Use your custom mapping instead!' | echohl None
+" cabbrev w DontDoThat
+" cabbrev wq DontDoThat
+" cabbrev x DontDoThat
+" cabbrev q DontDoThat
+" cabbrev q! DontDoThat
+
+" bind arrows to pageup/pagedown, since I don't use them otherwise
+function! ScrollHalfScreen(down, visualmode)
+  if !empty(a:visualmode) | exec "normal! gv" | endif
+  let motion = a:down ? 'j' : 'k'
+  exec 'normal '.winheight('$')/2.motion
+endfunction
+nnoremap <silent> <Down> :<C-U>call ScrollHalfScreen(1, 0)<CR>
+nnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 0)<CR>
+vnoremap <silent> <Down> :<C-U>call ScrollHalfScreen(1, 1)<CR>
+vnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 1)<CR>
+
+" blackhole paste
+function! BlackHolePaste(type)
+  if a:type ==# 'char'
+    silent exec 'normal! `[v`]"bdp'
+  elseif a:type == 'v'
+    silent exec 'normal! `<v`>"bdP'
+  endif
+endfunction
+nnoremap <silent> <leader>p :set operatorfunc=BlackHolePaste<CR>g@
+vnoremap <silent> <leader>p :<c-u>call BlackHolePaste(visualmode())<CR>
 
 " vimrc
 command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
@@ -319,7 +343,7 @@ fu! ReplaceSelection(hasrange)
   endif
 endfu
 command! -range=0 ReplaceSelection call ReplaceSelection(<count>)
-vnoremap <leader>s :ReplaceSelection<CR>
+vnoremap <leader>r :ReplaceSelection<CR>
 
 " remove small delay when leaving insert mode
 if !has('gui_running')
@@ -489,7 +513,7 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" vim-easyalign {{{L:
+" vim-easyalign {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Start interactive EasyAlign in visual mode (e.g. vip<Enter>)
 vmap <Enter> <Plug>(EasyAlign)
@@ -552,7 +576,7 @@ let g:syntastic_python_checkers=[]
 let g:syntastic_mode_map = { "mode": "passive" }
 augroup SyntaxLightline
   autocmd!
-  autocmd BufWritePost * call s:syntax_lightline()
+  autocmd BufWritePost * if !b:goyo_enabled | call s:syntax_lightline() | endif
 augroup END
 function! s:syntax_lightline()
   exe g:syncheck_cmd
@@ -578,6 +602,14 @@ let g:neomake_warning_sign = {
       \ 'text': '⚠',
       \ 'texthl': 'NeomakeWarning',
       \ }
+
+" pylama from root of git dir
+let g:neomake_python_pylama_maker = {
+      \ 'args': ['--format', 'pep8', '-o',
+        \ '"$(builtin cd '.expand('%:p:h').' && git rev-parse --show-toplevel 2>/dev/null || echo .)/pylama.ini"'],
+      \ 'errorformat': '%f:%l:%c: %m',
+      \ }
+let g:neomake_python_enabled_makers = ['pylama']
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
@@ -636,17 +668,6 @@ augroup END
 " enable easymotion with one leaderkey press
 map <leader> <Plug>(easymotion-prefix)
 
-" vim-sneak
-fu! EasyMotion_S_Secondchar()
-  call EasyMotion#S(2,1,2)
-  normal l
-endfu
-
-nmap s <Plug>(easymotion-s2)
-" nmap <silent> S :call EasyMotion_S_Secondchar()<CR>
-
-nmap <leader>s <Plug>(easymotion-sn)
-
 " blue and green ayyy lmao
 hi EasyMotionTarget ctermfg=39
 hi EasyMotionTarget2First ctermfg=40
@@ -659,6 +680,9 @@ omap <silent>  <leader>l <Plug>(easyoperator-line-select)
 xmap <silent>  <leader>l <Plug>(easyoperator-line-select)
 nmap <silent> d<leader>l <Plug>(easyoperator-line-delete)
 nmap <silent> y<leader>l <Plug>(easyoperator-line-yank)
+
+" vim-easymotion-segments
+let g:EasyMotionSegments_key = 's'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Text Objects {{{
@@ -833,6 +857,38 @@ let g:UltiSnipsEditSplit="horizontal"
 let g:UltiSnipsExpandTrigger="<C-E>"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Goyo {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+autocmd BufRead * let b:goyo_enabled = 0
+
+function! s:goyo_enter()
+  set noshowmode
+  set noshowcmd
+  let b:goyo_enabled = 1
+  let b:quitting = 0
+  let b:quitting_bang = 0
+  autocmd QuitPre <buffer> let b:quitting = 1
+  cabbrev <buffer> q! let b:quitting_bang = 1 <bar> q!
+endfunction
+
+function! s:goyo_leave()
+  set showmode
+  set showcmd
+  let b:goyo_enabled = 0
+  " Quit Vim if this is the only remaining buffer
+  if b:quitting && len(filter(range(1, bufnr('$')), 'buflisted(v:val)')) == 1
+    if b:quitting_bang
+      qa!
+    else
+      qa
+    endif
+  endif
+endfunction
+
+autocmd! User GoyoEnter nested call <SID>goyo_enter()
+autocmd! User GoyoLeave nested call <SID>goyo_leave()
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
@@ -867,6 +923,7 @@ endfunction!
 autocmd Filetype markdown,tex,noft,text
       \ set wrap |
       \ set breakindent |
+      \ set linebreak |
       \ exec 'nnoremap <silent> $ g$' |
       \ exec 'nnoremap <silent> ^ g^' |
       \ let b:textwidth_manual = 119 |

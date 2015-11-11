@@ -38,6 +38,7 @@ path=(
   /usr/local/git/bin
   /usr/texbin
   $POSTGRES_CLTOOLS
+  /usr/local/opt/go/libexec/bin
   $path
 )
 

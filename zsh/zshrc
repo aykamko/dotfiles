@@ -208,17 +208,24 @@ alias texclean="rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null"
 # Better CD
 ###############################################################################
 # override cd to do ls and vi when necessary
+if [ $(uname) = "Darwin" ]; then
+  alias fancyls="ls -G"
+else
+  alias fancyls="ls --group-directories-first --color=auto"
+fi
 function _better_cd() {
   set -- ${1//,/.} # replace commas (,) with periods (.)
   if [[ -f $1 ]]; then
     local fdir
     fdir=`dirname $1`
     if [[ -d $fdir ]]; then
-      builtin cd "$fdir" && ls
+      builtin cd "$fdir"
+      fancyls
     fi
     vim `basename $1` ${*:2}
   else
-    builtin cd $* && ls
+    builtin cd $*
+    fancyls
   fi
 }
 alias cd=_better_cd
@@ -269,11 +276,8 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
-# disable autocorrect suggestions for commands
-unsetopt CORRECT
-
-# pass bad match to command
-setopt NO_NOMATCH
+# realias cd
+alias cd=_better_cd
 
 ###############################################################################
 # z
