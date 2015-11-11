@@ -4,7 +4,6 @@
 set nocompatible   " be iMproved
 set encoding=utf-8 " necessary to show Unicode glyphs
 
-
 " vimrc folding
 autocmd VimEnter .vimrc
       \  set foldmethod=marker
@@ -62,7 +61,7 @@ Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 Plug 'JuliaLang/julia-vim'
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 
-" YouCompleteMe should be cloned manually
+" YouCompleteMe should be cloned manually because it's huge
 if !empty(glob(g:plug_dir.'YouCompleteMe'))
   Plug 'rdnetto/YCM-Generator',  { 'branch': 'stable', 'for': ['c', 'cpp', 'make'] }
   " load on InsertEnter
@@ -114,7 +113,13 @@ let mapleader = ' '
 let maplocalleader = ' '
 
 " Don't use virtualenv python
-let g:python_host_prog='/usr/local/bin/python'
+if empty(glob('/usr/local/bin/python'))
+  let g:python_host_prog='/usr/bin/python'
+  let g:python3_host_prog='/usr/bin/python3'
+else
+  let g:python_host_prog='/usr/local/bin/python'
+  let g:python3_host_prog='/usr/local/bin/python3'
+end
 
 " Display
 set ruler           " show cursor position

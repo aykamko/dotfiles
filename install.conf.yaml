@@ -34,7 +34,7 @@
       command: |
 
         for f in $(find "$HOME/dotfiles/zsh" -maxdepth 1 -type f | grep "zshrc.os"); do
-            if [[ "$OSTYPE" =~ "${f##*/zshrc.os.}" ]]; then
+            if uname | grep -iq "${f##*/zshrc.os.}"; then
                 ln -sf "${f}" "$HOME/.zshrc.os";
                 break;
             fi
@@ -57,6 +57,66 @@
         create: true
 
 - shell:
+    - description: Clone YouCompleteMe
+      command: |
+
+        if [ -d ~/.vim/bundle/YouCompleteMe ]; then
+            exit 0
+        fi
+        echo -n "Clone YouCompleteMe? [y|N] " > /dev/tty
+        read choice < /dev/tty
+        case "$choice" in
+            y|Y )
+                if [ ! -d ~/.vim/bundle ]; then
+                    mkdir -p ~/.vim/bundle
+                fi
+                git clone --recursive \
+                    https://github.com/Valloric/YouCompleteMe.git \
+                    ~/.vim/bundle/YouCompleteMe \
+                    > /dev/tty 2>&1;;
+        esac
+
+- shell:
+    - description: Build YouCompleteMe
+      command: |
+
+        if [ ! -d ~/.vim/bundle/YouCompleteMe ] || \
+            [ -f ~/.vim/bundle/YouCompleteMe/third_party/ycmd/ycm_core.so ]; then
+            exit 0
+        fi
+
+        echo -n "Build YouCompleteMe? (May require additional packages) [y|N] " > /dev/tty
+        read choice < /dev/tty
+        case "$choice" in
+            y|Y )
+                break;;
+            * )
+                exit 0;;
+        esac
+
+        os=$(uname)
+        if echo "${os}" | grep -iq "darwin"; then
+            echo "Installing cmake with brew." > /dev/tty
+            brew install cmake > /dev/tty 2>&1
+        elif echo "${os}" | grep -iq "linux"; then
+            echo "Installing required packages: build-essential cmake python-dev" > /dev/tty
+                sudo apt-get install build-essential cmake python-dev < /dev/tty > /dev/tty 2>&1
+        else
+            echo "Unknown OS: ${os}. Attempting to build anyway." > /dev/tty
+        fi
+        if [ $? -ne 0 ]; then
+            exit 1
+        fi
+
+        echo -n "Enter build options (default: --clang-completer --gocode-completer). Give a space for no args.\n> " > /dev/tty
+        read options < /dev/tty
+        if [ -n "${options}" ]; then
+            options="--clang-completer --gocode-completer"
+        fi
+        cd ~/.vim/bundle/YouCompleteMe
+        eval "./install.py ${options} > /dev/tty 2>&1"
+
+- shell:
     - description: Link neovim to vim
       command: |
 
@@ -75,7 +135,7 @@
       command: |
 
         for f in $(find "$HOME/dotfiles/git" -maxdepth 1 -type f | grep "gitconfig.os"); do
-            if [[ "$OSTYPE" =~ "${f##*/gitconfig.os.}" ]]; then
+            if uname | grep -iq "${f##*/gitconfig.os.}"; then
                 ln -sf "${f}" "$HOME/.gitconfig.os";
                 break;
             fi
