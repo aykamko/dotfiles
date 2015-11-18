@@ -10,6 +10,26 @@ alias vimrc="vi ~/.vimrc"
 function swpclean() {
   find . -name "*.sw*" -exec /bin/rm -rf {} \;
 }
+function vimreplace() {
+  if [[ $# < 2 ]]; then
+    echo 'Not enough arguments'
+    return
+  fi
+
+  local search
+  if test ag &> /dev/null; then
+    search="ag -l --nocolor $1"
+  else
+    search="grep -rl $1 *"
+  fi
+
+  local -a matches
+  while read line; do
+    matches+=$line
+  done < <(eval $search)
+  echo $matches
+  vim -c "bufdo %s/$1/$2/gec | update" ${matches}
+}
 
 ###############################################################################
 # Aliases & Functions
@@ -185,21 +205,10 @@ function groot() {
 }
 alias gr=groot
 
-# thefuck
-#------------------------------------------------------------------------------
-if ! test thefuck > /dev/null; then
-  eval "$(thefuck --alias)"
-fi
-
 # other
 #------------------------------------------------------------------------------
-# fall back to use built in cd
-function cs() {
-  builtin cd $*
-}
-
 # go to temp dir
-alias temp="cs $HOME/temp"
+alias temp="cd $HOME/temp"
 
 # clean latexmk aux files
 alias texclean="rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null"

@@ -1,5 +1,5 @@
 # vim: set sw=4:sts=4:et:
-- clean: ['~']
+- clean: ['~', '~/.*']
 
 # ----- zsh -----
 - clean: ['~/.zprezto/modules/prompt/functions']
@@ -151,8 +151,10 @@
 - clean: ['~/.pyvirtualenvs']
 - link:
     ~/.pyvirtualenvs/postactivate:
+        force: true
         path: virtualenv/postactivate
         create: true
     ~/.pyvirtualenvs/postdeactivate:
+        force: true
         path: virtualenv/postdeactivate
         create: true
