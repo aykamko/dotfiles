@@ -337,3 +337,6 @@ if [ -d ~/dotfiles/zsh/scripts ]; then
     source $f
   done
 fi
+
+unsetopt CORRECT # disable autocorrect suggestions for commands
+setopt NO_NOMATCH # pass bad match to command

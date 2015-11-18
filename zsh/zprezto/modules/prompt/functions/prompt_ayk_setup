@@ -101,8 +101,6 @@ function prompt_ayk_precmd {
 function prompt_ayk_setup {
     setopt LOCAL_OPTIONS
     unsetopt XTRACE KSH_ARRAYS
-    unsetopt CORRECT # disable autocorrect suggestions for commands
-    setopt NO_NOMATCH # pass bad match to command
     prompt_opts=(cr percent subst)
 
     # Load required functions.
