@@ -1,5 +1,11 @@
 # vim: set sw=4:sts=4:et:
 - clean: ['~', '~/.*']
+- shell:
+    - description: Update submodules in dotfiles repo.
+      command: |
+
+        cd $HOME/dotfiles
+        git submodule update --init --recursive
 
 # ----- zsh -----
 - clean: ['~/.zprezto/modules/prompt/functions']
@@ -39,7 +45,6 @@
                 break;
             fi
         done
-
 
 # ----- vim -----
 - clean:
