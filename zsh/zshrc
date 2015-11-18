@@ -145,6 +145,19 @@ type mkvirtualenv > /dev/null; if [[ -n $VIRTUAL_ENV && $? -ne 0 ]]; then
   venvwrapper
   workon ${VIRTUAL_ENV:t}
 fi
+# alias pylama to use pylama.ini at root of repo
+if test pylama >/dev/null; then
+  function _pylama() {
+    local gr
+    gr=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ $? -ne 0 || $* == *"-o"* || $* == *"--options"* ]]; then
+      pylama $*
+    else
+      pylama --options "${gr}/pylama.ini" $*
+    fi
+  }
+  alias pylama=_pylama
+fi
 
 # modified from http://unix.stackexchange.com/questions/13464
 function _upsearch() {
@@ -214,7 +227,7 @@ alias temp="cd $HOME/temp"
 alias texclean="rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null"
 
 ###############################################################################
-# Better CD
+# Builtin overrides
 ###############################################################################
 # override cd to do ls and vi when necessary
 if [ $(uname) = "Darwin" ]; then
@@ -243,6 +256,16 @@ alias cd=_better_cd
 dotfiles() { cd $HOME/dotfiles/$1; }
 compctl -f -W $HOME/dotfiles/ dotfiles
 
+# override cat
+function _cat_ls() {
+  if [ -d $1 ]; then
+    fancyls $1
+  else
+    command cat $*
+  fi
+}
+alias cat=_cat_ls
+
 ###############################################################################
 # Special Settings
 ###############################################################################
@@ -265,7 +288,7 @@ fi
 # Autostart TMUX
 ###############################################################################
 if [[ -f "$HOME/.no_tmux" ]]; then
-  builtin cd $(cat .no_tmux)
+  builtin cd $(cat $HOME/.no_tmux)
   command rm -f $HOME/.no_tmux
 elif [[ -z "$TMUX" ]]; then
   echo "Refusing to load Prezto. Opening tmux..."

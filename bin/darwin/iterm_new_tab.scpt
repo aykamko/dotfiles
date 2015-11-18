@@ -1,5 +1,5 @@
 tell application "iTerm"
-    tell the current terminal
-        launch session "Default Session"
+    tell current window
+        create tab with default profile
     end tell
 end tell

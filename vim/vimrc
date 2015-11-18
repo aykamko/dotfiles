@@ -603,14 +603,6 @@ let g:neomake_warning_sign = {
       \ 'texthl': 'NeomakeWarning',
       \ }
 
-" pylama from root of git dir
-let g:neomake_python_pylama_maker = {
-      \ 'args': ['--format', 'pep8', '-o',
-        \ '"$(builtin cd '.expand('%:p:h').' && git rev-parse --show-toplevel 2>/dev/null || echo .)/pylama.ini"'],
-      \ 'errorformat': '%f:%l:%c: %m',
-      \ }
-let g:neomake_python_enabled_makers = ['pylama']
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
