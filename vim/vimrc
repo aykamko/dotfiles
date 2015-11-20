@@ -64,6 +64,7 @@ Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 Plug 'JuliaLang/julia-vim'
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
+Plug 'fsharp/vim-fsharp',            { 'for': 'fsharp', 'do': 'make fsautocomplete' }
 
 " YouCompleteMe should be cloned manually because it's huge
 if !empty(glob(g:plug_dir.'YouCompleteMe'))
@@ -117,12 +118,12 @@ let mapleader = ' '
 let maplocalleader = ' '
 
 " Don't use virtualenv python
-if empty(glob('/usr/local/bin/python'))
-  let g:python_host_prog='/usr/bin/python'
-  let g:python3_host_prog='/usr/bin/python3'
-else
+if !empty(glob('/usr/local/bin/python'))
   let g:python_host_prog='/usr/local/bin/python'
   let g:python3_host_prog='/usr/local/bin/python3'
+else
+  let g:python_host_prog='/usr/bin/python'
+  let g:python3_host_prog='/usr/bin/python3'
 end
 
 " Display
