@@ -1,21 +1,32 @@
 PROFILE_STARTUP=false
 if [[ "$PROFILE_STARTUP" == true ]]; then
-  # http://zsh.sourceforge.net/Doc/Release/Prompt-Expansion.html
-  PS4=$'%D{%M%S%.} %N:%i> '
+  zmodload zsh/datetime
+  setopt promptsubst
+  PS4=$'+$EPOCHREALTIME %N:%i> '
   mkdir -p $HOME/temp/zsh_startlog
   exec 3>&2 2>$HOME/temp/zsh_startlog/$$
   setopt xtrace prompt_subst
 fi
 
 # vim
-hash nvim 2>/dev/null && alias vi=nvim && alias vim=nvim || alias vi=vim
+if hash nvim 2>/dev/null; then
+  alias vi=nvim
+  alias vim=nvim
+else
+  alias vi=vim
+fi
+
 alias vimrc='vi ~/.vimrc'
+
 swpclean() { find . -name '*.sw*' -exec /bin/rm -rf {} \; ; }
+
 vimreplace() {
   [[ $# < 2 ]] && echo 'Not enough arguments' && return
 
   local search
-  hash ag 2>/dev/null && search="ag -l --nocolor $1" || search="grep -rl $1 *"
+  hash ag 2>/dev/null && \
+    search="ag -l --nocolor $1" || \
+    search="grep -rl $1 *"
 
   local -a matches
   while read line; do
@@ -34,13 +45,14 @@ alias c=clear
 alias pp=fpp
 
 # zsh
-alias zshso="source ~/.zshrc"
-alias zshrc="vi ~/.zshrc"
-alias zprofile="vi ~/.zprofile"
-alias zpreztorc="vi ~/.zpreztorc"
+alias zshso='source ~/.zshrc'
+alias zshrc='vi ~/.zshrc'
+alias zprofile='vi ~/.zprofile'
+alias zpreztorc='vi ~/.zpreztorc'
 
 # tmux
 ta() { [[ -z $TMUX ]] && tmux attach -t "$@" || tmux switch -t "$@" }
+
 tkill() {
   case $1 in
     (-1)
@@ -77,8 +89,9 @@ fi
 if hash pylama 2>/dev/null; then
   pylama() { # pylama should use pylama.ini at root of git repo
     local gitroot=$(git rev-parse --show-toplevel 2>/dev/null)
-    [[ $? -ne 0 || $* == *"-o"* || $* == *"--options"* ]] && echo pylama $* || \
-      echo pylama --options "${gitroot}/pylama.ini" $*
+    [[ $? -ne 0 || $* == *"-o"* || $* == *"--options"* ]] && \
+      echo pylama $* || \
+      echo pylama --options "${gitroot}/pylama.ini" "$@"
   }
 fi
 
@@ -92,7 +105,9 @@ upsearch() { # modified from http://unix.stackexchange.com/questions/13464
 }
 dmake() { # django
   local django=$(upsearch manage.py)
-  [[ -n "$django" ]] && python "$django" "$@" || echo "Couldn't find manage.py"
+  [[ -n "$django" ]] && \
+    python "$django" "$@" || \
+    echo "Couldn't find manage.py"
 }
 
 # ruby
@@ -113,7 +128,10 @@ alias g=git
 # context from root of git directory
 gr() {
   local root=$(command git rev-parse --show-toplevel 2> /dev/null)
-  [[ $? != 0 ]] && cd "$@" || [[ $# == 0 ]] && cd $root || (builtin cd $root && "$@")
+  [[ $? != 0 ]] && \
+    cd "$@" || \
+    [[ $# == 0 ]] && cd $root || \
+    (builtin cd $root && "$@")
 }
 
 # other
@@ -123,9 +141,11 @@ alias texclean='rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null'
 ###############################################################################
 # Builtin overrides
 ###############################################################################
-# override cd to do ls and vi when necessary
-[ $(uname) = "Darwin" ] && alias fancyls="ls -G" || \
+[[ "$OSTYPE" == *"darwin"* ]] && \
+  alias fancyls="ls -G" || \
   alias fancyls="ls --group-directories-first --color=auto"
+
+# override cd to do ls and vi when necessary
 _better_cd() {
   set -- ${1//,/.} # replace commas (,) with periods (.)
   if [[ -f $1 ]]; then
@@ -148,18 +168,20 @@ alias cat=_cat_ls
 ###############################################################################
 # Special Settings
 ###############################################################################
-[[ -f "$HOME/.zshrc.os" ]] && source "$HOME/.zshrc.os" # OS Specific
-[[ -f "$HOME/.local_zshrc" ]] && source "$HOME/.local_zshrc" # Local
+[[ -f "$HOME/.zshrc.os" ]] && source "$HOME/.zshrc.os"         # OS Specific
+[[ -f "$HOME/.local_zshrc" ]] && source "$HOME/.local_zshrc"   # Local
 [[ -f "$HOME/.secret_zshrc" ]] && source "$HOME/.secret_zshrc" # Secret!
 
 ###############################################################################
 # Autostart TMUX
 ###############################################################################
 if [[ -f "$HOME/.no_tmux" ]]; then
-  builtin cd $(cat $HOME/.no_tmux) && command rm -f $HOME/.no_tmux
+  builtin cd $(cat $HOME/.no_tmux)
+  command rm -f $HOME/.no_tmux
 elif [[ -z "$TMUX" ]]; then
   echo "Refusing to load Prezto. Opening tmux..."
-  [[ -f "$HOME/.tmux_new" ]] && command rm -f $HOME/.tmux_new && tmux new ||
+  [[ -f "$HOME/.tmux_new" ]] && \
+    command rm -f $HOME/.tmux_new && tmux new || \
     tmux attach || tmux
   return
 fi
@@ -168,6 +190,9 @@ fi
 # Prezto
 ###############################################################################
 [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+
+# realias cd
+alias cd=_better_cd
 
 ###############################################################################
 # z
@@ -188,7 +213,11 @@ fi
 ###############################################################################
 # zsh scripts
 ###############################################################################
-if [ -d ~/dotfiles/zsh/scripts ]; then for f in $(ls ~/dotfiles/zsh/scripts/*); do source $f; done; fi
+if [ -d ~/dotfiles/zsh/scripts ]; then
+  for f in $(ls ~/dotfiles/zsh/scripts/*); do
+    source $f
+  done
+fi
 
 unsetopt CORRECT # disable autocorrect suggestions for commands
 setopt NO_NOMATCH # pass bad match to command
