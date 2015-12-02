@@ -1,0 +1,225 @@
+set nocompatible
+set encoding=utf-8
+let s:darwin = has('mac')
+
+let g:plug_dir = '~/.vim/bundle/'
+call plug#begin(g:plug_dir)
+
+Plug 'christoomey/vim-tmux-navigator'
+
+Plug 'aykamko/gitsync.nvim'
+Plug 'bling/vim-airline'
+
+call plug#end()
+filetype plugin indent on
+
+let g:gitsync_airline = 0
+
+let mapleader = ' '
+let maplocalleader = ' '
+
+" Don't use virtualenv python
+if executable('/usr/local/bin/python')
+  let g:python_host_prog='/usr/local/bin/python'
+  let g:python3_host_prog='/usr/local/bin/python3'
+elseif executable('/usr/bin/python')
+  let g:python_host_prog='/usr/bin/python'
+  let g:python3_host_prog='/usr/bin/python3'
+end
+
+" Display
+set ruler           " show cursor position
+set nolist          " hide tabs and EOL chars
+set showcmd         " show normal mode commands as they are entered
+set showmode
+set nowrap          " don't wrap long lines
+
+" Scrolling
+set scrolloff=5     " minimum of three lines above and below cursor
+set scrolljump=5    " scroll five lines at a time vertically
+set sidescroll=10   " minumum columns to scroll horizontally
+
+" Search
+set nohlsearch      " persist search highlighting, initially
+set incsearch       " search with typeahead
+
+" Indent
+set autoindent      " carry indent over to new lines
+
+" Clipboard
+set clipboard=unnamed " set unnamed to copy to system clipboard
+
+" Mouse
+set mouse=a           " enable mouse movement
+
+" Backups
+set backupdir=/tmp//,.
+set directory=/tmp//,.
+if v:version >= 703
+  set undodir=/tmp//,.
+endif
+
+" Other
+set noerrorbells      " no bells in terminal
+
+set tags=tags;/       " search up the directory tree for tags
+
+set undolevels=1000   " number of undos stored
+set viminfo='50,"50   " '=marks for x files, "=registers for x files
+
+" Colorscheme
+syntax enable
+
+let g:hybrid_use_iTerm_colors = 1
+colorscheme hybrid-ayk
+
+" highlight columns 79, 80, 119, 120
+highlight ColorColumn ctermbg=234
+set colorcolumn=79,80,99,100,119,120
+
+" change vim split line color to differentiate from tmux
+highlight StatusLineNC ctermfg=5
+highlight VertSplit ctermfg=5
+
+" unhighlight search terms
+highlight Search ctermbg=236
+
+" unhighlight sign column
+highlight SignColumn cterm=NONE ctermbg=NONE
+
+" add some extra keywords to Todo highlight group
+fu! ExtraTodoHi()
+  syn keyword extraTodo HACK INFO BUG NOTE containedin=.*Comment.*
+  hi def link extraTodo Todo
+endfu
+augroup extraTodoHi
+  autocmd!
+  autocmd VimEnter * call ExtraTodoHi() | autocmd! extraTodoHi
+augroup END
+
+" toggle number/relativenumber on insert/normal mode
+set number
+set relativenumber
+autocmd InsertEnter * set invrelativenumber
+autocmd InsertLeave * set invrelativenumber
+
+set shiftwidth=4
+set tabstop=4
+set softtabstop=4
+set expandtab
+set backspace=indent,eol,start
+set textwidth=99
+
+" remap j/k for wrapped lines; add relative jumps to jumplist
+" Source: reddit.com/r/vim/comments/3npf1z/using_jk_for_wrapped_lines_and_adding_jk_with_a/cvq2k3x
+function! LineMotion(dir)
+    execute "normal! " . (v:count1 > 1 ? "m'" . v:count1 : "g") . a:dir
+endfunction
+nnoremap <silent> j :<c-u>call LineMotion("j")<cr>
+nnoremap <silent> k :<c-u>call LineMotion("k")<cr>
+
+" because I suck
+cnoreabbrev W w
+cnoreabbrev Q q
+cnoreabbrev X x
+cnoreabbrev WQ wq
+cnoreabbrev Wq wq
+cnoreabbrev wQ wq
+
+" save to <leader>;
+noremap <silent> <leader><leader> :up<CR>
+vnoremap <silent> <leader><leader> :<C-U>p<CR>gv
+
+" save+quit to <leader>x
+noremap <silent> <leader>x :update \| q<CR>
+vnoremap <silent> <leader>x :<C-U>update \| q<CR>
+
+" quit/force-quit to <leader>q/Q
+noremap <silent> <leader>q :q<CR>
+vnoremap <silent> <leader>q :<C-U>q<CR>
+noremap <silent> <leader>Q :q!<CR>
+vnoremap <silent> <leader>Q :<C-U>q!<CR>
+
+" bind arrows to pageup/pagedown, since I don't use them otherwise
+function! ScrollHalfScreen(down, visualmode)
+  if !empty(a:visualmode) | exec "normal! gv" | endif
+  let motion = a:down ? 'j' : 'k'
+  exec 'normal! '.winheight('$')/2.motion
+endfunction
+nnoremap <silent> <Down> :<C-U>call ScrollHalfScreen(1, 0)<CR>
+nnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 0)<CR>
+vnoremap <silent> <Down> :<C-U>call ScrollHalfScreen(1, 1)<CR>
+vnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 1)<CR>
+
+" blackhole paste
+function! BlackHolePaste(type)
+  if a:type ==# 'char'
+    silent exec 'normal! `[v`]"bdp'
+  elseif a:type == 'v'
+    silent exec 'normal! `<v`>"bdp'
+  endif
+endfunction
+nnoremap <silent> <leader>p :set operatorfunc=BlackHolePaste<CR>g@
+vnoremap <silent> <leader>p :<c-u>call BlackHolePaste(visualmode())<CR>
+nnoremap <silent> dp "bddP
+
+" remap indent to use single >/<
+noremap > >>
+noremap < <<
+
+" reselects visual box after shift
+vnoremap < <gv
+vnoremap > >gv
+
+" repeat macro in register q
+nnoremap Q @q
+
+" toggle fold more easily
+nnoremap z<Space> za
+
+" paste in insert mode
+" (depends on clipboard setting)
+set pastetoggle=<F2>
+inoremap <silent> <C-P> <F2><C-R>+<F2>
+
+" get highlight group under cursor
+" http://vim.wikia.com/wiki/Identify_the_syntax_highlighting_group_used_at_the_cursor
+nnoremap <silent> <C-s> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
+      \ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+      \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
+
+" prettify JSON
+command! Prettify %!python -m json.tool
+
+" search/replace visual selection
+fu! ReplaceSelection(hasrange)
+  if a:hasrange > 0
+    call feedkeys(':%s/'.GetVisualSelection().'/', 'm')
+  endif
+endfu
+command! -range=0 ReplaceSelection call ReplaceSelection(<count>)
+vnoremap <leader>r :ReplaceSelection<CR>
+
+" remove small delay when leaving insert mode
+if !has('gui_running')
+  set ttimeoutlen=10
+  augroup FastEscape
+    autocmd!
+    au InsertEnter * set timeoutlen=0
+    au InsertLeave * set timeoutlen=1000
+  augroup END
+endif
+
+" vim-tmux aware killpane
+fu! TmuxAwareKillpane()
+  if $TMUX == '' || winnr('$') > 1
+    silent :q
+  else
+    call system('tmux kill-pane')
+  endif
+endfu
+nmap <silent> <C-x> :call TmuxAwareKillpane()<CR>
+
+" tmux pane title
+autocmd BufReadPost,FileReadPost,BufNewFile * let &titlestring=expand("%:t")
+set title

@@ -1,8 +1,11 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " {{{ vim-plug
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has('vim_starting')
+  set encoding=utf-8 " necessary to show Unicode glyphs
+endif
 set nocompatible   " be iMproved
-set encoding=utf-8 " necessary to show Unicode glyphs
+let s:darwin = has('mac')
 
 " vimrc folding
 autocmd VimEnter .vimrc
@@ -19,36 +22,34 @@ endif
 let g:plug_dir = '~/.vim/bundle/'
 call plug#begin(g:plug_dir)
 
-Plug 'takac/vim-hardtime'
-
-Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
       \ | Plug 'aykamko/vim-easymotion-segments'
+Plug 'SirVer/ultisnips' | Plug 'honza/vim-snippets'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
+Plug 'mattn/webapi-vim' | Plug 'mattn/gist-vim', { 'on': 'Gist' }
+
+Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'airblade/vim-gitgutter'
-Plug 'christoomey/vim-tmux-navigator'
-Plug 'itchyny/lightline.vim'
 Plug 'aykamko/vim-textobj-user'
+Plug 'benekastah/neomake'
+Plug 'christoomey/vim-tmux-navigator'
+Plug 'haya14busa/incsearch.vim'
+Plug 'itchyny/lightline.vim'
 Plug 'nathanaelkane/vim-indent-guides'
+Plug 'rking/ag.vim'
+Plug 'takac/vim-hardtime'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
-Plug 'tpope/vim-surround'
 Plug 'unblevable/quick-scope'
 Plug 'wellle/targets.vim'
-Plug 'haya14busa/incsearch.vim'
-Plug 'SirVer/ultisnips'
-
-
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
-
-Plug 'mattn/webapi-vim' | Plug 'mattn/gist-vim', { 'on': 'Gist' }
+" Plug 'aykamko/gitsync.nvim'
 
 Plug 'junegunn/vim-easy-align', { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
 Plug 'junegunn/goyo.vim',       { 'on': 'Goyo' }
-Plug 'rking/ag.vim'
 
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
@@ -89,25 +90,6 @@ if !empty(glob(g:plug_dir.'YouCompleteMe'))
   augroup END
 endif
 
-" load on BufWritePre
-if has('nvim')
-  let syntax_checker = 'neomake'
-  let g:syncheck_cmd = ':Neomake'
-  Plug 'benekastah/neomake', { 'on': [] }
-else
-  let syntax_checker = 'syntastic'
-  let g:syncheck_cmd = ':SyntasticCheck'
-  Plug 'scrooloose/syntastic', { 'on': [] }
-endif
-augroup plug_on_bufwritepre
-  autocmd!
-  " BUG: must load extraTodo syntax from here again, because loading Syntastic
-  " will clear the extraTodo syn group
-  autocmd BufWritePre *
-        \  call plug#load(syntax_checker) | call ExtraTodoHi()
-        \| autocmd! plug_on_bufwritepre
-augroup END
-
 call plug#end()
 filetype plugin indent on " required
 
@@ -116,6 +98,14 @@ filetype plugin indent on " required
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let mapleader = ' '
 let maplocalleader = ' '
+
+" if s:darwin
+"   let s:E = '❌'
+"   let s:W = '⚠️'
+" else
+  let s:E = '✖'
+  let s:W = '⚠'
+" endif
 
 " Don't use virtualenv python
 if !empty(glob('/usr/local/bin/python'))
@@ -187,6 +177,10 @@ set t_Co=256            " tell vim that terminal supports 256 colors
 highlight ColorColumn ctermbg=234
 set colorcolumn=79,80,99,100,119,120
 
+" change vim split line color to differentiate from tmux
+highlight StatusLineNC ctermfg=5
+highlight VertSplit ctermfg=5
+
 " unhighlight search terms
 highlight Search ctermbg=236
 
@@ -199,8 +193,8 @@ fu! ExtraTodoHi()
   hi def link extraTodo Todo
 endfu
 augroup extraTodoHi
-  au!
-  au BufEnter * call ExtraTodoHi() | autocmd! extraTodoHi
+  autocmd!
+  autocmd VimEnter * call ExtraTodoHi() | autocmd! extraTodoHi
 augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -209,8 +203,8 @@ augroup END
 " toggle number/relativenumber on insert/normal mode
 set number
 set relativenumber
-autocmd InsertEnter * :if !b:goyo_enabled | set invrelativenumber | endif
-autocmd InsertLeave * :if !b:goyo_enabled | set invrelativenumber | endif
+autocmd InsertEnter * :if !get(b:, 'goyo_enabled', 0) | set invrelativenumber | endif
+autocmd InsertLeave * :if !get(b:, 'goyo_enabled', 0) | set invrelativenumber | endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Indentation {{{
@@ -220,6 +214,7 @@ set tabstop=4
 set softtabstop=4
 set expandtab
 set backspace=indent,eol,start
+set textwidth=99
 
 " vim-indent-guides
 let g:indent_guides_enable_on_vim_startup = 1
@@ -231,14 +226,6 @@ hi IndentGuidesEven ctermbg=234
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Commands/Mappings {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" because I suck
-cnoreabbrev W w
-cnoreabbrev Q q
-cnoreabbrev X x
-cnoreabbrev WQ wq
-cnoreabbrev Wq wq
-cnoreabbrev wQ wq
-
 " remap j/k for wrapped lines; add relative jumps to jumplist
 " Source: reddit.com/r/vim/comments/3npf1z/using_jk_for_wrapped_lines_and_adding_jk_with_a/cvq2k3x
 function! LineMotion(dir)
@@ -246,6 +233,14 @@ function! LineMotion(dir)
 endfunction
 nnoremap <silent> j :<c-u>call LineMotion("j")<cr>
 nnoremap <silent> k :<c-u>call LineMotion("k")<cr>
+
+" because I suck
+cnoreabbrev W w
+cnoreabbrev Q q
+cnoreabbrev X x
+cnoreabbrev WQ wq
+cnoreabbrev Wq wq
+cnoreabbrev wQ wq
 
 " center screen horizontally
 fu! HorizontalScroll(cols)
@@ -258,18 +253,18 @@ endfu
 nnoremap <silent> z\| :call HorizontalScroll(wincol() - (winwidth(0)/2))<CR>
 
 " save to <leader>;
-noremap <silent> <leader>; :up<CR>
-vnoremap <silent> <leader>; <Esc>:up<CR>gv
+noremap <silent> <leader><leader> :up<CR>
+vnoremap <silent> <leader><leader> :<C-U>p<CR>gv
 
 " save+quit to <leader>
 noremap <silent> <leader>x :update \| q<CR>
-vnoremap <silent> <leader>x <Esc>:update \| q<CR>
+vnoremap <silent> <leader>x :<C-U>update \| q<CR>
 
 " quit/force-quit to <leader>q/Q
 noremap <silent> <leader>q :q<CR>
-vnoremap <silent> <leader>q <Esc>:q<CR>
+vnoremap <silent> <leader>q :<C-U>q<CR>
 noremap <silent> <leader>Q :q!<CR>
-vnoremap <silent> <leader>Q <Esc>:q!<CR>
+vnoremap <silent> <leader>Q :<C-U>q!<CR>
 
 " TODO: remove these abbrevs (temporary to force using above macros)
 " command! DontDoThat echohl WarningMsg | echo 'Use your custom mapping instead!' | echohl None
@@ -283,7 +278,7 @@ vnoremap <silent> <leader>Q <Esc>:q!<CR>
 function! ScrollHalfScreen(down, visualmode)
   if !empty(a:visualmode) | exec "normal! gv" | endif
   let motion = a:down ? 'j' : 'k'
-  exec 'normal '.winheight('$')/2.motion
+  exec 'normal! '.winheight('$')/2.motion
 endfunction
 nnoremap <silent> <Down> :<C-U>call ScrollHalfScreen(1, 0)<CR>
 nnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 0)<CR>
@@ -292,18 +287,26 @@ vnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 1)<CR>
 
 " blackhole paste
 function! BlackHolePaste(type)
+  echo "hello"
   if a:type ==# 'char'
     silent exec 'normal! `[v`]"bdp'
   elseif a:type == 'v'
-    silent exec 'normal! `<v`>"bdP'
+    silent exec 'normal! `<v`>"bdp'
   endif
 endfunction
 nnoremap <silent> <leader>p :set operatorfunc=BlackHolePaste<CR>g@
 vnoremap <silent> <leader>p :<c-u>call BlackHolePaste(visualmode())<CR>
+nnoremap <silent> dp "bddP
 
-" vimrc
-command! Vrc w | e $MYVIMRC  " open vimrc in a new buffer
-command! Vso so ~/.vimrc     " source vimrc
+" vimrc and help
+command! Vvimrc vsp $MYVIMRC
+cnoreabbrev vimrc Vvimrc
+command! Hvimrc sp $MYVIMRC
+cnoreabbrev hvimrc Hvimrc
+command! Vimso source $MYVIMRC
+cnoreabbrev vimso Vimso
+command! -nargs=* -complete=help Vhelp vertical help <args>
+cnoreabbrev vhelp Vhelp
 
 " copy to xclip with Control-C
 nnoremap <C-y> :w !xsel<CR><CR>
@@ -357,39 +360,30 @@ if !has('gui_running')
 endif
 
 " kill any trailing whitespace on save (Credit to Facebook)
-if !exists("g:fb_kill_whitespace") | let g:fb_kill_whitespace = 1 | endif
-if g:fb_kill_whitespace
-  fu! <SID>StripTrailingWhitespaces()
-    let l = line(".")
-    let c = col(".")
-    %s/\s\+$//e
-    call cursor(l, c)
-  endfu
-  let g:fb_kill_whitespace_blacklist = ["snippets"]
-  au BufWritePre <buffer> if index(g:fb_kill_whitespace_blacklist, &ft) < 0
-        \| :call <SID>StripTrailingWhitespaces()
-endif
+let g:strip_whitespace_blacklist = ["snippets"]
+function! s:strip_whitespace()
+  let l = line(".")
+  let c = col(".")
+  %s/\s\+$//e
+  call cursor(l, c)
+endfunction
+
+augroup killwhitespace
+  autocmd!
+  autocmd BufWritePre <buffer> if index(g:strip_whitespace_blacklist, &ft) < 0
+        \| :call s:strip_whitespace() | endif
+augroup END
 
 " set buffer to unmodifiable if read-only
-if !exists("g:update_modifiable") | let g:update_modifiable = 1 | endif
-if g:update_modifiable
-  fu! <SID>UpdateModifiable()
-    if !exists("b:setmodifiable")
-      let b:setmodifiable = 0
-    endif
-    if &readonly
-      if &modifiable
-        setlocal nomodifiable
-        let b:setmodifiable = 1
-      endif
-    else
-      if b:setmodifiable
-        setlocal modifiable
-      endif
-    endif
-  endfu
-  autocmd BufReadPost * call <SID>UpdateModifiable()
-endif
+function! s:set_unmodifiable()
+  if &readonly && &modifiable
+      setlocal nomodifiable
+  endif
+endfu
+augroup set_unmodifiable
+  autocmd!
+  autocmd BufReadPost * call s:set_unmodifiable()
+augroup END
 
 " vim-tmux aware killpane
 fu! TmuxAwareKillpane()
@@ -447,12 +441,13 @@ vmap <leader>c :TComment<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Lightline {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 set laststatus=2   " Always show the statusline
 let g:lightline = {
       \   'colorscheme': 'Tomorrow_Night',
       \   'active': {
-      \     'left': [ [ 'mode', 'paste' ], [ 'fileinfo', 'syntax'] ],
-      \     'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype'] ]
+      \     'left': [ [ 'mode', 'paste' ], [ 'fileinfo', 'syntax_err', 'syntax_war'] ],
+      \     'right': [ [ 'lineinfo' ], [ 'fugitive' ], ['filetype', 'gitsync' ] ]
       \   },
       \   'inactive': {
       \     'left': [ [ 'fileinfo' ] ],
@@ -466,18 +461,35 @@ let g:lightline = {
       \     'fileinfo': 'LLFileinfo',
       \   },
       \   'component_expand' : {
-      \     'syntax': 'Syntax',
+      \     'gitsync': 'Gitsync',
+      \     'syntax_err': 'SyntaxError',
+      \     'syntax_war': 'SyntaxWarning',
       \   },
       \   'component_type': {
-      \     'syntax': 'error',
+      \     'gitsync': 'error',
+      \     'syntax_err': 'error',
+      \     'syntax_war': 'warning',
       \   },
       \ }
 
-" syntax
-function! Syntax()
-  return exists('*neomake#statusline#LoclistStatus') ? neomake#statusline#LoclistStatus() :
-        \ exists('*SyntasticStatuslineFlag') ? SyntasticStatuslineFlag() :
-        \ ''
+function! Gitsync()
+  if !exists('*GitsyncDesynced') | return '' | endif
+  let bufdesynced = GitsyncDesynced()
+  if empty(bufdesynced) | return '' | endif
+  return join(bufdesynced, ', ').' ↻'
+endfunction
+
+function! SyntaxError()
+  if !exists('*neomake#statusline#LoclistCounts') | return '' | endif
+  let counts = neomake#statusline#LoclistCounts()
+  if !has_key(counts, 'E') | return '' | endif
+  return printf('%s %d', s:E, counts['E'])
+endfunction
+function! SyntaxWarning()
+  if !exists('*neomake#statusline#LoclistCounts') | return '' | endif
+  let counts = neomake#statusline#LoclistCounts()
+  if !has_key(counts, 'W') | return '' | endif
+  return printf('%s %d', s:W, counts['W'])
 endfunction
 
 " mode
@@ -492,7 +504,7 @@ function! LLModified()
   return &ft =~ 'help' ? '' : &modified ? '+' : &modifiable ? '' : '-'
 endfunction
 function! LLReadonly()
-  return &ft !~? 'help' && &readonly ? 'RO' : ''
+  return &ft !~? 'help' && &readonly ? '🔒' : ''
 endfunction
 function! LLTrucatedFilePath()
   let depth = g:pathname_depth ? g:pathname_depth : 10
@@ -510,14 +522,10 @@ function! LLFileinfo()
 endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" vimtex {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easyalign {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Start interactive EasyAlign in visual mode (e.g. vip<Enter>)
-vmap <Enter> <Plug>(EasyAlign)
+vmap <lEnter> <Plug>(EasyAlign)
 
 " Start interactive EasyAlign for a motion/text object (e.g. <leader>aip)
 nmap <leader>a <Plug>(EasyAlign)
@@ -550,9 +558,7 @@ endfunction
 command! -nargs=* YcmLazy call YcmLazy(<f-args>)
 
 nnoremap <silent> <leader>yd :YcmForceCompileAndDiagnostics<cr>
-nnoremap <silent> <leader>yo :YcmLazy GoToDefinitionElseDeclaration<CR>
-nnoremap <silent> <leader>yf :YcmLazy GoToDefinition<CR>
-nnoremap <silent> <leader>yc :YcmLazy GoToDeclaration<CR>
+nnoremap <silent> <leader>yo :YcmLazy GoTo<cr>
 
 " semantic trigger for tex (suggested by :help vimtex)
 if !exists('g:ycm_semantic_triggers')
@@ -562,67 +568,41 @@ let g:ycm_semantic_triggers.tex = [
       \ 're!\\[A-Za-z]*(ref|cite)[A-Za-z]*([^]]*])?{([^}]*, ?)*'
       \ ]
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" Syntastic {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:syntastic_java_javac_custom_classpath_command =
-      \ "ant -q path -s | grep echo | cut -f2- -d] | tr -d ' ' | tr ':' '\n'"
-let g:syntastic_stl_format = '%E{✖ %e, ␤:%fe}%B{; }%W{♺ %w, ␤:%fw}'
-
-" disable tex because its annoying
-" disable python because pythonmode
-let g:syntastic_tex_checkers=[]
-let g:syntastic_python_checkers=[]
-
-" hack to get syntastic to update lightline on syntax check
-let g:syntastic_mode_map = { "mode": "passive" }
-augroup SyntaxLightline
-  autocmd!
-  autocmd BufWritePost * if !b:goyo_enabled | call s:syntax_lightline() | endif
-augroup END
-function! s:syntax_lightline()
-  exe g:syncheck_cmd
-  call lightline#update()
-endfunction
-
-" highlights
-hi SpellBad ctermbg=NONE
-hi SpellCap ctermbg=NONE
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Neomake {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:neomake_verbose = 0
+let g:neomake_verbose = 0 " useful for debug
 
 hi NeomakeError ctermfg=red
 hi NeomakeWarning ctermfg=yellow
 let g:neomake_error_sign = {
-      \ 'text': '✖',
+      \ 'text': s:E,
       \ 'texthl': 'NeomakeError',
       \ }
 let g:neomake_warning_sign = {
-      \ 'text': '⚠',
+      \ 'text': s:W,
       \ 'texthl': 'NeomakeWarning',
       \ }
+
+let g:neomake_statusline_callback = 'lightline#update'
+if executable('pylama')
+  let g:neomake_python_enabled_makers = ['pylama']
+endif
+
+function! ToggleLocationList()
+  if empty(filter(tabpagebuflist(), 'getbufvar(v:val, "&buftype") is# "quickfix"'))
+    lwindow
+  else
+    lclose
+  endif
+endfunction
+nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
+
+autocmd! BufWritePost * if !get(b:, 'goyo_enabled', 0) | Neomake | endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <silent> <leader><leader> :FZF<CR>
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" pymode {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:pymode_lint_signs = 1
-let g:pymode_lint_on_write = 1
-let g:pymode_lint_cwindow = 0
-let g:pymode_rope_completion = 0
-let g:pymode_folding = 0
-let g:pymode_lint_ignore = "E501" " ignore 80 char limit
-
-function! _PylintToggle()
-  let g:pymode_lint = !g:pymode_lint
-endfunction
-command! PylintToggle call _PylintToggle()
+nnoremap <silent> <leader>o :FZF<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " ag.vim {{{
@@ -666,9 +646,11 @@ hi EasyMotionTarget ctermfg=39
 hi EasyMotionTarget2First ctermfg=40
 hi EasyMotionTarget2Second ctermfg=28
 
+
+
 " vim-easyoperator-line
-let g:EasyOperator_line_do_mapping = 0
-let g:EasyOperator_line_first = 'CursorLine'
+let s:EasyOperator_line_do_mapping = 0
+let s:EasyOperator_line_first = 'CursorLine'
 omap <silent>  <leader>l <Plug>(easyoperator-line-select)
 xmap <silent>  <leader>l <Plug>(easyoperator-line-select)
 nmap <silent> d<leader>l <Plug>(easyoperator-line-delete)
@@ -725,7 +707,7 @@ function! TextobjUserSetup()
         \ }})
 
     function! TextobjSelectSegment(object_type, right_boundary)
-        let left_boundaries = ['_\+\i', '\<', '\l\u', '\u\u\ze\l', '\a\d', '\d\a']
+        let left_boundaries = ['_\+\i', '\<', '\l\u', '\u\u\ze\l', '\a\d', '\d\a', '#\a']
         call search(join(left_boundaries, '\|'), 'bce')
         let start_position = getpos('.')
 
@@ -745,7 +727,7 @@ function! TextobjUserSetup()
     endfunction
 
     function! TextobjSelectSegmentA()
-        let right_boundaries = ['_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
+        let right_boundaries = ['_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>', '\a#']
         let right_boundary = join(right_boundaries, '\|')
         let [type, start_position, end_position] = TextobjSelectSegment('a', right_boundary)
         let [_, start_line, start_column, _] = start_position
@@ -772,7 +754,7 @@ function! TextobjUserSetup()
     endfunction
 
     function! TextobjSelectSegmentI()
-        let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>']
+        let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>', '\a#']
         return TextobjSelectSegment('i', join(right_boundaries, '\|'))
     endfunction
 
@@ -852,8 +834,6 @@ let g:UltiSnipsExpandTrigger="<C-E>"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Goyo {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-autocmd BufRead * let b:goyo_enabled = 0
-
 function! s:goyo_enter()
   set noshowmode
   set noshowcmd
@@ -882,23 +862,28 @@ autocmd! User GoyoEnter nested call <SID>goyo_enter()
 autocmd! User GoyoLeave nested call <SID>goyo_leave()
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Gitsync {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:gitsync_callback = 'lightline#update'
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
 autocmd BufNewFile,BufReadPost *.slim set filetype=slim
 autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
-autocmd FileType javascript,html,jinja setl sw=2 sts=2 et
+autocmd FileType vim,javascript,html,jinja setl sw=2 sts=2 et
 
 autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
       \ set textwidth=72 |
       \ set colorcolumn=71,72 |
       \ call matchaddpos('ColorColumn', [[1, 49, 2]])
 
-" auto-indending sucks for some files, but it's nice to choose the wrap width
+" line wrap sucks for some files, but it's nice to choose the wrap width
 function! ManualFormat(type, ...)
   let og_width = &textwidth
-  exec 'set textwidth='.get(b:, 'textwidth_manual', 79)
+  exec 'set textwidth='.get(b:, 'textwidth_manual', &textwidth)
 
   if a:0  " Invoked from Visual mode
     silent exe "normal! '<v'>gq"
@@ -913,8 +898,8 @@ function! ManualFormat(type, ...)
   exec 'set textwidth='.og_width
 endfunction!
 
+autocmd Filetype markdown,noft,text set wrap
 autocmd Filetype markdown,tex,noft,text
-      \ set wrap |
       \ set breakindent |
       \ set linebreak |
       \ exec 'nnoremap <silent> $ g$' |

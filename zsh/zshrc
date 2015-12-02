@@ -17,6 +17,8 @@ else
 fi
 
 alias vimrc='vi ~/.vimrc'
+alias vis='vi -u ~/.vim/vimrc_small'
+alias vimrc_small='vis ~/.vim/vimrc_small'
 
 swpclean() { find . -name '*.sw*' -exec /bin/rm -rf {} \; ; }
 
@@ -40,6 +42,15 @@ vimreplace() {
 ###############################################################################
 # basics
 alias c=clear
+clr() {
+  clear
+  [ -n $TMUX ] && tmux clear-history
+}
+stripansi() {
+  [[ "$OSTYPE" == *"darwin"* ]] && \
+    sed -E "s/"$'\E'"\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g" ||
+    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g"
+}
 
 # Facebook Path Picker
 alias pp=fpp
@@ -86,14 +97,14 @@ if [ -f /usr/local/bin/virtualenvwrapper.sh ]; then
   [[ -n ${VIRTUAL_ENV} ]] && workon ${VIRTUAL_ENV:t} # autostart virtualenv
 fi
 
-if hash pylama 2>/dev/null; then
-  pylama() { # pylama should use pylama.ini at root of git repo
-    local gitroot=$(git rev-parse --show-toplevel 2>/dev/null)
-    [[ $? -ne 0 || $* == *"-o"* || $* == *"--options"* ]] && \
-      echo pylama $* || \
-      echo pylama --options "${gitroot}/pylama.ini" "$@"
-  }
-fi
+# if hash pylama 2>/dev/null; then
+#   pylama() { # pylama should use pylama.ini at root of git repo
+#     local gitroot=$(git rev-parse --show-toplevel 2>/dev/null)
+#     [[ $? -ne 0 || $* == *"-o"* || $* == *"--options"* ]] && \
+#       pylama $* || \
+#       pylama --options "${gitroot}/pylama.ini" "$@"
+#   }
+# fi
 
 upsearch() { # modified from http://unix.stackexchange.com/questions/13464
   local curdir="$PWD"
@@ -122,7 +133,7 @@ if hash nvm 2>/dev/null; then
 fi
 
 # git
-hash hub >/dev/null && alias git=hub
+hash hub 2>/dev/null && alias git=hub
 alias g=git
 
 # context from root of git directory
@@ -133,6 +144,11 @@ gr() {
     [[ $# == 0 ]] && cd $root || \
     (builtin cd $root && "$@")
 }
+
+if hash tag 2>/dev/null; then
+  ag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
+  tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
+fi
 
 # other
 alias temp="cd $HOME/temp"

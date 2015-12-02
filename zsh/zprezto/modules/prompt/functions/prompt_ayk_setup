@@ -12,17 +12,15 @@ _third_color='magenta'
 
 # Git: remote status (number of commits behind and after remote)
 function +vi-git_remote {
-    local left_right
     local -a remote_info
     set -- $(command git rev-list --left-right --count @\{u\}.. 2> /dev/null)
 
     # $1 is behind, $2 is forward
     if [[ -n $2 && $2 != 0 ]]; then
         remote_info+="+$2"
-        left_right=true
     fi
     if [[ -n $1 && $1 != 0 ]]; then
-        (( $left_right )) && remote_info+=", "
+        (( -n $2 && $2 != 0 )) && remote_info+=", "
         remote_info+="-$1"
     fi
     [[ -n $remote_info ]] && hook_com[misc]="%F{$_secondary_color}{%f%F{yellow}$remote_info%f%F{$_secondary_color}}%f"
@@ -113,6 +111,7 @@ function prompt_ayk_setup {
     # Set editor-info parameters.
     zstyle ':prezto:module:editor:info:completing' format "%B%F{red}...%f%b"
     zstyle ':prezto:module:editor:info:keymap:primary' format "🐼 "
+    # zstyle ':prezto:module:editor:info:keymap:primary' format ">"
     zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{14}"
     zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{red}!%f%b"
 
@@ -130,7 +129,7 @@ function prompt_ayk_setup {
 
     # Define prompts.
     PROMPT='${_has_tmux}${_pwd}${_docker}${_prompt_ayk_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
-    RPROMPT='%(?:: %F{yellow}⏎%f)'
+    RPROMPT='%f%(?:: %F{yellow}⏎%f)'
 }
 
 prompt_ayk_setup "$@"
