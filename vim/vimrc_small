@@ -9,11 +9,12 @@ Plug 'christoomey/vim-tmux-navigator'
 
 Plug 'aykamko/gitsync.nvim'
 Plug 'bling/vim-airline'
+Plug 'tpope/vim-fugitive'
 
 call plug#end()
 filetype plugin indent on
 
-let g:gitsync_airline = 0
+let g:gitsync_airline = 1
 
 let mapleader = ' '
 let maplocalleader = ' '
