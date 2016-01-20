@@ -10,8 +10,13 @@ fi
 
 # vim
 if hash nvim 2>/dev/null; then
-  alias vi=nvim
-  alias vim=nvim
+  if hash nvim-client 2>/dev/null; then
+    alias vi=nvim-client
+    alias vim=nvim-client
+  else
+    alias vi=nvim
+    alias vim=nvim
+  fi
 else
   alias vi=vim
 fi
@@ -123,7 +128,7 @@ dmake() { # django
 
 # ruby
 if hash rbenv 2>/dev/null; then
-  rbenv() { unset -f rbenv && eval "$( rbenv init - )" && rbenv "$@"; }
+  eval "$(rbenv init -)"
 fi
 
 # nvm/node

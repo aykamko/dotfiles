@@ -10,7 +10,11 @@ fi
 ###############################################################################
 export EDITOR='vim'
 if hash nvim 2>/dev/null; then
-  export EDITOR='nvim'
+  if hash nvim-client 2>/dev/null; then
+    export EDITOR='nvim-client'
+  else
+    export EDITOR='nvim'
+  fi
 fi
 export VISUAL='vim'
 export PAGER='less'

@@ -27,14 +27,15 @@ Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'SirVer/ultisnips'
 Plug 'airblade/vim-gitgutter'
 Plug 'aykamko/gitsync.nvim'
-Plug 'aykamko/vim-textobj-user'
 Plug 'aykamko/neomake'
+Plug 'aykamko/vim-textobj-user'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'haya14busa/incsearch.vim'
 Plug 'itchyny/lightline.vim'
 Plug 'junegunn/vim-easy-align'
 Plug 'nathanaelkane/vim-indent-guides'
-Plug 'rking/ag.vim'
+Plug 'mhinz/vim-grepper'
+Plug 'scrooloose/nerdtree'
 Plug 'takac/vim-hardtime'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tomtom/tcomment_vim'
@@ -67,6 +68,7 @@ Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
 Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
+Plug 'mxw/vim-jsx'
 
 " currently testing async loading of YCM using neovim
 Plug 'Valloric/YouCompleteMe', { 'do': './install.py --clang-completer --gocode-completer' } |
@@ -134,16 +136,15 @@ set tags=tags;/       " search up the directory tree for tags
 set undolevels=1000   " number of undos stored
 set viminfo='50,"50   " '=marks for x files, "=registers for x files
 
-" netrw
-let g:netrw_liststyle=3
-let g:netrw_winsize=20
-nnoremap <silent> <leader>k :Lexplore<CR>
-
 " hack to always display sign column
 augroup DisplaySignCol
-  au!
-  au BufEnter * sign define dummy
-  au BufEnter * exe 'sign place 9999 line=1 name=dummy buffer='.bufnr('')
+  autocmd!
+  autocmd BufEnter * sign define dummy
+  autocmd BufEnter * if &buftype !=# 'terminal' |
+        \ exec 'sign place 9999 line=1 name=dummy buffer='.bufnr('') | endif
+  " no sign column in terminals pls
+  autocmd TermOpen * exec 'sign unplace * buffer='.bufnr('')
+  autocmd TermClose * exec 'sign place 9999 line=1 name=dummy buffer='.bufnr('')
 augroup END
 
 " remove small delay when leaving insert mode
@@ -193,9 +194,10 @@ augroup END
 " Line Numbering {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
-set number
+if &buftype !=# 'terminal' | set number | endif
 autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained *
-      \ if !get(b:, 'goyo_enabled', 0) | set invrelativenumber | endif
+      \ if !get(b:, 'goyo_enabled', 0) && &buftype !=# 'terminal' |
+      \ set invrelativenumber | endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Indentation {{{
@@ -224,6 +226,9 @@ function! LineMotion(dir)
 endfunction
 nnoremap <silent> j :<c-u>call LineMotion("j")<cr>
 nnoremap <silent> k :<c-u>call LineMotion("k")<cr>
+
+" makes sense
+nnoremap <silent> Y yg_
 
 " because I suck
 cnoreabbrev W w
@@ -281,11 +286,30 @@ nnoremap <silent> <leader>p :set operatorfunc=BlackHolePaste<CR>g@
 vnoremap <silent> <leader>p :<c-u>call BlackHolePaste(visualmode())<CR>
 nnoremap <silent> dp "bddP
 
+" directional split for file
+function! OpenDirectionalSplit(file)
+  echohl Question
+  echom 'Choose split direction. [hjkl] '
+  echohl Normal
+  call inputsave()
+  let dirchoice = nr2char(getchar())
+  call inputrestore()
+  redraw!
+  if dirchoice == 'h'
+    exec 'aboveleft vsp '.a:file
+  elseif dirchoice == 'j'
+    exec 'belowright sp '.a:file
+  elseif dirchoice == 'k'
+    exec 'aboveleft sp '.a:file
+  elseif dirchoice == 'l'
+    exec 'belowright vsp '.a:file
+  endif
+endfunction
+command! -nargs=1 DirectionalSplit call OpenDirectionalSplit(<f-args>)
+
 " vimrc and help
-command! Vvimrc vsp $MYVIMRC
-cnoreabbrev vimrc Vvimrc
-command! Hvimrc sp $MYVIMRC
-cnoreabbrev hvimrc Hvimrc
+command! Vimrc DirectionalSplit $MYVIMRC
+cnoreabbrev vimrc Vimrc
 command! Vimso source $MYVIMRC
 cnoreabbrev vimso Vimso
 command! -nargs=* -complete=help Vhelp vertical help <args>
@@ -375,6 +399,18 @@ nmap <silent> <C-x> :call TmuxAwareKillpane()<CR>
 autocmd BufReadPost,FileReadPost,BufNewFile * let &titlestring=expand("%:t")
 set title
 
+" directional term splits
+command! Dterm DirectionalSplit term://$SHELL | startinsert
+cnoreabbrev dterm Dterm
+
+" terminal mappings
+autocmd TermOpen * tnoremap <buffer> <Esc><Esc> <C-\><C-n>
+autocmd FileType fzf tunmap <buffer> <Esc><Esc>
+tnoremap <C-w>h <C-\><C-n><C-w>h
+tnoremap <C-w>j <C-\><C-n><C-w>j
+tnoremap <C-w>k <C-\><C-n><C-w>k
+tnoremap <C-w>l <C-\><C-n><C-w>l
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " quick-scope {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -431,6 +467,7 @@ let g:lightline = {
       \     'mode': 'LLMode',
       \     'fileinfo': 'LLFileInfo',
       \     'lineinfo': 'LLLineInfo',
+      \     'filetype': 'LLFileType',
       \   },
       \   'component_expand' : {
       \     'gitsync': 'Gitsync',
@@ -464,7 +501,7 @@ endfunction
 
 " mode
 function! LLMode()
-  return  &ft =~ 'netrw' ? 'netrw' :
+  return  &ft =~ 'nerdtree' ? 'nerdtree' :
         \ &ft =~ 'fzf' ? 'FZF' :
         \ lightline#mode()
 endfunction
@@ -472,14 +509,14 @@ endfunction
 " filename and fileinfo
 let g:pathname_depth = 3
 function! LLModified()
-  return index(['help', 'netrw'], &ft) > -1 ? '' :
+  return index(['help', 'nerdtree'], &ft) > -1 ? '' :
         \ &modified ? '+' : ''
 endfunction
 function! LLReadonly()
-  return index(['help', 'netrw'], &ft) < 0 && &readonly ? '🔒' : ''
+  return index(['help', 'nerdtree'], &ft) < 0 && &readonly ? '🔒' : ''
 endfunction
 function! LLTrucatedFilePath()
-  if &ft =~ 'netrw' | return '' | endif
+  if &ft =~ 'nerdtree' | return '' | endif
   let fullpath = expand('%:p:~')
   return empty(fullpath) ? '[No Name]' :
         \ matchstr(fullpath,
@@ -487,14 +524,18 @@ function! LLTrucatedFilePath()
         \   get(g:, 'pathname_depth', 3)))
 endfunction
 function! LLFileInfo()
-  if index(['netrw', 'fzf'], &ft) > -1 | return '' | endif
+  if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
   let segments = [LLReadonly(), LLTrucatedFilePath(), LLModified()]
   return substitute(join(segments, ' '), '^\s*\(.\{-}\)\s*$', '\1', '')
 endfunction
 function! LLLineInfo()
-  if index(['netrw', 'fzf'], &ft) > -1 | return '' | endif
+  if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
   let [_, l, c, _] = getpos('.')
   return l.':'.c
+endfunction
+function! LLLineInfo()
+  if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
+  return &ft
 endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -516,6 +557,7 @@ nnoremap <leader>a :A<CR>
 " YouCompleteMe {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ycm_confirm_extra_conf = 0
+let g:ycm_nvim_async_enable = 1
 let g:ycm_global_ycm_extra_conf = $HOME.'/.vim/ycm_extra_conf.py'
 
 " lazy load/exec ycm commands
@@ -580,38 +622,73 @@ autocmd! BufWritePost * if !get(b:, 'goyo_enabled', 0) | Neomake | endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <silent> <leader>o :FZF<CR>
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit',
+  \ 'ctrl-s': 'DirectionalSplit' }
+
+function! GitAwareFZF()
+  let gitroot=system('git rev-parse --show-toplevel')
+  if v:shell_error
+    FZF
+  else
+    let gitroot=substitute(gitroot, '\n\+$', '', 'g').'/' " strip trailing newlines
+    exec 'FZF -d '.gitroot.' --with-nth=2 --header="Git Repo: '.gitroot.'"'
+  end
+endfunction
+
+nnoremap <silent> <leader>o :call GitAwareFZF()<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " ag.vim {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ag_working_path_mode='r'
+" let g:ag_working_path_mode='r'
+"
+" " source: http://stackoverflow.com/a/6271254
+" function! GetVisualSelection()
+"   let [lnum1, col1] = getpos("'<")[1:2]
+"   let [lnum2, col2] = getpos("'>")[1:2]
+"   let lines = getline(lnum1, lnum2)
+"   let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
+"   let lines[0] = lines[0][col1 - 1:]
+"   return join(lines, "\n")
+" endfunction
+"
+" " redefine Ag to accept visual selections
+" function! AgSelection(bang, args, hasrange)
+"   if a:hasrange > 0
+"     let selection = GetVisualSelection()
+"     call ag#Ag(a:bang, a:args == '' ? selection : a:args.' '.selection) | return
+"   endif
+"   call ag#Ag(a:bang, a:args)
+" endfunction
+"
+" augroup redefine_ag
+"   autocmd!
+"   autocmd! BufEnter *
+"         \  exec "command! -bang -nargs=* -range=0 -complete=file Ag call AgSelection('grep<bang>', <q-args>, <count>)"
+"         \| autocmd! redefine_ag
+" augroup END
 
-" source: http://stackoverflow.com/a/6271254
-function! GetVisualSelection()
-  let [lnum1, col1] = getpos("'<")[1:2]
-  let [lnum2, col2] = getpos("'>")[1:2]
-  let lines = getline(lnum1, lnum2)
-  let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
-  let lines[0] = lines[0][col1 - 1:]
-  return join(lines, "\n")
-endfunction
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-grepper {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Mimic :grep and make ag the default tool.
+let g:grepper = {
+    \ 'tools': ['ag', 'git', 'grep'],
+    \ 'open':  1,
+    \ 'jump':  0,
+    \ 'switch': 1
+    \ }
+let g:grepper.ag =
+      \ { 'grepprg': 'ag --vimgrep $* `git rev-parse --show-toplevel`' }
 
-" redefine Ag to accept visual selections
-function! AgSelection(bang, args, hasrange)
-  if a:hasrange > 0
-    let selection = GetVisualSelection()
-    call ag#Ag(a:bang, a:args == '' ? selection : a:args.' '.selection) | return
-  endif
-  call ag#Ag(a:bang, a:args)
-endfunction
+command! -nargs=* -complete=file Ag Grepper -tool ag -query <args>
+cnoreabbrev ag Ag
 
-augroup redefine_ag
-  autocmd!
-  autocmd! BufEnter *
-        \  exec "command! -bang -nargs=* -range=0 -complete=file Ag call AgSelection('grep<bang>', <q-args>, <count>)"
-        \| autocmd! redefine_ag
-augroup END
+nmap gs <plug>(GrepperOperator)
+xmap gs <plug>(GrepperOperator)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easymotion {{{
@@ -850,13 +927,26 @@ autocmd! User GoyoLeave nested call <SID>goyo_leave()
 let g:gitsync_callback = 'lightline#update'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" NERDTree {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <silent> <leader>k :NERDTreeFind<CR>
+nnoremap <silent> <leader>l :NERDTreeToggle<CR>
+
+let g:NERDTreeWinSize = 35
+let g:NERDTreeQuitOnOpen = 1
+
+autocmd BufEnter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree())
+      \| q | endif
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
 autocmd BufNewFile,BufReadPost *.slim set filetype=slim
+" autocmd BufNewFile,BufReadPost *.jsx set filetype=jsx
 autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
-autocmd FileType vim,javascript,html,jinja setl sw=2 sts=2 et
+autocmd FileType vim,javascript,coffee,html,jinja setl sw=2 sts=2 et
 autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
       \ set textwidth=72 |
       \ set colorcolumn=71,72 |
@@ -880,10 +970,11 @@ function! ManualFormat(type, ...)
   exec 'set textwidth='.og_width
 endfunction!
 
-autocmd Filetype markdown,noft,text set wrap
 autocmd Filetype tex,markdown,noft,text
+      \ set wrap |
       \ set breakindent |
       \ set linebreak |
+      \ set textwidth=9999 |
       \ exec 'nnoremap <silent> $ g$' |
       \ exec 'nnoremap <silent> ^ g^' |
       \ let b:textwidth_manual = 119 |

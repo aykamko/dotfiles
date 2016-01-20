@@ -74,6 +74,10 @@ function docker_mounted {
     fi
 }
 
+# neovim: show marker if terminal is through neovim's libvterm
+function is_nvim_term {
+}
+
 # PWD: Add space before prompt extras, if they exist.
 function prompt_ayk_pwd {
     _pwd="%F{$_primary_color}%3~%f"
@@ -93,6 +97,7 @@ function prompt_ayk_precmd {
     docker_mounted
     xterm_title
     has_tmux
+    is_nvim_term
     prompt_ayk_pwd
 }
 
@@ -108,10 +113,12 @@ function prompt_ayk_setup {
     # Add hook for calling vcs_info before each command.
     add-zsh-hook precmd prompt_ayk_precmd
 
+    # If terminal is through neovim's libvterm, change prompt emoji
+    [[ -n ${NVIM_LISTEN_ADDRESS} ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
+
     # Set editor-info parameters.
     zstyle ':prezto:module:editor:info:completing' format "%B%F{red}...%f%b"
-    zstyle ':prezto:module:editor:info:keymap:primary' format "🐼 "
-    # zstyle ':prezto:module:editor:info:keymap:primary' format ">"
+    zstyle ':prezto:module:editor:info:keymap:primary' format "${prompt_emoji}"
     zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{14}"
     zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{red}!%f%b"
 
@@ -128,7 +135,7 @@ function prompt_ayk_setup {
     zstyle ':vcs_info:git*+set-message:*' hooks git_remote git_changes_fmt
 
     # Define prompts.
-    PROMPT='${_has_tmux}${_pwd}${_docker}${_prompt_ayk_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
+    PROMPT='${_has_tmux}${_pwd}${_docker}${_prompt_ayk_venv}${vcs_info_msg_0_} ${_nvim_term}${editor_info[keymap]}${editor_info[overwrite]} '
     RPROMPT='%f%(?:: %F{yellow}⏎%f)'
 }
 
