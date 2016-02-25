@@ -205,7 +205,7 @@ elif [[ -z "$TMUX" ]]; then
     command rm -f $HOME/.tmux_new
     tmux new
   else
-    tmux attach || tmux new
+    tmux attach || sleep 0.01; tmux
   fi
   if [[ $? -eq 0 ]]; then return; fi
 fi
