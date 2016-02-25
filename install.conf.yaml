@@ -99,6 +99,19 @@
 
         os=$(uname)
         if echo "${os}" | grep -iq "linux"; then
+            nvim_suffix() {
+                sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
+                sudo update-alternatives --config vi
+                sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
+                sudo update-alternatives --config vim
+                sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
+                sudo update-alternatives --config editor
+
+                sudo pip install neovim
+                if hash pip3 2>/dev/null; then
+                    sudo pip3 install neovim
+                fi
+            }
             if ! hash apt-get 2>/dev/null || test -h $(which apt-get); then
                 build_from_src() {
                     echo -n "Neovim has to build from source! Continue anyway? [Y|n]"
@@ -116,13 +129,7 @@
                     make
                     sudo make install
                     popd
-
-                    sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
-                    sudo update-alternatives --config vi
-                    sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
-                    sudo update-alternatives --config vim
-                    sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
-                    sudo update-alternatives --config editor
+                    nvim_suffix
 
                     echo -n "Keep Neovim folder at ~/neovim? [Y|n]"
                     read choice
@@ -142,13 +149,7 @@
                     sudo apt-get update
                     sudo apt-get install -y neovim
                     sudo apt-get install -y python-dev python-pip python3-dev python3-pip
-
-                    sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
-                    sudo update-alternatives --config vi
-                    sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
-                    sudo update-alternatives --config vim
-                    sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
-                    sudo update-alternatives --config editor
+                    nvim_suffix
                 }
                 apt_get_nvim < /dev/tty > /dev/tty 2>&1
             fi
