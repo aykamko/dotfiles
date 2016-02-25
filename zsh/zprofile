@@ -32,11 +32,11 @@ export LANGUAGE='en_US.UTF-8'
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-export PYENV_ROOT=$HOME/.pyenv
+export PYENV_SHIMS=$HOME/.pyenv/shims
 export POSTGRES_CLTOOLS=/Applications/Postgres.app/Contents/Versions/9.4/bin
 
 path=(
-  $PYENV_ROOT
+  $PYENV_SHIMS
   /usr/local/{bin,sbin}
   /usr/{bin,sbin}
   /bin
