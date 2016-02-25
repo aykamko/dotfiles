@@ -81,6 +81,68 @@
         create: true
 
 - shell:
+    - description: Build Neovim (Clone if necessary)
+      command: |
+
+        echo -n "Install Neovim? (May building from source) [Y|n] " > /dev/tty
+        read choice < /dev/tty
+        case "$choice" in
+            n|N )
+                exit 0;;
+            * )
+                break;;
+        esac
+
+        if echo "${os}" | grep -iq "linux"; then
+            if ! hash apt-get 2>/dev/null || test -h $(which apt-get); then
+                build-from-source() {
+                    echo -n "Neovim has to build from source! Continue anyway? [Y|n]"
+                    read choice
+                    case "$choice" in
+                        n|N )
+                            exit 0;;
+                        * )
+                            break;;
+                    esac
+
+                    sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip
+                    git clone https://github.com/neovim/neovim ~/neovim
+                    pushd ~/neovim
+                    make
+                    sudo make install
+                    popd
+
+                    echo -n "Keep Neovim folder at ~/neovim? [Y|n]"
+                    read choice
+                    case "$choice" in
+                        n|N )
+                            rm -rf ~/neovim
+                            exit 0;;
+                        * )
+                            break;;
+                    esac
+                }
+                build-from-source < /dev/tty > /dev/tty 2>&1
+            else
+                apt-get-neovim() {
+                    sudo apt-get install -y software-properties-common
+                    sudo add-apt-repository ppa:neovim-ppa/unstable
+                    sudo apt-get update
+                    sudo apt-get install -y neovim
+                    sudo apt-get install -y python-dev python-pip python3-dev python3-pip
+
+                    sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
+                    sudo update-alternatives --config vi
+                    sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
+                    sudo update-alternatives --config vim
+                    sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
+                    sudo update-alternatives --config editor
+                }
+                apt-get-neovim < /dev/tty > /dev/tty 2>&1
+            fi
+        fi
+
+- shell:
     - description: Link neovim to vim
       command: |
 
