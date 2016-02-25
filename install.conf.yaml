@@ -84,6 +84,10 @@
     - description: Build Neovim (Clone if necessary)
       command: |
 
+        if hash nvim 2>/dev/null; then
+            exit 0
+        fi
+
         echo -n "Install Neovim? (May building from source) [Y|n] " > /dev/tty
         read choice < /dev/tty
         case "$choice" in
@@ -93,9 +97,10 @@
                 break;;
         esac
 
+        os=$(uname)
         if echo "${os}" | grep -iq "linux"; then
             if ! hash apt-get 2>/dev/null || test -h $(which apt-get); then
-                build-from-source() {
+                build_from_src() {
                     echo -n "Neovim has to build from source! Continue anyway? [Y|n]"
                     read choice
                     case "$choice" in
@@ -112,6 +117,13 @@
                     sudo make install
                     popd
 
+                    sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
+                    sudo update-alternatives --config vi
+                    sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
+                    sudo update-alternatives --config vim
+                    sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
+                    sudo update-alternatives --config editor
+
                     echo -n "Keep Neovim folder at ~/neovim? [Y|n]"
                     read choice
                     case "$choice" in
@@ -122,9 +134,9 @@
                             break;;
                     esac
                 }
-                build-from-source < /dev/tty > /dev/tty 2>&1
+                build_from_src < /dev/tty > /dev/tty 2>&1
             else
-                apt-get-neovim() {
+                apt_get_nvim() {
                     sudo apt-get install -y software-properties-common
                     sudo add-apt-repository ppa:neovim-ppa/unstable
                     sudo apt-get update
@@ -138,7 +150,7 @@
                     sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
                     sudo update-alternatives --config editor
                 }
-                apt-get-neovim < /dev/tty > /dev/tty 2>&1
+                apt_get_nvim < /dev/tty > /dev/tty 2>&1
             fi
         fi
 
