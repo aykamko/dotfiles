@@ -70,9 +70,12 @@ Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 " Plug 'mxw/vim-jsx'
 
+" Make sure YCM is not install on initial PlugInstall
+if empty(glob(g:plug_dir.'YouCompleteMe')) | mkdir(g:plug_dir.'YouCompleteMe') | endif
 Plug 'Valloric/YouCompleteMe', {
       \ 'frozen': 1,
       \ 'do': './install.py --clang-completer --gocode-completer' }
+if empty(glob(g:plug_dir.'YCM-Generator')) | mkdir(g:plug_dir.'YCM-Generator') | endif
 Plug 'rdnetto/YCM-Generator',  {
       \ 'frozen': 1,
       \ 'branch': 'stable',
