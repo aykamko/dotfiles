@@ -123,7 +123,7 @@
                             break;;
                     esac
 
-                    sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip
+                    sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip xclip
                     git clone https://github.com/neovim/neovim ~/neovim
                     pushd ~/neovim
                     make
@@ -148,7 +148,7 @@
                     sudo add-apt-repository ppa:neovim-ppa/unstable
                     sudo apt-get update
                     sudo apt-get install -y neovim
-                    sudo apt-get install -y python-dev python-pip python3-dev python3-pip
+                    sudo apt-get install -y python-dev python-pip python3-dev python3-pip xclip
                     nvim_suffix
                 }
                 apt_get_nvim < /dev/tty > /dev/tty 2>&1
