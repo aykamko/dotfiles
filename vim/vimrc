@@ -48,7 +48,6 @@ Plug 'wellle/targets.vim'
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
       \ | Plug 'aykamko/vim-easymotion-segments'
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 Plug 'mattn/webapi-vim'
       \ | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 Plug 'junegunn/goyo.vim',       { 'on': 'Goyo' }
@@ -73,12 +72,20 @@ if has('nvim')
   Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
 endif
 
-" Make sure YCM is not install on initial PlugInstall
+" Make sure YCM and fzf is not installed on initial PlugInstall
+if empty(glob('~/.fzf')) |
+      \ call mkdir(expand('~/.fzf'), 'p') | endif
+Plug 'junegunn/fzf', {
+      \ 'frozen': 1,
+      \ 'dir': '~/.fzf',
+      \ 'do': 'yes \| ./install' }
+
 if empty(glob(g:plug_dir.'YouCompleteMe')) |
       \ call mkdir(expand(g:plug_dir.'YouCompleteMe'), 'p') | endif
 Plug 'Valloric/YouCompleteMe', {
       \ 'frozen': 1,
       \ 'do': './install.py --clang-completer --gocode-completer' }
+
 if empty(glob(g:plug_dir.'YCM-Generator')) |
       \ call mkdir(expand(g:plug_dir.'YCM-Generator'), 'p') | endif
 Plug 'rdnetto/YCM-Generator',  {
