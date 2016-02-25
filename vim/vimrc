@@ -26,7 +26,6 @@ call plug#begin(g:plug_dir)
 Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'SirVer/ultisnips'
 Plug 'airblade/vim-gitgutter'
-Plug 'aykamko/gitsync.nvim'
 Plug 'aykamko/neomake'
 Plug 'aykamko/vim-textobj-user'
 Plug 'christoomey/vim-tmux-navigator'
@@ -54,7 +53,6 @@ Plug 'mattn/webapi-vim'
       \ | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 Plug 'junegunn/goyo.vim',       { 'on': 'Goyo' }
 
-Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
@@ -70,12 +68,19 @@ Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 " Plug 'mxw/vim-jsx'
 
+if has('nvim')
+  Plug 'aykamko/gitsync.nvim'
+  Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
+endif
+
 " Make sure YCM is not install on initial PlugInstall
-if empty(glob(g:plug_dir.'YouCompleteMe')) | mkdir(g:plug_dir.'YouCompleteMe') | endif
+if empty(glob(g:plug_dir.'YouCompleteMe')) |
+      \ call mkdir(expand(g:plug_dir.'YouCompleteMe'), 'p') | endif
 Plug 'Valloric/YouCompleteMe', {
       \ 'frozen': 1,
       \ 'do': './install.py --clang-completer --gocode-completer' }
-if empty(glob(g:plug_dir.'YCM-Generator')) | mkdir(g:plug_dir.'YCM-Generator') | endif
+if empty(glob(g:plug_dir.'YCM-Generator')) |
+      \ call mkdir(expand(g:plug_dir.'YCM-Generator'), 'p') | endif
 Plug 'rdnetto/YCM-Generator',  {
       \ 'frozen': 1,
       \ 'branch': 'stable',

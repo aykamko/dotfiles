@@ -201,10 +201,13 @@ if [[ -f "$HOME/.no_tmux" ]]; then
   command rm -f $HOME/.no_tmux
 elif [[ -z "$TMUX" ]]; then
   echo "Refusing to load Prezto. Opening tmux..."
-  [[ -f "$HOME/.tmux_new" ]] && \
-    command rm -f $HOME/.tmux_new && tmux new || \
-    tmux attach || tmux
-  return
+  if [[ -f "$HOME/.tmux_new" ]]; then
+    command rm -f $HOME/.tmux_new
+    tmux new
+  else
+    tmux attach || tmux new
+  fi
+  if [[ $? -eq 0 ]]; then return; fi
 fi
 
 ###############################################################################

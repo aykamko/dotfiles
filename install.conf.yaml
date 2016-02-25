@@ -11,6 +11,16 @@
 - clean: ['~/.zprezto/modules/prompt/functions']
 
 - shell:
+    - description: Install ZSH
+      command: |
+        if ! hash zsh 2>/dev/null; then
+            os=$(uname)
+            if echo "${os}" | grep -iq "linux"; then
+                sudo apt-get install zsh < /dev/tty > /dev/tty 2>&1
+            fi
+        fi
+
+- shell:
     - description: Clone zprezto from Github
       command: |
 
@@ -20,6 +30,10 @@
                 ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}";
             done
         fi
+
+- shell:
+    - description: Set ZSH as default shell
+      command: sudo chsh -s $(which zsh) $(whoami) < /dev/tty > /dev/tty 2>&1
 
 - link:
     ~/.zshrc:
@@ -70,7 +84,7 @@
     - description: Clone YouCompleteMe
       command: |
 
-        if [ -d ~/.vim/bundle/YouCompleteMe ]; then
+        if [ -d ~/.vim/bundle/YouCompleteMe/.git ]; then
             exit 0
         fi
         echo -n "Clone YouCompleteMe? [y|N] " > /dev/tty
@@ -90,7 +104,7 @@
     - description: Build YouCompleteMe
       command: |
 
-        if [ ! -d ~/.vim/bundle/YouCompleteMe ] || \
+        if [ ! -d ~/.vim/bundle/YouCompleteMe/.git ] || \
             [ -f ~/.vim/bundle/YouCompleteMe/third_party/ycmd/ycm_core.so ]; then
             exit 0
         fi
@@ -137,7 +151,9 @@
 
 # ----- git -----
 - link:
-    ~/.gitconfig: git/gitconfig
+    ~/.gitconfig:
+        path: git/gitconfig
+        force: true
     ~/.gitconfig.user: git/gitconfig.user
     ~/.gitignore_global: git/gitignore_global
 
@@ -157,6 +173,47 @@
 - link:
     ~/.tmux.conf: tmux/tmux.conf
 
+- shell:
+    - description: Try to build tmux 2.1 from source.
+      command: |
+
+        if hash tmux 2>/dev/null && tmux -V | grep -q 2.1; then
+            exit 0
+        fi
+
+        echo -n "Download and build tmux v2.1? (May require additional packages) [Y|n] " > /dev/tty
+        read choice < /dev/tty
+        case "$choice" in
+            n|N )
+                exit 0;;
+            * )
+                break;;
+        esac
+
+        os=$(uname)
+        # TODO: Darwin tools
+        if echo "${os}" | grep -iq "linux"; then
+            sudo apt-get install automake pkg-config libevent-dev ncurses-dev > /dev/tty < /dev/tty 2>&1
+        else
+            echo "Unknown OS: ${os}. Attempting to build anyway." > /dev/tty
+        fi
+        if [ $? -ne 0 ]; then
+            exit 1
+        fi
+
+        install_tmux() {
+            curl -L https://api.github.com/repos/tmux/tmux/tarball/310f0a9 > /tmp/tmux-2.1.tar.gz
+            cd /tmp
+            tar -zxvf tmux-2.1.tar.gz
+            cd tmux-tmux-310f0a9
+            sh autogen.sh
+            ./configure
+            make
+            sudo make install
+            cd ..
+            rm -rf tmux-2.1.tar.gz tmux-tmux-310f0a9
+        }
+        install_tmux > /dev/tty < /dev/tty 2>&1
 
 # ----- virtualenv -----
 - clean: ['~/.pyvirtualenvs']
