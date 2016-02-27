@@ -46,7 +46,8 @@ class AdvancedShell(dotbot.Plugin):
             self._log_cmd(item['condition'], msg)
             if item.get('branch'):
                 if ret not in item['branch']:
-                    return False, 'No rule for condition result: %d' % ret
+                    self._log.lowinfo('No rule for condition result: %d' % ret)
+                    return True, None
                 success = self._process_commands(item['branch'][ret])
                 return not success, success
             else:

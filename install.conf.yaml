@@ -1,35 +1,34 @@
-# vim: set sw=4:sts=4:et:
-- clean: ['~', '~/.*']
+- clean:
+  - '~'
+  - '~/.*'
+
 - shell:
-    - description: Update submodules in dotfiles repo.
-      command: |
-        cd ~/dotfiles
-        git submodule update --init --recursive
+  - description: Update submodules in dotfiles repo
+    command: |
+      cd ~/dotfiles
+      git submodule update --init --recursive
 
 # ----- zsh -----
 - clean: ['~/.zprezto/modules/prompt/functions']
 
 - shell++:
-    - description: Install ZSH
+    - description: Install zsh
       condition: '! hash zsh'
     - stdall: true
       platforms:
         linux: sudo apt-get install -y zsh
+    - description: Set zsh as default shell
+      stdall: true
+      command: sudo chsh -s $(which zsh) $(whoami)
 
 - shell++:
-    - description: Clone zprezto from Github
+    - description: Install zprezto
       condition: '[ ! -d "${ZDOTFIR:-$HOME}/.zprezto" ]'
     - command: |
         git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
         for rcfile in $(find "${ZDOTDIR:-$HOME}"/.zprezto/runcoms -not -path '*\.md' -type f); do
             ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}"
         done
-
-- shell++:
-    - description: Set ZSH as default shell
-      condition:
-      stdall: true
-      command: sudo chsh -s $(which zsh) $(whoami)
 
 - link:
     ~/.zshrc:
