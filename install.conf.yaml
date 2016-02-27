@@ -3,7 +3,6 @@
 - shell:
     - description: Update submodules in dotfiles repo.
       command: |
-
         cd ~/dotfiles
         git submodule update --init --recursive
 
@@ -15,48 +14,40 @@
       condition: '! hash zsh'
     - stdall: true
       platforms:
-        linux: sudo apt-get install zsh < /dev/tty > /dev/tty 2>&1
+        linux: sudo apt-get install -y zsh
 
 - shell++:
     - description: Clone zprezto from Github
       condition: '[ ! -d "${ZDOTFIR:-$HOME}/.zprezto" ]'
-      command: |
-
-        git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto";
-            for rcfile in $(find "${ZDOTDIR:-$HOME}"/.zprezto/runcoms -not -path '*\.md' -type f); do
-            ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}";
+    - command: |
+        git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+        for rcfile in $(find "${ZDOTDIR:-$HOME}"/.zprezto/runcoms -not -path '*\.md' -type f); do
+            ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}"
         done
 
 - shell++:
     - description: Set ZSH as default shell
-      condition: 
+      condition:
       stdall: true
       command: sudo chsh -s $(which zsh) $(whoami)
 
 - link:
     ~/.zshrc:
         path: zsh/zshrc
-        force: true
+        relink: true
     ~/.zprofile:
         path: zsh/zprofile
-        force: true
+        relink: true
     ~/.zpreztorc:
         path: zsh/zpreztorc
-        force: true
+        relink: true
     ~/.zprezto/modules/prompt/functions/prompt_ayk_setup:
         path: zsh/zprezto/modules/prompt/functions/prompt_ayk_setup
         relink: true
 
-- shell:
-    - description: Link zsh configs
-      command: |
-
-        for f in $(find "$HOME/dotfiles/zsh" -maxdepth 1 -type f | grep "zshrc.os"); do
-            if uname | grep -iq "${f##*/zshrc.os.}"; then
-                ln -sf "${f}" "$HOME/.zshrc.os";
-                break;
-            fi
-        done
+- platform-link:
+    darwin:
+      ~/.zshrc.os: zsh/zshrc.os.darwin
 
 # ----- vim -----
 - clean:
@@ -79,73 +70,56 @@
         create: true
 
 - shell++:
-    - description: Build Neovim
+    - description: Install Neovim
       condition: '! hash nvim'
     - prompt: Install Neovim? (May require building from source)
       default: true
     - stdall: true
       platforms:
-        darwin: |
+        linux:
+          - condition: '! hash apt-get 2>/dev/null || test -h $(which apt-get)'
+            branch:
+              0:
+                - prompt: Neovim has to build from source! Continue anyway?
+                  default: True
+                - stdall: True
+                  command: |
+                    sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip xclip
+                    git clone https://github.com/neovim/neovim ~/neovim
+                    pushd ~/neovim
+                    make
+                    sudo make install
+                    popd
 
-           nvim_suffix() {
-               sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
-               sudo update-alternatives --config vi
-               sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
-               sudo update-alternatives --config vim
-               sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
-               sudo update-alternatives --config editor
+                - prompt: Delete Neovim folder at ~/neovim?
+                  default: False
+                - command: rm -rf ~/neovim
 
-               sudo pip install neovim
-               if hash pip3 2>/dev/null; then
-                   sudo pip3 install neovim
-               fi
-           }
-           if ! hash apt-get 2>/dev/null || test -h $(which apt-get); then
-               build_from_src() {
-                   echo -n "Neovim has to build from source! Continue anyway? [Y|n]"
-                   read choice
-                   case "$choice" in
-                       n|N )
-                           exit 0;;
-                       * )
-                           break;;
-                   esac
+              1:
+                - stdall: true
+                  command: |
+                    sudo apt-get install -y software-properties-common
+                    sudo add-apt-repository -y ppa:neovim-ppa/unstable
+                    sudo apt-get update
+                    sudo apt-get install -y neovim
+                    sudo apt-get install -y python-dev python-pip python3-dev python3-pip xclip
 
-                   sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip xclip
-                   git clone https://github.com/neovim/neovim ~/neovim
-                   pushd ~/neovim
-                   make
-                   sudo make install
-                   popd
-                   nvim_suffix
+          - stdall: true
+            command: |
+              sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
+              sudo update-alternatives --config vi
+              sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
+              sudo update-alternatives --config vim
+              sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
+              sudo update-alternatives --config editor
 
-                   echo -n "Keep Neovim folder at ~/neovim? [Y|n]"
-                   read choice
-                   case "$choice" in
-                       n|N )
-                           rm -rf ~/neovim
-                           exit 0;;
-                       * )
-                           break;;
-                   esac
-               }
-               build_from_src
-           else
-               apt_get_nvim() {
-                   sudo apt-get install -y software-properties-common
-                   sudo add-apt-repository ppa:neovim-ppa/unstable
-                   sudo apt-get update
-                   sudo apt-get install -y neovim
-                   sudo apt-get install -y python-dev python-pip python3-dev python3-pip xclip
-                   nvim_suffix
-               }
-               apt_get_nvim
-           fi
+              sudo pip install neovim
+              if hash pip3 2>/dev/null; then
+                  sudo pip3 install neovim
+              fi
 
-- shell:
     - description: Link neovim to vim
       command: |
-
         mkdir -p ${XDG_CONFIG_HOME:=$HOME/.config}
         ln -sf ~/.vim $XDG_CONFIG_HOME/nvim
         ln -sf ~/.vimrc $XDG_CONFIG_HOME/nvim/init.vim
@@ -155,21 +129,15 @@
 - link:
     ~/.gitconfig:
         path: git/gitconfig
-        force: true
+        relink: true
     ~/.gitconfig.user: git/gitconfig.user
     ~/.gitignore_global: git/gitignore_global
 
-- shell:
-    - description: Link git config
-      command: |
-
-        for f in $(find "$HOME/dotfiles/git" -maxdepth 1 -type f | grep "gitconfig.os"); do
-            if uname | grep -iq "${f##*/gitconfig.os.}"; then
-                ln -sf "${f}" "$HOME/.gitconfig.os";
-                break;
-            fi
-        done
-
+- platform-link:
+    linux:
+      ~/.gitconfig.os: git/gitconfig.os.linux
+    darwin:
+      ~/.gitconfig.os: git/gitconfig.os.darwin
 
 # ----- tmux -----
 - link:
@@ -182,8 +150,8 @@
       default: true
     - stdall: true
       platforms:
-        darwin: 'echo' #TODO
-        linux: sudo apt-get install automake pkg-config libevent-dev ncurses-dev
+        darwin: echo #TODO
+        linux: sudo apt-get install -y automake pkg-config libevent-dev ncurses-dev
     - stdall: true
       command: |
 
@@ -202,10 +170,10 @@
 - clean: ['~/.pyvirtualenvs']
 - link:
     ~/.pyvirtualenvs/postactivate:
-        force: true
         path: virtualenv/postactivate
+        relink: true
         create: true
     ~/.pyvirtualenvs/postdeactivate:
-        force: true
         path: virtualenv/postdeactivate
+        relink: true
         create: true

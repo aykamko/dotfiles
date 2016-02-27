@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import dotbot
+from dotbot.messenger.color import Color
 
 
 class AdvancedShell(dotbot.Plugin):
@@ -19,7 +20,7 @@ class AdvancedShell(dotbot.Plugin):
             raise ValueError('Shell++ cannot handle directive %s' % directive)
         return self._process_commands(data)
 
-    def _log_msg(self, cmd, msg):
+    def _log_cmd(self, cmd, msg):
         if msg is None:
             self._log.lowinfo(cmd)
         else:
@@ -42,8 +43,14 @@ class AdvancedShell(dotbot.Plugin):
         if item.get('condition'):
             ret = subprocess.call(item['condition'], shell=True, stdin=stdin, stdout=stdout,
                                   stderr=stderr, cwd=self._base_directory)
-            self._log_msg(item['condition'], msg)
-            return ret == item.get('continue-if', 0), None
+            self._log_cmd(item['condition'], msg)
+            if item.get('branch'):
+                if ret not in item['branch']:
+                    return False, 'No rule for condition result: %d' % ret
+                success = self._process_commands(item['branch'][ret])
+                return not success, success
+            else:
+                return ret == item.get('continue-if', 0), None
 
         elif item.get('prompt'):
             default = False if type(item.get('default')) != bool else item['default']
@@ -51,19 +58,28 @@ class AdvancedShell(dotbot.Plugin):
                 choices = ' [Y/n] '
             else:
                 choices = ' [y/N] '
-            sys.stdout.write(item['prompt'] + choices)
-            choice = raw_input().lower()
+            sys.stdout.write(Color.YELLOW + item['prompt'] + choices)
+            if os.getenv('DOTBOT_YES', False):
+                sys.stdout.write(('y' if default else 'n') + Color.RESET + os.linesep)
+                return True, None
+            else:
+                choice = raw_input().lower()
+                sys.stdout.write(Color.RESET + os.linesep)
+
             if default:
                 return choice not in ['no', 'n'], None
             else:
                 return choice not in ['yes', 'ye', 'y'], None
 
         elif item.get('platforms'):
-            uname = os.uname().lower()
+            uname = os.uname()[0].lower()
             platforms = item['platforms']
             if uname not in platforms:
                 return False, 'No rule for platform'
             cmd = platforms[uname]
+            if isinstance(cmd, dict) or isinstance(cmd, list):
+                success = self._process_commands(cmd)
+                return not success, success
 
         elif item.get('command'):
             cmd = item['command']
@@ -71,7 +87,7 @@ class AdvancedShell(dotbot.Plugin):
         else:
             return False, 'Bad item: {}'.format(item)
 
-        self._log_msg(cmd, msg)
+        self._log_cmd(cmd, msg)
         ret = subprocess.call(cmd, shell=True, stdin=stdin, stdout=stdout,
                               stderr=stderr, cwd=self._base_directory)
         if ret != 0:
@@ -87,7 +103,8 @@ class AdvancedShell(dotbot.Plugin):
                     keep_going, err = self._process_dict_item(item, devnull)
                     if not keep_going:
                         if err:
-                            self._log.warning(err)
+                            if err is not True:
+                                self._log.warning(err)
                             success = False
                         break
                     else:
