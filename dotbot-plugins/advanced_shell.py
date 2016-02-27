@@ -48,8 +48,8 @@ class AdvancedShell(dotbot.Plugin):
                 if ret not in item['branch']:
                     self._log.lowinfo('No rule for condition result: %d' % ret)
                     return True, None
-                success = self._process_commands(item['branch'][ret])
-                return not success, success
+                success = self._process_commands(item['branch'][ret], False)
+                return success, not success
             else:
                 return ret == item.get('continue-if', 0), None
 
@@ -60,7 +60,7 @@ class AdvancedShell(dotbot.Plugin):
             else:
                 choices = ' [y/N] '
             sys.stdout.write(Color.YELLOW + item['prompt'] + choices)
-            if os.getenv('DOTBOT_YES', False):
+            if os.getenv('DOTBOT_DEFAULT', False):
                 sys.stdout.write(('y' if default else 'n') + Color.RESET + os.linesep)
                 return True, None
             else:
@@ -79,8 +79,8 @@ class AdvancedShell(dotbot.Plugin):
                 return False, 'No rule for platform'
             cmd = platforms[uname]
             if isinstance(cmd, dict) or isinstance(cmd, list):
-                success = self._process_commands(cmd)
-                return not success, success
+                success = self._process_commands(cmd, False)
+                return success, not success
 
         elif item.get('command'):
             cmd = item['command']
@@ -95,7 +95,7 @@ class AdvancedShell(dotbot.Plugin):
             return False, 'Command [%s] failed' % cmd
         return True, None
 
-    def _process_commands(self, data):
+    def _process_commands(self, data, log_suffix=True):
         success = True
         with open(os.devnull, 'w') as devnull:
             for item in data:
@@ -122,8 +122,9 @@ class AdvancedShell(dotbot.Plugin):
                 if ret != 0:
                     success = False
                     self._log.warning('Command [%s] failed' % cmd)
-        if success:
-            self._log.info('All commands have been executed')
-        else:
-            self._log.error('Some commands were not successfully executed')
+        if log_suffix:
+            if success:
+                self._log.info('All commands have been executed')
+            else:
+                self._log.error('Some commands were not successfully executed')
         return success
