@@ -106,11 +106,11 @@
           - stdall: true
             command: |
               sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
-              sudo update-alternatives --config vi
               sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
-              sudo update-alternatives --config vim
               sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
-              sudo update-alternatives --config editor
+              sudo update-alternatives --auto vi
+              sudo update-alternatives --auto vim
+              sudo update-alternatives --auto editor
 
               sudo pip install neovim
               if hash pip3 2>/dev/null; then
