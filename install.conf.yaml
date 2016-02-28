@@ -31,6 +31,9 @@
         done
 
 - link:
+    ~/.zshenv:
+        path: zsh/zshenv
+        relink: true
     ~/.zshrc:
         path: zsh/zshrc
         relink: true
@@ -39,6 +42,9 @@
         relink: true
     ~/.zpreztorc:
         path: zsh/zpreztorc
+        relink: true
+    ~/.zlogin:
+        path: zsh/zlogin
         relink: true
     ~/.zprezto/modules/prompt/functions/prompt_ayk_setup:
         path: zsh/zprezto/modules/prompt/functions/prompt_ayk_setup

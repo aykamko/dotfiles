@@ -1,0 +1,34 @@
+#
+# Executes commands at login post-zshrc.
+#
+# Authors:
+#   Sorin Ionescu <sorin.ionescu@gmail.com>
+#
+
+# Execute code that does not affect the current session in the background.
+{
+  # Compile the completion dump to increase startup speed.
+  zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
+  if [[ -s "$zcompdump" && (! -s "${zcompdump}.zwc" || "$zcompdump" -nt "${zcompdump}.zwc") ]]; then
+    zcompile "$zcompdump"
+  fi
+} &!
+
+# Print a random, hopefully interesting, adage.
+if (( $+commands[fortune] )); then
+  if [[ -t 0 || -t 1 ]]; then
+    fortune -s
+    print
+  fi
+fi
+
+if [[ "$SHLVL" -eq 2 && -o LOGIN ]]; then
+  echo "$(tput setaf 3)> Started zsh in about $(bc -l <<< "$EPOCHREALTIME - $ZSH_START_TIME") seconds.$(tput sgr0)"
+fi
+if [[ "$PROFILE_STARTUP" == true ]]; then
+  unsetopt xtrace
+  exec 2>&3 3>&-
+  if [ -f ~/dotfiles/bin/zsh-profile-processor.py ]; then
+    $HOME/dotfiles/bin/zsh-profile-processor.py $ZSH_START_TIME $ZSH_PROFILER_LOG
+  fi
+fi

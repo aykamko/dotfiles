@@ -1,0 +1,28 @@
+#
+# Defines environment variables and sets up profiler.
+#
+# Authors:
+#   Sorin Ionescu <sorin.ionescu@gmail.com>
+#   Aleks Kamko <aykamko@gmail.com>
+#
+
+# Profiler for interactive login shell
+if [[ "$SHLVL" -eq 2 && -o LOGIN ]]; then
+  zmodload zsh/datetime
+  ZSH_START_TIME=$EPOCHREALTIME
+  PROFILE_STARTUP=true
+  if [[ "$PROFILE_STARTUP" == true ]]; then
+    zmodload zsh/datetime
+    setopt promptsubst
+    ZSH_PROFILER_LOG="$HOME/temp/zsh_startlog/${"$(date +%s)":6}_$$"
+    PS4=$'+$EPOCHREALTIME %N:%i> '
+    mkdir -p ~/temp/zsh_startlog
+    exec 3>&2 2>$ZSH_PROFILER_LOG
+    setopt xtrace prompt_subst
+  fi
+fi
+
+# Ensure that a non-login, non-interactive shell has a defined environment.
+if [[ "$SHLVL" -eq 1 && ! -o LOGIN && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
+  source "${ZDOTDIR:-$HOME}/.zprofile"
+fi

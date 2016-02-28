@@ -1,13 +1,3 @@
-PROFILE_STARTUP=false
-if [[ "$PROFILE_STARTUP" == true ]]; then
-  zmodload zsh/datetime
-  setopt promptsubst
-  PS4=$'+$EPOCHREALTIME %N:%i> '
-  mkdir -p $HOME/temp/zsh_startlog
-  exec 3>&2 2>$HOME/temp/zsh_startlog/$$
-  setopt xtrace prompt_subst
-fi
-
 # vim
 if hash nvim 2>/dev/null; then
   if hash nvim-client 2>/dev/null; then
@@ -62,9 +52,11 @@ alias pp=fpp
 
 # zsh
 alias zshso='source ~/.zshrc'
+alias zshenv='vi ~/.zshenv'
 alias zshrc='vi ~/.zshrc'
 alias zprofile='vi ~/.zprofile'
 alias zpreztorc='vi ~/.zpreztorc'
+alias zlogin='vi ~/.zlogin'
 
 # tmux
 ta() { [[ -z $TMUX ]] && tmux attach -t "$@" || tmux switch -t "$@" }
@@ -245,8 +237,3 @@ fi
 
 unsetopt CORRECT # disable autocorrect suggestions for commands
 setopt NO_NOMATCH # pass bad match to command
-
-if [[ "$PROFILE_STARTUP" == true ]]; then
-  unsetopt xtrace
-  exec 2>&3 3>&-
-fi
