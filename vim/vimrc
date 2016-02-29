@@ -437,6 +437,14 @@ if has('nvim')
   tnoremap <C-w>j <C-\><C-n><C-w>j
   tnoremap <C-w>k <C-\><C-n><C-w>k
   tnoremap <C-w>l <C-\><C-n><C-w>l
+
+  " focus terminal if mouse click
+  function! FocusTerm()
+    if &buftype ==# 'terminal'
+      startinsert
+    endif
+  endfunction
+  nnoremap <silent> <LeftMouse> <LeftMouse>:call FocusTerm()<CR>
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
