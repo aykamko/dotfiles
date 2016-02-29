@@ -37,7 +37,6 @@ function +vi-git_changes_fmt {
     return 0
 }
 
-# Virtualenv: current working virtualenv
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 function prompt_ayk_venv {
     if [[ -n ${VIRTUAL_ENV} ]]; then
@@ -57,7 +56,7 @@ function xterm_title {
 # tmux: show marker if not in tmux
 function has_tmux {
     if [[ -z "$TMUX" ]]; then
-        _has_tmux="%F{$_third_color}[No TMUX]%f "
+        _has_tmux="%F{$_third_color}[--tmux]%f "
     else
         unset _has_tmux
     fi
@@ -72,10 +71,6 @@ function docker_mounted {
     else
         unset _docker
     fi
-}
-
-# neovim: show marker if terminal is through neovim's libvterm
-function is_nvim_term {
 }
 
 # PWD: Add space before prompt extras, if they exist.
@@ -97,7 +92,6 @@ function prompt_ayk_precmd {
     docker_mounted
     xterm_title
     has_tmux
-    is_nvim_term
     prompt_ayk_pwd
 }
 
