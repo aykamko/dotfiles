@@ -22,13 +22,9 @@ if (( $+commands[fortune] )); then
   fi
 fi
 
-if [[ -o LOGIN ]]; then
-  {
-    local yellow="\x1b[33m"
-    local reset="\x1b[0m"
-    echo "${yellow}Started zsh in about ${$(( $EPOCHREALTIME - $ZSH_START_TIME )):0:5} seconds.${reset}"
-  }
-fi
+local yellow="\x1b[33m"
+local reset="\x1b[0m"
+echo "${yellow}> Started zsh in about ${$(( $EPOCHREALTIME - $ZSH_START_TIME )):0:5} seconds.${reset}"
 
 if [[ $ZSH_PROFILE_STARTUP -eq 1 ]]; then
   unsetopt xtrace

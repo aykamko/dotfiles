@@ -107,8 +107,8 @@ function prompt_ayk_setup {
     # Add hook for calling vcs_info before each command.
     add-zsh-hook precmd prompt_ayk_precmd
 
-    # If terminal is through neovim's libvterm, change prompt emoji
-    [[ -n ${NVIM_LISTEN_ADDRESS} ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
+    # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
+    [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
 
     # Set editor-info parameters.
     zstyle ':prezto:module:editor:info:completing' format "%B%F{red}...%f%b"

@@ -6,8 +6,8 @@
 #   Aleks Kamko <aykamko@gmail.com>
 #
 
-# Profiler for interactive login shell
-if [[ -o LOGIN ]]; then
+# Profiler for interactive shell
+if [[ -o INTERACTIVE ]]; then
   zmodload zsh/datetime
   ZSH_START_TIME=$EPOCHREALTIME
 

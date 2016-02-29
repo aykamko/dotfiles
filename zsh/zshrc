@@ -217,3 +217,9 @@ fi
 
 unsetopt CORRECT  # disable autocorrect suggestions for commands
 setopt NO_NOMATCH # pass bad match to command
+
+if [[ -o INTERACTIVE && ! -o LOGIN ]]; then
+  local purple="\x1b[35m"
+  local reset="\x1b[0m"
+  echo "${purple}> Started zsh in about ${$(( $EPOCHREALTIME - $ZSH_START_TIME )):0:5} seconds.${reset}"
+fi
