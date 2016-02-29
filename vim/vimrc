@@ -29,7 +29,6 @@ call plug#begin(g:plug_dir)
 Plug 'Shougo/unite.vim'
 Plug 'Shougo/vimfiler.vim'
 
-Plug 'SirVer/ultisnips'
 Plug 'airblade/vim-gitgutter'
 Plug 'aykamko/neomake'
 Plug 'aykamko/vim-textobj-user'
@@ -76,9 +75,9 @@ if has('nvim')
   Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
 endif
 
-" Make sure YCM and fzf is not installed on initial PlugInstall
-if empty(glob('~/.fzf')) |
-      \ call mkdir(expand('~/.fzf'), 'p') | endif
+" Don't install the following plugins on initial PlugInstall (must use PlugInstall! instead)
+
+if empty(glob('~/.fzf')) | call mkdir(expand('~/.fzf'), 'p') | endif
 Plug 'junegunn/fzf', {
       \ 'frozen': 1,
       \ 'dir': '~/.fzf',
@@ -89,6 +88,11 @@ if empty(glob(g:plug_dir.'YouCompleteMe')) |
 Plug 'Valloric/YouCompleteMe', {
       \ 'frozen': 1,
       \ 'do': './install.py --clang-completer --gocode-completer --tern-completer' }
+
+if empty(glob(g:plug_dir.'ultisnips')) |
+      \ call mkdir(expand(g:plug_dir.'ultisnips'), 'p') | endif
+Plug 'SirVer/ultisnips', {
+      \ 'frozen': 1 }
 
 if empty(glob(g:plug_dir.'YCM-Generator')) |
       \ call mkdir(expand(g:plug_dir.'YCM-Generator'), 'p') | endif
