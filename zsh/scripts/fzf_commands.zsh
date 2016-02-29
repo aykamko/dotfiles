@@ -1,9 +1,8 @@
-# From: https://github.com/junegunn/fzf/wiki/Examples
-# fd - cd to selected directory
+# Adapted from: https://github.com/junegunn/fzf/wiki/Examples
 fd() {
   local dir
-  dir=$(find ${1:-*} -path '*/\.*' -prune \
-                  -o -type d -print 2> /dev/null | fzf-tmux +m) &&
+  dir=$(find ${1:-.} -type d -print 2> /dev/null | \
+      fzf-tmux +m --delimiter="^${1:-.}/" --with-nth=2 --header="Searching from: ${1:-.}/") &&
   cd "$dir"
 }
 
@@ -105,11 +104,20 @@ fport() {
 # From: https://github.com/junegunn/fzf/wiki/Examples
 # v - open files in ~/.viminfo
 v() {
-  local files
-  files=$(grep '^>' ~/.viminfo | cut -c3- |
+  local infiles files
+  if hash nvim 2>/dev/null; then
+    if [ ! -f ~/.nvim.shada ]; then echo "No shada found at ~/.nvim.shada" && return 1; fi
+    command nvim \
+      --cmd 'rshada ~/.nvim.shada | for f in v:oldfiles | echo f | endfor | quit' \
+      2>! ~/.nvim.history
+    infiles=$(cat ~/.nvim.history | grep '^/')
+  else
+    infiles=$(grep '^>' ~/.viminfo | cut -c3- |
           while read line; do
             [ -f "${line/\~/$HOME}" ] && echo "$line"
-          done | fzf-tmux -d -m -q "$*" -1 \
+          done)
+  fi
+  files=$(echo $infiles | fzf-tmux -d -m -q "$*" -1 \
             --expect=ctrl-d)
   if [ -n "$files" ]; then
     if [ "$k" = 'ctrl-d' ]; then
@@ -118,7 +126,6 @@ v() {
       vim ${files//\~/$HOME}
     fi
   fi
-
 }
 
 # From: https://github.com/junegunn/fzf/wiki/Examples

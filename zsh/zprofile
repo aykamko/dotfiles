@@ -1,20 +1,32 @@
+# vim: set ft=zsh:ts=2:sts=2:sw=2:
+_zprofile() {
+###############################################################################
+# Misc
+###############################################################################
+export UNAME=${$(uname -s):l}
+export DOTFILES=$HOME/dotfiles
+export WORKON_HOME=$HOME/.pyvirtualenvs # Virtualenv
+export TEXMFHOME=texmf # Latex
+export KEYTIMEOUT=1 # Reduce command line vim delay
+
 ###############################################################################
 # Browser
 ###############################################################################
-if [[ "$OSTYPE" == darwin* ]]; then
+if [[ "$UNAME" == darwin ]]; then
   export BROWSER='open'
 fi
 
 ###############################################################################
 # Editors
 ###############################################################################
-export EDITOR='vim'
-if hash nvim 2>/dev/null; then
-  if hash nvim-client 2>/dev/null; then
+if (( $+commands[nvim] )); then
+  if (( $+commands[nvim-client] )); then
     export EDITOR='nvim-client'
   else
     export EDITOR='nvim'
   fi
+else
+  export EDITOR='vim'
 fi
 export VISUAL='vim'
 export PAGER='less'
@@ -32,33 +44,14 @@ export LANGUAGE='en_US.UTF-8'
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-export PYENV_SHIMS=$HOME/.pyenv/shims
-export POSTGRES_CLTOOLS=/Applications/Postgres.app/Contents/Versions/9.4/bin
+if [ -d $HOME/.pyenv ]; then
+  export PYENV_SHIMS=$HOME/.pyenv/shims
+  path=($PYENV_SHIMS $path)
+fi
 
-path=(
-  $PYENV_SHIMS
-  /usr/local/{bin,sbin}
-  /usr/{bin,sbin}
-  /bin
-  /opt/X11/bin
-  /usr/local/heroku/bin
-  /usr/local/git/bin
-  /usr/texbin
-  $POSTGRES_CLTOOLS
-  /usr/local/opt/go/libexec/bin
-  $path
-)
-
-if [ -d $HOME/dotfiles/bin ]; then
-  path+=($HOME/dotfiles/bin)
-
-  # source platform specific binaries
-  local d
-  for d in $(find $HOME/dotfiles/bin -mindepth 1 -maxdepth 1 -type d); do
-    if [[ "$OSTYPE" =~ "${d##*/}" ]]; then
-      path+=(${d})
-    fi
-  done
+if [ -d $DOTFILES/bin ]; then
+  path+=($DOTFILES/bin)
+  [ -d $DOTFILES/bin/$UNAME ] && path+=($DOTFILES/bin/$UNAME)
 fi
 
 ###############################################################################
@@ -74,15 +67,5 @@ export LESS='-F -g -i -M -R -S -w -X -z-4'
 if (( $#commands[(i)lesspipe(|.sh)] )); then
   export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
 fi
-
-###############################################################################
-# Misc
-###############################################################################
-# Virtualenv
-export WORKON_HOME=$HOME/.pyvirtualenvs
-
-# Latex
-export TEXMFHOME=texmf
-
-# Reduce command line vim delay
-export KEYTIMEOUT=1
+}
+[[ -z $TMUX ]] && _zprofile

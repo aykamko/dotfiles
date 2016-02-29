@@ -7,16 +7,22 @@
 #
 
 # Profiler for interactive login shell
-if [[ "$SHLVL" -eq 2 && -o LOGIN ]]; then
+if [[ -o LOGIN ]]; then
   zmodload zsh/datetime
   ZSH_START_TIME=$EPOCHREALTIME
-  PROFILE_STARTUP=true
-  if [[ "$PROFILE_STARTUP" == true ]]; then
-    zmodload zsh/datetime
+
+  #######################################
+  #######################################
+  ZSH_PROFILE_STARTUP=0
+  #######################################
+  #######################################
+
+  if [ $ZSH_PROFILE_STARTUP -eq 1 ]; then
     setopt promptsubst
     ZSH_PROFILER_LOG="$HOME/temp/zsh_startlog/${"$(date +%s)":6}_$$"
+    mkdir -p ${ZSH_PROFILER_LOG:a:h}
+
     PS4=$'+$EPOCHREALTIME %N:%i> '
-    mkdir -p ~/temp/zsh_startlog
     exec 3>&2 2>$ZSH_PROFILER_LOG
     setopt xtrace prompt_subst
   fi

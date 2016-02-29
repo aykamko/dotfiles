@@ -29,6 +29,12 @@
         for rcfile in $(find "${ZDOTDIR:-$HOME}"/.zprezto/runcoms -not -path '*\.md' -type f); do
             ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}"
         done
+    - platforms:
+        darwin: sudo rm -f /etc/zshenv && sudo ln -s $HOME/dotfiles/zsh/etc/zshenv.os.darwin /etc/zshenv
+
+- platform-link:
+    darwin:
+      ~/.zshrc.os: zsh/zshrc.os.darwin
 
 - link:
     ~/.zshenv:
@@ -50,9 +56,6 @@
         path: zsh/zprezto/modules/prompt/functions/prompt_ayk_setup
         relink: true
 
-- platform-link:
-    darwin:
-      ~/.zshrc.os: zsh/zshrc.os.darwin
 
 # ----- vim -----
 - clean:

@@ -1,6 +1,29 @@
+# vim: set ft=zsh:
+###############################################################################
+# Prezto
+###############################################################################
+# don't load prezto outside of tmux to speed up load
+[[ -n "$TMUX" ]] && \
+  [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+
+###############################################################################
+# Aliases & Functions
+###############################################################################
+# basics
+alias c=clear
+clr() {
+  clear
+  [ -n $TMUX ] && tmux clear-history
+}
+stripansi() {
+  [[ $UNAME == darwin ]] && \
+    sed -E "s/"$'\E'"\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g" ||
+    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g"
+}
+
 # vim
-if hash nvim 2>/dev/null; then
-  if hash nvim-client 2>/dev/null; then
+if (( $+commands[nvim] )); then
+  if (( $+commands[nvim-client] )); then
     alias vi=nvim-client
     alias vim=nvim-client
   else
@@ -15,13 +38,15 @@ alias vimrc='vi ~/.vimrc'
 alias vis='vi -u ~/.vim/vimrc_small'
 alias vimrc_small='vis ~/.vim/vimrc_small'
 
-swpclean() { find . -name '*.sw*' -exec /bin/rm -rf {} \; ; }
+swpclean() {
+  find . -name '*.sw*' -exec /bin/rm -rf {} \;
+}
 
 vimreplace() {
   [[ $# < 2 ]] && echo 'Not enough arguments' && return
 
   local search
-  hash ag 2>/dev/null && \
+  (( $+commands[ag] )) && \
     search="ag -l --nocolor $1" || \
     search="grep -rl $1 *"
 
@@ -30,21 +55,6 @@ vimreplace() {
     matches+=$line
   done < <(eval $search)
   vim -c "bufdo %s/$1/$2/gec | update" ${matches}
-}
-
-###############################################################################
-# Aliases & Functions
-###############################################################################
-# basics
-alias c=clear
-clr() {
-  clear
-  [ -n $TMUX ] && tmux clear-history
-}
-stripansi() {
-  [[ "$OSTYPE" == *"darwin"* ]] && \
-    sed -E "s/"$'\E'"\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g" ||
-    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g"
 }
 
 # Facebook Path Picker
@@ -59,7 +69,12 @@ alias zpreztorc='vi ~/.zpreztorc'
 alias zlogin='vi ~/.zlogin'
 
 # tmux
-ta() { [[ -z $TMUX ]] && tmux attach -t "$@" || tmux switch -t "$@" }
+alias t='tmux'
+alias tl='tmux ls'
+alias detach='tmux detach'
+alias tmuxconf="vi ~/.tmux.conf"
+alias tconf='tmuxconf'
+alias tname='tmux rename-session'
 
 tkill() {
   case $1 in
@@ -72,14 +87,6 @@ tkill() {
       command tmux kill-session;;
   esac
 }
-
-alias tl='tmux ls'
-alias detach='tmux detach'
-alias tmuxconf="vi ~/.tmux.conf"
-alias tconf='tmuxconf'
-alias tname='tmux rename-session'
-
-tpp() { [[ -z $TMUX ]] && echo 'Not in tmux!' || command tmux capture-pane -pe | fpp; }
 
 # julia
 alias jl=julia
@@ -94,7 +101,7 @@ if [ -f /usr/local/bin/virtualenvwrapper.sh ]; then
   [[ -n ${VIRTUAL_ENV} ]] && workon ${VIRTUAL_ENV:t} # autostart virtualenv
 fi
 
-# if hash pylama 2>/dev/null; then
+# if (( $+commands[pylama] )); then
 #   pylama() { # pylama should use pylama.ini at root of git repo
 #     local gitroot=$(git rev-parse --show-toplevel 2>/dev/null)
 #     [[ $? -ne 0 || $* == *"-o"* || $* == *"--options"* ]] && \
@@ -103,7 +110,8 @@ fi
 #   }
 # fi
 
-upsearch() { # modified from http://unix.stackexchange.com/questions/13464
+# modified from http://unix.stackexchange.com/questions/13464
+upsearch() {
   local curdir="$PWD"
   while 1; do
     [ -f "$curdir/$1" ] && echo "$curdir/$1" && return
@@ -113,36 +121,33 @@ upsearch() { # modified from http://unix.stackexchange.com/questions/13464
 }
 dmake() { # django
   local django=$(upsearch manage.py)
-  [[ -n "$django" ]] && \
-    python "$django" "$@" || \
+  [[ -n $django ]] && \
+    (cd $(dirname $django) && python $django "$@") || \
     echo "Couldn't find manage.py"
 }
 
 # ruby
-if hash rbenv 2>/dev/null; then
-  eval "$(rbenv init -)"
+if (( $+commmands[rbenv] )); then
+  # eval "$(rbenv init -)"
 fi
 
 # nvm/node
-if hash nvm 2>/dev/null; then
+if (( $+commands[nvm] )); then
   export NVM_DIR=$HOME/.nvm
   nvm() { unset -f nvm && source $(brew --prefix nvm)/nvm.sh && nvm "$@"; }
 fi
 
 # git
-hash hub 2>/dev/null && alias git=hub
+(( $+commands[hub] )) && alias git=hub
 alias g=git
 
 # context from root of git directory
 gr() {
   local root=$(command git rev-parse --show-toplevel 2> /dev/null)
-  [[ $? != 0 ]] && \
-    cd "$@" || \
-    [[ $# == 0 ]] && cd $root || \
-    (builtin cd $root && "$@")
+  [[ $? == 0 ]] && cd $root || cd "$@"
 }
 
-if hash tag 2>/dev/null; then
+if (( $+commands[tag] )); then
   ag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
   tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
 fi
@@ -160,10 +165,10 @@ alias texclean='rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null'
 
 # override cd to do ls and vi when necessary
 _better_cd() {
-  set -- ${1//,/.} # replace commas (,) with periods (.)
+  set -- ${1//,/.} # replace commas (,) with periods (.) [looking at u Golang]
   if [[ -f $1 ]]; then
     local fdir=$(dirname $1)
-    [[ -d $fdir ]] && builtin cd "$fdir" && fancyls && vim $(basename $1) ${*:2}
+    [[ -d $fdir ]] && builtin cd $fdir && fancyls && vim $(basename $1) ${*:2}
   else
     builtin cd "$@" && fancyls
   fi
@@ -171,8 +176,8 @@ _better_cd() {
 alias cd=_better_cd
 
 # tab completion in dotfiles directory
-dotfiles() { cd $HOME/dotfiles/$1; }
-compctl -f -W $HOME/dotfiles/ dotfiles
+dotfiles() { cd $DOTFILES/$1; }
+compctl -f -W $DOTFILES/ dotfiles
 
 # override cat
 _cat_ls() { [ -d $1 ] && fancyls $1 || command cat "$@"; }
@@ -186,34 +191,9 @@ alias cat=_cat_ls
 [[ -f "$HOME/.secret_zshrc" ]] && source "$HOME/.secret_zshrc" # Secret!
 
 ###############################################################################
-# Autostart TMUX
-###############################################################################
-if [[ -f "$HOME/.no_tmux" ]]; then
-  builtin cd $(cat $HOME/.no_tmux)
-  command rm -f $HOME/.no_tmux
-elif [[ -z "$TMUX" ]]; then
-  echo "Refusing to load Prezto. Opening tmux..."
-  if [[ -f "$HOME/.tmux_new" ]]; then
-    command rm -f $HOME/.tmux_new
-    tmux new
-  else
-    tmux attach || sleep 0.01; tmux
-  fi
-  if [[ $? -eq 0 ]]; then return; fi
-fi
-
-###############################################################################
-# Prezto
-###############################################################################
-[[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
-
-# realias cd
-alias cd=_better_cd
-
-###############################################################################
 # z
 ###############################################################################
-[ -f ~/dotfiles/z/z.sh ] && source ~/dotfiles/z/z.sh
+[ -f $DOTFILES/z/z.sh ] && source $DOTFILES/z/z.sh
 
 ###############################################################################
 # vim fzf
@@ -229,11 +209,11 @@ fi
 ###############################################################################
 # zsh scripts
 ###############################################################################
-if [ -d ~/dotfiles/zsh/scripts ]; then
-  for f in $(ls ~/dotfiles/zsh/scripts/*); do
+if [ -d $DOTFILES/zsh/scripts ]; then
+  for f in $DOTFILES/zsh/scripts/*; do
     source $f
   done
 fi
 
-unsetopt CORRECT # disable autocorrect suggestions for commands
+unsetopt CORRECT  # disable autocorrect suggestions for commands
 setopt NO_NOMATCH # pass bad match to command
