@@ -13,8 +13,8 @@ _third_color='magenta'
 # Git: remote status (number of commits behind and after remote)
 function +vi-git_remote {
     local remote_info
-    local ahead=$(command git rev-list --count @\{u\}..HEAD 2>/dev/null)
-    local behind=$(command git rev-list --count HEAD..@\{u\} 2>/dev/null)
+    local ahead behind
+    read ahead behind <<< $(command git rev-list --left-right --count HEAD..@\{u\} 2>/dev/null)
 
     if [[ -n $ahead && $ahead != 0 ]]; then
         remote_info+="+$ahead"
@@ -48,9 +48,8 @@ function prompt_ayk_venv {
 
 # xterm: set pane title
 function xterm_title {
-    local xtermpwd
-    xtermpwd=$(echo "${PWD/#$HOME/~}" | egrep -o '[^/]*(\/[^/]*(\/[^/]*)?)?$')
-    echo -ne "\033]2;${xtermpwd}\033\\"
+  # execute in background
+  echo -ne "\033]2;$(egrep -o '[^/]*(\/[^/]*(\/[^/]*)?)?$' <<< "${PWD/#$HOME/~}")\033\\" &!
 }
 
 # tmux: show marker if not in tmux
