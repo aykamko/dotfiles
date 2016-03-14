@@ -39,22 +39,6 @@ export LANG='en_US.UTF-8'
 export LANGUAGE='en_US.UTF-8'
 
 ###############################################################################
-# Paths
-###############################################################################
-# Ensure path arrays do not contain duplicates.
-typeset -gU cdpath fpath mailpath path
-
-if [ -d $HOME/.pyenv ]; then
-  export PYENV_SHIMS=$HOME/.pyenv/shims
-  path=($PYENV_SHIMS $path)
-fi
-
-if [ -d $DOTFILES/bin ]; then
-  path+=($DOTFILES/bin)
-  [ -d $DOTFILES/bin/$UNAME ] && path+=($DOTFILES/bin/$UNAME)
-fi
-
-###############################################################################
 # Less
 ###############################################################################
 # Set the default Less options.
@@ -68,4 +52,29 @@ if (( $#commands[(i)lesspipe(|.sh)] )); then
   export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
 fi
 }
+
+_zprofile_paths() {
+###############################################################################
+# Paths
+###############################################################################
+# Ensure path arrays do not contain duplicates.
+typeset -gU cdpath fpath mailpath path
+
+if [ -d $HOME/.pyenv ]; then
+  export PYENV_SHIMS=$HOME/.pyenv/shims
+  path=($PYENV_SHIMS $path)
+fi
+
+if [ -d $HOME/.rbenv ]; then
+  export RBENV_SHIMS=$HOME/.rbenv/shims
+  path=($RBENV_SHIMS $path)
+fi
+
+if [ -d $DOTFILES/bin ]; then
+  path+=($DOTFILES/bin)
+  [ -d $DOTFILES/bin/$UNAME ] && path+=($DOTFILES/bin/$UNAME)
+fi
+}
+
 [[ -z $TMUX ]] && _zprofile
+[[ -z $TMUX || -n $VIMRUNTIME ]] && _zprofile_paths

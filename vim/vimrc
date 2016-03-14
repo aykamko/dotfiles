@@ -8,10 +8,12 @@ set nocompatible   " be iMproved
 let s:darwin = has('mac')
 let s:tmux = $TMUX != ''
 
-" vimrc folding
-autocmd VimEnter .vimrc
-      \  set foldmethod=marker
-      \| set foldlevel=0
+augroup vimrc_folding
+  autocmd BufNewFile,BufReadPost .vimrc
+        \  set foldmethod=marker
+        \| set foldlevel=0
+        \| autocmd! vimrc_folding
+augroup END
 
 " autoinstall vim-plug
 if empty(glob('~/.vim/autoload/plug.vim'))
@@ -23,13 +25,7 @@ endif
 let g:plug_dir = '~/.vim/bundle/'
 call plug#begin(g:plug_dir)
 
-" Plug 'ConradIrwin/vim-bracketed-paste'
-" Plug 'scrooloose/nerdtree'
-
-Plug 'Shougo/unite.vim'
-Plug 'Shougo/vimfiler.vim'
-
-Plug 'airblade/vim-gitgutter'
+Plug 'ConradIrwin/vim-bracketed-paste'
 Plug 'aykamko/neomake'
 Plug 'aykamko/vim-textobj-user'
 Plug 'christoomey/vim-tmux-navigator'
@@ -38,11 +34,9 @@ Plug 'itchyny/lightline.vim'
 Plug 'junegunn/vim-easy-align'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'mhinz/vim-grepper'
-Plug 'takac/vim-hardtime'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
-Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'unblevable/quick-scope'
@@ -53,7 +47,11 @@ Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easymotion-segments'
 Plug 'mattn/webapi-vim'
       \ | Plug 'mattn/gist-vim', { 'on': 'Gist' }
-Plug 'junegunn/goyo.vim',       { 'on': 'Goyo' }
+Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
+Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
+
+" lazy-loaded via FugitiveLazy to reduce VimEnter time
+Plug 'tpope/vim-fugitive',       { 'on': [] }
 
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
@@ -68,14 +66,17 @@ Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
 Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
-Plug 'mxw/vim-jsx'
+
+autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
+Plug 'mxw/vim-jsx',                  { 'for': 'javascript.jsx' }
 
 if has('nvim')
-  Plug 'aykamko/gitsync.nvim'
+  " Plug 'aykamko/gitsync.nvim'
+  " Plug 'aykamko/async-vimrc'
+  Plug 'Shougo/deoplete.nvim'
   Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
+  Plug 'Shougo/neosnippet.vim'
 endif
-
-" Don't install the following plugins on initial PlugInstall (must use PlugInstall! instead)
 
 if empty(glob('~/.fzf')) | call mkdir(expand('~/.fzf'), 'p') | endif
 Plug 'junegunn/fzf', {
@@ -83,23 +84,29 @@ Plug 'junegunn/fzf', {
       \ 'dir': '~/.fzf',
       \ 'do': 'yes \| ./install' }
 
-if empty(glob(g:plug_dir.'YouCompleteMe')) |
-      \ call mkdir(expand(g:plug_dir.'YouCompleteMe'), 'p') | endif
-Plug 'Valloric/YouCompleteMe', {
-      \ 'frozen': 1,
-      \ 'do': './install.py --clang-completer --gocode-completer --tern-completer' }
+" Don't install the following plugins on initial PlugInstall (must use PlugInstall! instead)
+" Also disable these for now, way too slow
 
-if empty(glob(g:plug_dir.'ultisnips')) |
-      \ call mkdir(expand(g:plug_dir.'ultisnips'), 'p') | endif
-Plug 'SirVer/ultisnips', {
-      \ 'frozen': 1 }
+" if empty(glob(g:plug_dir.'YouCompleteMe')) |
+"       \ call mkdir(expand(g:plug_dir.'YouCompleteMe'), 'p') | endif
+" Plug 'Valloric/YouCompleteMe', {
+"       \ 'frozen': 1,
+"       \ 'do': './install.py --clang-completer --gocode-completer --tern-completer' ,
+"       \ 'on': [] } " lazy loaded through async-vimrc
+"
+" if empty(glob(g:plug_dir.'YCM-Generator')) |
+"       \ call mkdir(expand(g:plug_dir.'YCM-Generator'), 'p') | endif
+" Plug 'rdnetto/YCM-Generator',  {
+"       \ 'frozen': 1,
+"       \ 'branch': 'stable',
+"       \ 'for': ['c', 'cpp', 'make'] }
 
-if empty(glob(g:plug_dir.'YCM-Generator')) |
-      \ call mkdir(expand(g:plug_dir.'YCM-Generator'), 'p') | endif
-Plug 'rdnetto/YCM-Generator',  {
-      \ 'frozen': 1,
-      \ 'branch': 'stable',
-      \ 'for': ['c', 'cpp', 'make'] }
+" if empty(glob(g:plug_dir.'ultisnips')) |
+"       \ call mkdir(expand(g:plug_dir.'ultisnips'), 'p') | endif
+" Plug 'SirVer/ultisnips', {
+"       \ 'frozen': 1,
+"       \ 'for': [] } " lazy loaded through async-vimrc
+"
 
 call plug#end()
 filetype plugin indent on " required
@@ -112,6 +119,10 @@ let maplocalleader = ' '
 
 let s:E = '✖'
 let s:W = '⚠'
+
+" skip checks
+let g:python_host_skip_check = 1
+let g:python3_host_skip_check = 1
 
 " Don't use virtualenv python
 " if !empty($PYENV_SHIMS)
@@ -169,10 +180,12 @@ augroup DisplaySignCol
   autocmd!
   autocmd BufEnter * sign define dummy
   autocmd BufEnter * if &buftype !=# 'terminal' |
-        \ exec 'sign place 9999 line=1 name=dummy buffer='.bufnr('') | endif
+        \ exec 'sign place 9999 line=1 name=dummy buffer='.bufnr('') |
+        \ endif
   if has('nvim')
     " no sign column in terminals pls
     autocmd TermOpen * exec 'sign unplace * buffer='.bufnr('')
+    autocmd TermOpen * set bufhidden=delete
     autocmd TermClose * exec 'sign place 9999 line=1 name=dummy buffer='.bufnr('')
   endif
 augroup END
@@ -224,8 +237,9 @@ augroup END
 " Line Numbering {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
-if &buftype !=# 'terminal' | set number | endif
-autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained *
+if &buftype !=# 'terminal' | set number | set relativenumber | endif
+" autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained * TODO: fix these
+autocmd! InsertEnter,InsertLeave *
       \ if !get(b:, 'goyo_enabled', 0) && &buftype !=# 'terminal' |
       \ set invrelativenumber | endif
 
@@ -305,7 +319,6 @@ vnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 1)<CR>
 
 " blackhole paste
 function! BlackHolePaste(type)
-  echo "hello"
   if a:type ==# 'char'
     silent exec 'normal! `[v`]"bdp'
   elseif a:type == 'v'
@@ -317,15 +330,27 @@ vnoremap <silent> <leader>p :<c-u>call BlackHolePaste(visualmode())<CR>
 nnoremap <silent> dp "bddP
 
 " directional split for file
-function! OpenDirectionalSplit(file)
-  echohl Question
-  echom 'Choose split direction. [hjkl] '
-  echohl Normal
-  call inputsave()
-  let dirchoice = nr2char(getchar())
-  call inputrestore()
-  redraw!
-  if dirchoice == 'h'
+function! OpenDirectionalSplit(file, ...)
+  if len(a:000) > 0
+    let dirchoice = a:000[0]
+  else
+    echohl Question
+    echom 'Choose split direction. [hjkl or Enter] '
+    echohl Normal
+    call inputsave()
+    let char = getchar()
+    call inputrestore()
+    redraw!
+    if char == 13  " Enter
+      let dirchoice = 'e'
+    else
+      let dirchoice = nr2char(char)
+    end
+  end
+
+  if dirchoice == 'e'
+    exec 'e '.a:file
+  elseif dirchoice == 'h'
     exec 'aboveleft vsp '.a:file
   elseif dirchoice == 'j'
     exec 'belowright sp '.a:file
@@ -333,12 +358,16 @@ function! OpenDirectionalSplit(file)
     exec 'aboveleft sp '.a:file
   elseif dirchoice == 'l'
     exec 'belowright vsp '.a:file
+  else
+    echohl Error
+    echom 'Unknown direction: '.dirchoice
+    echohl Normal
   endif
 endfunction
-command! -nargs=1 DirectionalSplit call OpenDirectionalSplit(<f-args>)
+command! -bar -nargs=+ DirectionalSplit call OpenDirectionalSplit(<f-args>)
 
 " vimrc and help
-command! Vimrc DirectionalSplit $MYVIMRC
+command! -nargs=? Vimrc DirectionalSplit $MYVIMRC <args>
 cnoreabbrev vimrc Vimrc
 command! Vimso source $MYVIMRC
 cnoreabbrev vimso Vimso
@@ -411,6 +440,21 @@ augroup set_unmodifiable
   autocmd BufReadPost * call s:set_unmodifiable()
 augroup END
 
+" zoom into pane
+function! s:ZoomToggle() abort
+    if exists('t:zoomed') && t:zoomed
+        exec t:zoom_winrestcmd
+        let t:zoomed = 0
+    else
+        let t:zoom_winrestcmd = winrestcmd()
+        resize
+        vertical resize
+        let t:zoomed = 1
+    endif
+endfunction
+command! ZoomToggle call s:ZoomToggle()
+nnoremap <silent> <leader>z :ZoomToggle<CR>
+
 " vim-tmux aware killpane
 function! TmuxAwareKillpane()
   if s:tmux || winnr('$') > 1
@@ -431,8 +475,9 @@ set title
 
 if has('nvim')
   " directional term splits
-  command! Dterm DirectionalSplit term://$SHELL | startinsert
+  command! -nargs=? Dterm DirectionalSplit term://$SHELL <args> | startinsert
   cnoreabbrev dterm Dterm
+  cnoreabbrev dt Dterm
 
   " terminal mappings
   autocmd TermOpen * tnoremap <buffer> <Esc><Esc> <C-\><C-n>
@@ -448,7 +493,7 @@ if has('nvim')
       startinsert
     endif
   endfunction
-  nnoremap <silent> <LeftMouse> <LeftMouse>:call FocusTerm()<CR>
+  autocmd BufEnter * call FocusTerm()
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -493,7 +538,7 @@ set laststatus=2   " Always show the statusline
 let g:lightline = {
       \   'colorscheme': 'Tomorrow_Night',
       \   'active': {
-      \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_err', 'syntax_war']],
+      \     'left': [['zoom', 'mode', 'paste'], ['fileinfo', 'syntax_err', 'syntax_war']],
       \     'right': [['lineinfo'], ['fugitive'], ['gitsync', 'filetype']]
       \   },
       \   'inactive': {
@@ -504,6 +549,7 @@ let g:lightline = {
       \     'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}',
       \   },
       \   'component_function' : {
+      \     'zoom': 'LLZoom',
       \     'mode': 'LLMode',
       \     'fileinfo': 'LLFileInfo',
       \     'lineinfo': 'LLLineInfo',
@@ -546,6 +592,11 @@ function! LLMode()
         \ lightline#mode()
 endfunction
 
+" zoom
+function! LLZoom()
+  return (exists('t:zoomed') && t:zoomed) ? 'ZOOM' : ''
+endfunction
+
 " filename and fileinfo
 let g:pathname_depth = 3
 function! LLModified()
@@ -582,7 +633,7 @@ endfunction
 " vim-easyalign {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Start interactive EasyAlign in visual mode (e.g. vip<Enter>)
-vmap <lEnter> <Plug>(EasyAlign)
+vmap <Enter> <Plug>(EasyAlign)
 
 " Start interactive EasyAlign for a motion/text object (e.g. <leader>aip)
 nmap <leader>a <Plug>(EasyAlign)
@@ -594,37 +645,24 @@ nmap <leader>a <Plug>(EasyAlign)
 nnoremap <leader>a :A<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" YouCompleteMe {{{
+" deoplete {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ycm_confirm_extra_conf = 0
-let g:ycm_global_ycm_extra_conf = $HOME.'/.vim/ycm_extra_conf.py'
+let g:deoplete#enable_at_startup = 1
 
-" lazy load/exec ycm commands
-function! YcmLazy(...)
-  if !exists("*youcompleteme#Enable")
-    echo "Loading YCM..."
-    call plug#load('YouCompleteMe')
-  endif
-  if !exists(":YcmCompleter")
-    call youcompleteme#Enable()
-  endif
-  exe printf(':YcmCompleter %s', join(a:000, ' '))
-endfunction
-command! -nargs=* YcmLazy call YcmLazy(<f-args>)
+imap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "<Tab>"
+imap <silent><expr> <S-Tab> pumvisible() ? "\<C-p>" : "<S-Tab>"
 
-nnoremap <silent> <leader>yd :YcmForceCompileAndDiagnostics<cr>
-nnoremap <silent> <leader>yo :YcmLazy GoTo<cr>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" neosnippet {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:neosnippet#snippets_directory = $HOME.'/.vim/snippets'
+let g:neosnippet#disable_runtime_snippets = {
+      \ '_': 1,
+      \ } " disable built-in snippets
 
-" semantic trigger for tex (suggested by :help vimtex)
-if !exists('g:ycm_semantic_triggers')
-  let g:ycm_semantic_triggers = {}
-endif
-let g:ycm_semantic_triggers.tex = [
-      \ 're!\\[A-Za-z]*(ref|cite)[A-Za-z]*([^]]*])?{([^}]*, ?)*'
-      \ ]
-
-" Ultisnips doesn't seem to work without this
-let g:UltiSnipsUsePythonVersion = 2
+" expand snippets with Enter
+imap <silent><expr> <CR> neosnippet#expandable_or_jumpable() ?
+      \ "\<Plug>(neosnippet_expand_or_jump)" : "\<CR>"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Neomake {{{
@@ -646,6 +684,7 @@ let g:neomake_statusline_callback = 'lightline#update'
 if executable('pylama')
   let g:neomake_python_enabled_makers = ['pylama']
 endif
+let g:neomake_tex_enabled_makers = []
 
 function! ToggleLocationList()
   if empty(filter(tabpagebuflist(), 'getbufvar(v:val, "&buftype") is# "quickfix"'))
@@ -664,6 +703,9 @@ autocmd! BufWritePost * if !get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabl
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+cnoreabbrev fzf FZF
+cnoreabbrev f FZF
+
 let g:fzf_action = {
   \ 'ctrl-t': 'tab split',
   \ 'ctrl-x': 'split',
@@ -899,13 +941,6 @@ function! TextobjUserSetup()
 endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" vim-hardtime {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:hardtime_default_on = 0
-let g:hardtime_maxcount = 2
-let g:hardtime_timeout = 5000
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " incsearch.vim {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map /  <Plug>(incsearch-forward)
@@ -914,24 +949,6 @@ map g/ <Plug>(incsearch-stay)
 
 " stay on *
 map <silent> g* :let @/='\<'.expand('<cword>').'\>'<CR>
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" UltiSnips {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:UltiSnipsEditSplit="horizontal"
-
-" expand UltiSnips with Enter
-let g:UltiSnipsExpandTrigger = "<nop>"
-let g:ulti_expand_or_jump_res = 0
-function! ExpandSnippetOrCarriageReturn()
-    let snippet = UltiSnips#ExpandSnippetOrJump()
-    if g:ulti_expand_or_jump_res > 0
-        return snippet
-    else
-        return "\<CR>"
-    endif
-endfunction
-inoremap <silent> <expr> <CR> pumvisible() ? "\<C-R>=ExpandSnippetOrCarriageReturn()\<CR>" : "\<CR>"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Goyo {{{
@@ -971,13 +988,38 @@ let g:gitsync_callback = 'lightline#update'
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " VimFiler {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:vimfiler_as_default_explorer = 1
+if exists(':VimFilerRead')
+  let g:vimfiler_as_default_explorer = 1
 
-call vimfiler#custom#profile('default', 'context', {
-      \ 'columns': '',
-      \ })
+  call vimfiler#custom#profile('default', 'context', {
+        \ 'columns': '',
+        \ })
 
-nnoremap <silent> <leader>k :VimFiler -split -find -winwidth=35 -project<CR>
+  nnoremap <silent> <leader>k :VimFiler -split -find -winwidth=35 -project<CR>
+endif
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" NERDTree {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let NERDTree hijack netrw while still having async load
+let g:NERDTreeHijackNetrw = 1
+function! s:plugasync_nerdtree_checkForBrowse(dir)
+  silent! autocmd! FileExplorer
+  if a:dir != '' && isdirectory(a:dir)
+    if !exists('#NERDTree') | call plug#load('nerdtree') | endif
+    call nerdtree#checkForBrowse(dir)
+  endif
+endfunction
+autocmd VimEnter * call s:plugasync_nerdtree_checkForBrowse(expand("<amatch>"))
+
+nnoremap <silent> <leader>k :NERDTreeFind<CR>
+nnoremap <silent> <leader>l :NERDTreeToggle<CR>
+
+let g:NERDTreeWinSize = 35
+let g:NERDTreeQuitOnOpen = 1
+
+" close Vim if NERDTree is the only window left
+autocmd BufEnter * if (winnr("$")==1 && exists("b:NERDTree") && b:NERDTree.isTabTree())|q|endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
@@ -985,7 +1027,6 @@ nnoremap <silent> <leader>k :VimFiler -split -find -winwidth=35 -project<CR>
 autocmd BufNewFile,BufReadPost *.md set filetype=markdown
 autocmd BufNewFile,BufReadPost *.hn set filetype=horn
 autocmd BufNewFile,BufReadPost *.slim set filetype=slim
-" autocmd BufNewFile,BufReadPost *.jsx set filetype=jsx
 autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
 autocmd FileType vim,javascript,coffee,html,jinja setl sw=2 sts=2 et
 autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
@@ -1022,4 +1063,20 @@ autocmd Filetype tex,markdown,noft,text
       \ exec 'nnoremap <silent> gq :set opfunc=ManualFormat<CR>g@' |
       \ exec 'vnoremap <silent> gq :<C-U>call ManualFormat(visualmode(), 1)<CR>'
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Fugitive {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" lazy load/exec fugitive commands
+function! s:fugitiveLazy(...)
+  if !exists('#fugitive')
+    echo "Loading Fugitive..."
+    call plug#load('vim-fugitive')
+    echo
+  endif
+  call fugitive#detect(getcwd())
+  exe printf(':%s', join(a:000, ' '))
+endfunction
+command! -nargs=* FugitiveLazy call s:fugitiveLazy(<f-args>)
+command! -nargs=* Gdiff :call s:fugitiveLazy('Gdiff', <f-args>)
+command! -nargs=* Gblame :call s:fugitiveLazy('Gblame', <f-args>)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

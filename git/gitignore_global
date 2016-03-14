@@ -1,11 +1,8 @@
 # Custom
 .ptignore
 .agignore
-.ruby-version
-node_modules/
-.ycm_extra_conf.py
 .ycm_extra_conf.pyc
-.ruby_version
+node_modules/
 
 # Created by http://www.gitignore.io
 

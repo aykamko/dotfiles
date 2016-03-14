@@ -76,9 +76,15 @@
 
     # push
     ps = push                         # push
-    sync = "!git push -u ${1-origin} `git rev-parse --abbrev-ref HEAD`"
-    track = branch -u
-    upstream = branch -u
+    sync = "!git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
+    clobber = "!BRANCH=`git rev-parse --abbrev-ref HEAD`; \
+        git fetch ${1:-origin} $BRANCH; \
+        git checkout FETCH_HEAD; \
+        git branch -D $BRANCH; \
+        git checkout -b $BRANCH; \
+        git branch --set-upstream-to=${1:-origin}/$BRANCH $BRANCH"
+    track = branch --track
+    upstream = branch --track
     shove = push -f # use with caution
 
     # rebase
@@ -114,8 +120,10 @@
     svnd = svn dcommit
     svnl = svn log --oneline --show-commit
 
-    # other
-    pp = "!echo $git_capture | fpp"
+    # arc
+    arc-clean = "!for b in $(git branch --color=never | egrep -e '^\\s+arcpatch'); do \
+        git branch -D \"${b}\"; \
+        done"
 [format]
     pretty = format:%C(blue)%ad%Creset %C(yellow)%h%C(green)%d%Creset %C(blue)%s %C(magenta) [%an]%Creset
 [mergetool]
@@ -129,14 +137,19 @@
     tool = mvimdiff
 [apply]
     whitespace = nowarn
+[pull]
+    rebase = true
 [push]
     # 'git push' will push the current branch to its tracking branch
     # the usual default is to push all branches
     default = upstream
 [core]
     autocrlf = false
-    editor = nvim-client
     excludesfile = ~/.gitignore_global
+    # editor = "type _nvim_gitcommit >/dev/null 2>&1 && echo _nvim_gitcommit || echo vim"
+    editor = "type nvim-bridge >/dev/null 2>&1 && \
+        nvim-bridge-send \"builtin:gitcommit:$@\" || \
+        vim"
 [advice]
     statusHints = false
 [diff]

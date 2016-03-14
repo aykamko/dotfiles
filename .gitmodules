@@ -5,3 +5,6 @@
 	path = dotbot
 	url = https://github.com/anishathalye/dotbot
 	branch = master
+[submodule "vim-profiler"]
+	path = vim-profiler
+	url = https://github.com/bchretien/vim-profiler

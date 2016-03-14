@@ -13,8 +13,8 @@ _third_color='magenta'
 # Git: remote status (number of commits behind and after remote)
 function +vi-git_remote {
     local remote_info
-    local ahead behind
-    read ahead behind <<< $(command git rev-list --left-right --count HEAD..@\{u\} 2>/dev/null)
+    local behind ahead
+    read behind ahead <<< $(command git rev-list --left-right --count HEAD..@\{u\} 2>/dev/null)
 
     if [[ -n $ahead && $ahead != 0 ]]; then
         remote_info+="+$ahead"

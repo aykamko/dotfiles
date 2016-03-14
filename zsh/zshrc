@@ -7,6 +7,50 @@
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
 ###############################################################################
+# Neovim Pane Switching
+###############################################################################
+# vim
+if (( $+commands[nvim] )); then
+  alias vim=nvim
+  alias vi=nvim
+else
+  alias vi=vim
+fi
+
+# only defined in neovim libvterm
+if [[ -n $NVIM_LISTEN_ADDRESS && (( $+commands[nvim-bridge] )) ]]; then
+  nvim-bridge &!
+  nvim_bridge_send() { nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@\x04" }
+  exit_hook() { nvim_bridge_send 'builtin:close' }
+  trap exit_hook EXIT
+
+  _nvim_up()    { nvim_bridge_send 'command:TmuxNavigateUp' }
+  _nvim_right() { nvim_bridge_send 'command:TmuxNavigateRight' }
+  _nvim_down()  { nvim_bridge_send 'command:TmuxNavigateDown' }
+  _nvim_left()  { nvim_bridge_send 'command:TmuxNavigateLeft' }
+  zle -N nvim_up _nvim_up
+  zle -N nvim_right _nvim_right
+  zle -N nvim_down _nvim_down
+  zle -N nvim_left _nvim_left
+  bindkey '^K' nvim_up
+  bindkey '^L' nvim_right
+  bindkey '^J' nvim_down
+  bindkey '^H' nvim_left
+
+  _nvim_quit_pane() { nvim_bridge_send "builtin:q" }
+  alias ':q'=_nvim_quit_pane
+
+  _nvim_client() { nvim_bridge_send "builtin:edit:$(pwd):$@" }
+  alias nvim=_nvim_client
+  alias vim=_nvim_client
+  alias vi=_nvim_client
+  export EDITOR=_nvim_client
+
+elif [[ -n $TMUX ]]; then
+  alias ':q'='tmux kill-pane'
+fi
+
+###############################################################################
 # Aliases & Functions
 ###############################################################################
 # basics
@@ -21,22 +65,15 @@ stripansi() {
     sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g"
 }
 
-# vim
-if (( $+commands[nvim] )); then
-  if (( $+commands[nvim-client] )); then
-    alias vi=nvim-client
-    alias vim=nvim-client
-  else
-    alias vi=nvim
-    alias vim=nvim
-  fi
-else
-  alias vi=vim
-fi
+alias unixtime='date +%s'
 
 alias vimrc='vi ~/.vimrc'
 alias vis='vi -u ~/.vim/vimrc_small'
 alias vimrc_small='vis ~/.vim/vimrc_small'
+
+vim-profile() {
+  $DOTFILES/vim-profiler/vim-profiler.py ${@:1:$((${#@} - 1))} $(which nvim) ${@: -1}
+}
 
 swpclean() {
   find . -name '*.sw*' -exec /bin/rm -rf {} \;
@@ -95,6 +132,9 @@ alias jl=julia
 alias ipy=ipython
 alias py=python
 alias py3=python3
+rpdb() {
+  socat readline tcp:${2:-0.0.0.0}:${1:-4444}
+}
 
 if [ -f /usr/local/bin/virtualenvwrapper.sh ]; then
   workon() { unset -f workon && source /usr/local/bin/virtualenvwrapper.sh && workon "$@"; }
@@ -127,12 +167,12 @@ dmake() { # django
 }
 
 # ruby
-if (( $+commmands[rbenv] )); then
-  # eval "$(rbenv init -)"
+if (( $+commands[rbenv] )); then
+  rbenv() { unset -f rbenv && eval "$(rbenv init - | tail -n +2)" && rbenv "$@"; }
 fi
 
-# nvm/node
-if (( $+commands[nvm] )); then
+# nvm
+if [[ (( $+commands[brew] )) && -s $(brew --prefix nvm)/nvm.sh ]]; then
   export NVM_DIR=$HOME/.nvm
   nvm() { unset -f nvm && source $(brew --prefix nvm)/nvm.sh && nvm "$@"; }
 fi
@@ -201,8 +241,8 @@ alias cat=_cat_ls
 if [ -f ~/.fzf.zsh ]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
-  export FZF_DEFAULT_COMMAND='ag -g "" `git rev-parse --show-toplevel 2>/dev/null`'
-  export FZF_CTRL_T_COMMAND='ag -g ""'
+  export FZF_DEFAULT_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g "" `git rev-parse --show-toplevel 2>/dev/null`'
+  export FZF_CTRL_T_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g ""'
   export FZF_DEFAULT_OPTS='--ansi -m --bind=alt-k:up,alt-j:down'
 fi
 
@@ -215,8 +255,9 @@ if [ -d $DOTFILES/zsh/scripts ]; then
   done
 fi
 
-unsetopt CORRECT  # disable autocorrect suggestions for commands
-setopt NO_NOMATCH # pass bad match to command
+unsetopt CORRECT         # disable autocorrect suggestions for commands
+unsetopt AUTO_NAME_DIRS  # resolve environment variables in prompt
+setopt NO_NOMATCH        # pass bad match to command
 
 if [[ -o INTERACTIVE && ! -o LOGIN ]]; then
   local purple="\x1b[35m"

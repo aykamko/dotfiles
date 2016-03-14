@@ -1,23 +1,33 @@
 # Adapted from: https://github.com/junegunn/fzf/wiki/Examples
-fd() {
-  local dir
-  dir=$(find ${1:-.} -type d -print 2> /dev/null | \
-      fzf-tmux +m --delimiter="^${1:-.}/" --with-nth=2 --header="Searching from: ${1:-.}/") &&
-  cd "$dir"
+ff() {
+  local out file key delimiter
+  [[ -n $1 ]] && \
+    delimiter="--delimiter='^${1}/' --with-nth=2" || \
+    delimiter=""
+  out=$(ag --nocolor --hidden --ignore-dir=.git -g "" ${1:-.} | \
+      fzf-tmux $delimiter  --header="Searching from: ${1-.}/" --expect=ctrl-d,f1)
+  key=$(head -1 <<< "$out")
+  file=$(tail -1 <<< "$out")
+  if [[ -n "$file" ]]; then
+    cd $(dirname "$file")
+    if [[ "$key" != 'f1' && "$key" != 'ctrl-d' ]]; then
+      ${EDITOR:-vim} "$file"
+    fi
+  fi
 }
+alias fd=ff
 
 # From: https://github.com/junegunn/fzf/wiki/Examples
 # fe [FUZZY PATTERN] - Open the selected file with the default editor
 #   - Bypass fuzzy finder if there's only one match (--select-1)
 #   - Exit if there's no match (--exit-0)
 fe() {
-  local file k
-  out=$(fzf-tmux --query="$1" --select-1 --exit-0 \
-    --expect=ctrl-d)
-  k=$(head -1 <<< "$out")
+  local file key
+  out=$(fzf-tmux --query="$1" --select-1 --exit-0 --expect=ctrl-d,f1)
+  key=$(head -1 <<< "$out")
   file=$(tail -1 <<< "$out")
-  if [ -n "$file" ]; then
-    if [ "$k" = 'ctrl-d' ]; then
+  if [[ -n "$file" ]]; then
+    if [[ "$key" = 'ctrl-d' || "$key" = 'f1' ]]; then
       cd $(dirname "$file")
     else
       ${EDITOR:-vim} "$file"
@@ -104,26 +114,26 @@ fport() {
 # From: https://github.com/junegunn/fzf/wiki/Examples
 # v - open files in ~/.viminfo
 v() {
-  local infiles files
+  local infiles out key files
   if hash nvim 2>/dev/null; then
     if [ ! -f ~/.nvim.shada ]; then echo "No shada found at ~/.nvim.shada" && return 1; fi
-    command nvim \
-      --cmd 'rshada ~/.nvim.shada | for f in v:oldfiles | echo f | endfor | quit' \
-      2>! ~/.nvim.history
-    infiles=$(cat ~/.nvim.history | grep '^/')
+    command nvim --cmd 'rsh ~/.nvim.shada | for f in v:oldfiles | echo f | endfor | quit' \
+      2>!~/.nvim.history
+    infiles=$(cat ~/.nvim.history | grep '^/' | tr -cd '[:print:]\n')
   else
     infiles=$(grep '^>' ~/.viminfo | cut -c3- |
           while read line; do
             [ -f "${line/\~/$HOME}" ] && echo "$line"
           done)
   fi
-  files=$(echo $infiles | fzf-tmux -d -m -q "$*" -1 \
-            --expect=ctrl-d)
-  if [ -n "$files" ]; then
-    if [ "$k" = 'ctrl-d' ]; then
-      cd $(dirname "$files")
+  out=$(echo $infiles | fzf-tmux -d -q "$*" -1 --expect=ctrl-d,f1)
+  key=$(head -1 <<< "$out")
+  file=$(tail -1 <<< "$out")
+  if [[ -n "$file" ]]; then
+    if [[ "$key" == 'ctrl-d' || "$key" == 'f1' ]]; then
+      cd $(dirname "$file")
     else
-      vim ${files//\~/$HOME}
+      ${EDITOR:-vim} "$file"
     fi
   fi
 }

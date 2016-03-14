@@ -1,0 +1,153 @@
+#!/usr/bin/env python
+import socket
+import os
+import sys
+import re
+import greenlet
+import argparse
+from neovim import attach
+from neovim.api import NvimError
+
+def debug(string, append=True, outfile='/Users/Aleks/foo'):
+    mode = 'a+' if append else 'w+'
+    with open(outfile, mode) as f:
+        f.write(string + '\n')
+
+def make_abspath(cwd, path):
+    path = os.path.expandvars(path)
+    path = os.path.expanduser(path)
+    if path.startswith('/'):
+        return path
+    return os.path.normpath(os.path.join(cwd, path))
+
+class NvimBridge():
+    def __init__(self, nvim_sock_path):
+        self.nvim = attach('socket', path=nvim_sock_path)
+        self.bridgesock_addr = nvim_sock_path + '_bridge'
+
+    def run_until_interrupt(self):
+        self.serversock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if os.path.exists(self.bridgesock_addr):
+            os.remove(self.bridgesock_addr)
+        self.serversock.bind(self.bridgesock_addr)
+        self.serversock.listen(1)
+        while True:
+            try:
+                clientsock, _ = self.serversock.accept()
+            except KeyboardInterrupt:
+                self.serversock.close()
+                sys.exit(1)
+            self.handle_client(clientsock)
+            clientsock.close()
+
+    def close_bridge(self, clientsock):
+        self.serversock.close()
+        clientsock.close()
+        sys.exit(0)
+
+    def handle_client(self, clientsock):
+        cmds = clientsock.recv(1024).split('^^')
+        for c in cmds:
+            close = self.handle_cmd(clientsock, c.strip())
+            if close is True:
+                self.close_bridge(clientsock)
+        clientsock.close()
+
+    def filter_eof(self, cmd):
+        if ord(cmd[-1]) == 4:  # EOF
+            return cmd[:-1]
+        return cmd
+
+    def handle_cmd(self, clientsock, cmd):
+        cmd = self.filter_eof(cmd)
+        if cmd.startswith('input:'):
+            return self.nvim.input(cmd[6:].strip())
+
+        elif cmd.startswith('command:'):
+            return self.nvim.command(cmd[8:].strip())
+
+        elif cmd.startswith('builtin:'):
+            close = self.execute_builtin(cmd[8:])
+            if close is True:
+                return close
+
+        return self.no_handler_error(clientsock, cmd)
+
+    def execute_builtin(self, cmd):
+        if cmd.startswith('edit:'):
+            return self._edit_in_session(cmd[5:])
+        elif cmd.startswith('gitcommit:'):
+            return self._git_commit(cmd[10:])
+        elif cmd == 'q':
+            return self._quit_pane()
+        elif cmd == 'close':
+            return True
+
+    def no_handler_error(self, clientsock, cmd):
+        clientsock.send('Unknown message: %s\n' % cmd)
+        return False
+
+    def get_listed_buffers(self):
+        return set(buf.number for buf in self.nvim.buffers
+                   if self.nvim.eval('buflisted(%d)' % buf.number))
+
+    def _git_commit(self, commit_msg_file):
+        """
+        Adapted from: https://gist.github.com/rf-/33fc88d3071f4254b80e
+        """
+        channel_id = self.nvim.channel_id
+        term_window = self.nvim.current.window
+        orig_term_height = term_window.height
+        preexisting_bufs = self.get_listed_buffers()
+
+        # split window with commit msg file
+        self.nvim.command('split | args %s' % commit_msg_file)
+        term_window.height = 1  # temporarily squish term window
+
+        commit_buf = self.get_listed_buffers().difference(preexisting_bufs).pop()
+        self.nvim.command((
+            'autocmd BufDelete,BufHidden,BufUnload <buffer=%d> '
+            'call rpcnotify(%d, "git_commit")'
+        ) % (commit_buf, channel_id))
+
+        self.nvim.session.next_message()
+
+        self.nvim.command('argdel *')
+        self.nvim.command('autocmd! BufDelete,BufHidden,BufUnload <buffer=%d>' % commit_buf)
+        self.nvim.command('bdelete! %d' % commit_buf)
+        return False
+
+    def _edit_in_session(self, cmd):
+        term_bufnum = self.nvim.current.buffer.number
+        clientcwd, files_str = cmd.split(':', 1)
+        files = files_str.split()
+        self.nvim.vars['files_to_edit'] = [make_abspath(clientcwd, f) for f in files]
+        for _ in range(len(files)):
+            try:
+                self.nvim.command('exe "drop ".remove(g:files_to_edit, 0)')
+            except NvimError as e:
+                pass
+        self.nvim.command('bdelete! %d' % term_bufnum)
+        return True  # close bridge
+
+    def _quit_pane(self):
+        term_bufnum = self.nvim.current.buffer.number
+        self.nvim.input(r'<c-\><c-n><c-w>p')
+        self.nvim.command('bdelete! %d' % term_bufnum)
+        return True  # close bridge
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sock', help='Neovim unix socket')
+    args = parser.parse_args()
+
+    if args.sock:
+        addr = args.sock
+    else:
+        addr = os.environ.get('NVIM_LISTEN_ADDRESS', None)
+        if not addr:
+            sys.stderr.write('Not running in libvterm!')
+            sys.exit(1)
+
+    NvimBridge(addr).run_until_interrupt()
