@@ -14,14 +14,6 @@
   fi
 } &!
 
-# Print a random, hopefully interesting, adage.
-if (( $+commands[fortune] )); then
-  if [[ -t 0 || -t 1 ]]; then
-    fortune -s
-    print
-  fi
-fi
-
 local yellow="\x1b[33m"
 local reset="\x1b[0m"
 echo "${yellow}> Started zsh in about ${$(( $EPOCHREALTIME - $ZSH_START_TIME )):0:5} seconds.${reset}"
@@ -30,7 +22,7 @@ if [[ $ZSH_PROFILE_STARTUP -eq 1 ]]; then
   unsetopt xtrace
   exec 2>&3 3>&-
   if [ -f $DOTFILES/bin/zsh-profile-processor.py ]; then
-    $DOTFILES/bin/zsh-profile-processor.py $ZSH_START_TIME $ZSH_PROFILER_LOG
+    $DOTFILES/bin/zsh-profile-processor.py $ZSH_START_TIME $ZSH_PROFILER_LOG &!
   fi
 fi
 

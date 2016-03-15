@@ -70,6 +70,10 @@ if [ -d $HOME/.rbenv ]; then
   path=($RBENV_SHIMS $path)
 fi
 
+if [ -d $HOME/.nvm ]; then
+  export NVM_DIR=$HOME/.nvm
+fi
+
 if [ -d $DOTFILES/bin ]; then
   path+=($DOTFILES/bin)
   [ -d $DOTFILES/bin/$UNAME ] && path+=($DOTFILES/bin/$UNAME)

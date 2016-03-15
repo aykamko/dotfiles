@@ -5,6 +5,7 @@ import sys
 import re
 import greenlet
 import argparse
+import time
 from neovim import attach
 from neovim.api import NvimError
 
@@ -127,12 +128,14 @@ class NvimBridge():
                 self.nvim.command('exe "drop ".remove(g:files_to_edit, 0)')
             except NvimError as e:
                 pass
+        time.sleep(0.05)
         self.nvim.command('bdelete! %d' % term_bufnum)
         return True  # close bridge
 
     def _quit_pane(self):
         term_bufnum = self.nvim.current.buffer.number
         self.nvim.input(r'<c-\><c-n><c-w>p')
+        time.sleep(0.05)
         self.nvim.command('bdelete! %d' % term_bufnum)
         return True  # close bridge
 

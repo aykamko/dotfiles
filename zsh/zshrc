@@ -2,6 +2,7 @@
 ###############################################################################
 # Prezto
 ###############################################################################
+export TRUSTED_COMPINIT="HAL 9000"
 # don't load prezto outside of tmux to speed up load
 [[ -n "$TMUX" ]] && \
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
@@ -20,7 +21,7 @@ fi
 # only defined in neovim libvterm
 if [[ -n $NVIM_LISTEN_ADDRESS && (( $+commands[nvim-bridge] )) ]]; then
   nvim-bridge &!
-  nvim_bridge_send() { nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@\x04" }
+  nvim_bridge_send() { nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@" }
   exit_hook() { nvim_bridge_send 'builtin:close' }
   trap exit_hook EXIT
 
@@ -172,9 +173,20 @@ if (( $+commands[rbenv] )); then
 fi
 
 # nvm
-if [[ (( $+commands[brew] )) && -s $(brew --prefix nvm)/nvm.sh ]]; then
-  export NVM_DIR=$HOME/.nvm
-  nvm() { unset -f nvm && source $(brew --prefix nvm)/nvm.sh && nvm "$@"; }
+# TODO(aleks, 03/15/16): the following line is too slow because of brew, but it's also more
+# general. should fix later
+# if [[ (( $+commands[brew] )) && -s $(brew --prefix nvm)/nvm.sh ]]; then
+if [[ (( $+commands[brew] )) && -s usr/local/opt/nvm.sh ]]; then
+  _node_shim() {
+    unset -f node
+    unset -f npm
+    unset -f nvm
+    unset -f _node_shim
+    source $(brew --prefix nvm)/nvm.sh
+  }
+  node() { _node_shim && node "$@"; }
+  npm() { _node_shim && npm "$@"; }
+  nvm() { _node_shim && nvm "$@"; }
 fi
 
 # git
@@ -256,7 +268,7 @@ if [ -d $DOTFILES/zsh/scripts ]; then
 fi
 
 unsetopt CORRECT         # disable autocorrect suggestions for commands
-unsetopt AUTO_NAME_DIRS  # resolve environment variables in prompt
+unsetopt AUTO_NAME_DIRS  # don't resolve environment variables in prompt
 setopt NO_NOMATCH        # pass bad match to command
 
 if [[ -o INTERACTIVE && ! -o LOGIN ]]; then

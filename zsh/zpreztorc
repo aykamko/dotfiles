@@ -14,7 +14,7 @@ zstyle ':prezto:load' pmodule \
   'directory' \
   'spectrum' \
   'utility' \
-  'completion' \
+  'completion_insecure' \  # TODO(aleks, 03/15/16): add this module to dotfiles
   'prompt' \
   'history-substring-search'
 
