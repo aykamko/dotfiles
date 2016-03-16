@@ -6,6 +6,7 @@ zstyle ':prezto:*:*' color 'yes'
 
 # Set the Prezto modules to load (browse modules).
 # The order matters.
+# TODO(aleks, 03/15/16): add the `completion_insecure` module to dotfiles
 zstyle ':prezto:load' pmodule \
   'environment' \
   'terminal' \
@@ -14,7 +15,7 @@ zstyle ':prezto:load' pmodule \
   'directory' \
   'spectrum' \
   'utility' \
-  'completion_insecure' \  # TODO(aleks, 03/15/16): add this module to dotfiles
+  'completion_insecure' \
   'prompt' \
   'history-substring-search'
 

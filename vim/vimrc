@@ -349,15 +349,15 @@ function! OpenDirectionalSplit(file, ...)
   end
 
   if dirchoice == 'e'
-    exec 'e '.a:file
+    exec 'drop '.a:file
   elseif dirchoice == 'h'
-    exec 'aboveleft vsp '.a:file
+    exec 'aboveleft vsp | drop '.a:file
   elseif dirchoice == 'j'
-    exec 'belowright sp '.a:file
+    exec 'belowright sp | drop '.a:file
   elseif dirchoice == 'k'
-    exec 'aboveleft sp '.a:file
+    exec 'aboveleft sp | drop '.a:file
   elseif dirchoice == 'l'
-    exec 'belowright vsp '.a:file
+    exec 'belowright vsp | drop '.a:file
   else
     echohl Error
     echom 'Unknown direction: '.dirchoice
@@ -707,9 +707,9 @@ cnoreabbrev fzf FZF
 cnoreabbrev f FZF
 
 let g:fzf_action = {
-  \ 'ctrl-t': 'tab split',
-  \ 'ctrl-x': 'split',
-  \ 'ctrl-v': 'vsplit',
+  \ 'ctrl-t': 'tab split | drop',
+  \ 'ctrl-x': 'split | drop',
+  \ 'ctrl-v': 'vsplit | drop',
   \ 'ctrl-s': 'DirectionalSplit' }
 
 function! GitAwareFZF()

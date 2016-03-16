@@ -7,6 +7,11 @@ export TRUSTED_COMPINIT="HAL 9000"
 [[ -n "$TMUX" ]] && \
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
+# faster git info
+if [ -d $DOTFILES/faster-vcs-info ]; then
+  fpath=($DOTFILES/faster-vcs-info $fpath)
+fi
+
 ###############################################################################
 # Neovim Pane Switching
 ###############################################################################
@@ -55,6 +60,7 @@ fi
 # Aliases & Functions
 ###############################################################################
 # basics
+alias restart="exec $SHELL"
 alias c=clear
 clr() {
   clear
@@ -133,6 +139,9 @@ alias jl=julia
 alias ipy=ipython
 alias py=python
 alias py3=python3
+venv() {
+  source $1/bin/activate
+}
 rpdb() {
   socat readline tcp:${2:-0.0.0.0}:${1:-4444}
 }
@@ -191,7 +200,7 @@ fi
 
 # git
 (( $+commands[hub] )) && alias git=hub
-alias g=git
+alias g='git'
 
 # context from root of git directory
 gr() {
@@ -272,7 +281,5 @@ unsetopt AUTO_NAME_DIRS  # don't resolve environment variables in prompt
 setopt NO_NOMATCH        # pass bad match to command
 
 if [[ -o INTERACTIVE && ! -o LOGIN ]]; then
-  local purple="\x1b[35m"
-  local reset="\x1b[0m"
-  echo "${purple}> Started zsh in about ${$(( $EPOCHREALTIME - $ZSH_START_TIME )):0:5} seconds.${reset}"
+  _startup_time_prompt '\x1b[35m'  # purple
 fi

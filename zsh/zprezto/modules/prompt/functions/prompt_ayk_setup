@@ -6,28 +6,32 @@
 #   Aleks Kamko <aykamko@gmail.com>
 #
 
-_primary_color='cyan'
-_secondary_color='blue'
-_third_color='magenta'
+_c1='cyan'
+_c2='blue'
+_c3='magenta'
+_c4='red'
+_hide='240'
+_attn='14'
 
-# Git: remote status (number of commits behind and after remote)
-function +vi-git_remote {
-    local remote_info
-    local behind ahead
-    read behind ahead <<< $(command git rev-list --left-right --count HEAD..@\{u\} 2>/dev/null)
+# Get the commit difference counts between local and remote.
+function +vi-git_ahead_behind {
+    local remote_info ahead_and_behind_cmd ahead_and_behind ahead behind
+    ahead_and_behind_cmd='git rev-list --count --left-right HEAD...@{upstream}'
+    ahead_and_behind="$(${(z)ahead_and_behind_cmd} 2> /dev/null)"
+    ahead="$ahead_and_behind[(w)1]"
+    behind="$ahead_and_behind[(w)2]"
 
-    if [[ -n $ahead && $ahead != 0 ]]; then
+    if (( ahead > 0 )); then
         remote_info+="+$ahead"
     fi
-    if [[ -n $behind && $behind != 0 ]]; then
-        [[ -n $ahead && $ahead != 0 ]] && remote_info+=", "
+    if (( behind > 0 )); then
+        (( ahead > 0 )) && remote_info+=", "
         remote_info+="-$behind"
     fi
-    [[ -n $remote_info ]] && hook_com[misc]="%F{$_secondary_color}{%f%F{yellow}$remote_info%f%F{$_secondary_color}}%f"
+    [[ -n $remote_info ]] && hook_com[misc]="%F{$_c2}{%f%F{yellow}$remote_info%f%F{$_c2}}%f"
     return 0
 }
 
-# Git: add space before change symbols, if they exist
 function +vi-git_changes_fmt {
     if [[ -n ${hook_com[staged]} ]]; then
         hook_com[staged]=" ${hook_com[staged]}"
@@ -38,11 +42,11 @@ function +vi-git_changes_fmt {
 }
 
 export VIRTUAL_ENV_DISABLE_PROMPT=1
-function prompt_ayk_venv {
+function virtualenv_info {
     if [[ -n ${VIRTUAL_ENV} ]]; then
-        _prompt_ayk_venv="%F{$_secondary_color}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_secondary_color}]%f"
+        _venv="%F{$_c2}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
     else
-        unset _prompt_ayk_venv
+        unset _venv
     fi
 }
 
@@ -52,21 +56,12 @@ function xterm_title {
   echo -ne "\033]2;$(egrep -o '[^/]*(\/[^/]*(\/[^/]*)?)?$' <<< "${PWD/#$HOME/~}")\033\\" &!
 }
 
-# tmux: show marker if not in tmux
-function has_tmux {
-    if [[ -z "$TMUX" ]]; then
-        _has_tmux="%F{$_third_color}[--tmux]%f "
-    else
-        unset _has_tmux
-    fi
-}
-
 # docker: show marker if machine is mounted in env
 function docker_mounted {
     if [[ -n ${DOCKER_MACHINE_NAME} ]]; then
         local machine_name
         [[ "${DOCKER_MACHINE_NAME}" = "default" ]] && unset machine_name || machine_name="$DOCKER_MACHINE_NAME"
-        _docker="%F{$_secondary_color}[%f🐳 %F{white}${machine_name}%f%F{$_secondary_color}]%f"
+        _docker="%F{$_c2}[%f🐳 %F{white}${machine_name}%f%F{$_c2}]%f"
     else
         unset _docker
     fi
@@ -74,24 +69,27 @@ function docker_mounted {
 
 # PWD: Add space before prompt extras, if they exist.
 function prompt_ayk_pwd {
-    _pwd="%F{$_primary_color}%3~%f"
+    _pwd="%F{$_c1}%3~%f"
 
     local prompt_extras
     prompt_extras=(
         $vcs_info_msg_0_
-        $_prompt_ayk_venv
+        $_venv
         $_docker
     )
     [[ ${#prompt_extras[@]} -gt 0 ]] && _pwd+=" "
 }
 
 function prompt_ayk_precmd {
-    prompt_ayk_venv
+    local prompt_start_time=$EPOCHREALTIME
+
     vcs_info
+    virtualenv_info
     docker_mounted
     xterm_title
-    has_tmux
     prompt_ayk_pwd
+
+    _prompt_time=${$(( ($EPOCHREALTIME - $prompt_start_time) * 1000 ))%%\.*}
 }
 
 function prompt_ayk_setup {
@@ -109,27 +107,29 @@ function prompt_ayk_setup {
     # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
     [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
 
+    # If terminal not in tmux, prepend message
+    [[ -z "$TMUX" ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
+
     # Set editor-info parameters.
-    zstyle ':prezto:module:editor:info:completing' format "%B%F{red}...%f%b"
+    zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
     zstyle ':prezto:module:editor:info:keymap:primary' format "${prompt_emoji}"
-    zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{14}"
-    zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{red}!%f%b"
+    zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{$_attn}"
+    zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
 
     # Set vcs_info parameters.
-    zstyle ':vcs_info:*' enable git hg svn
+    zstyle ':vcs_info:*' enable git
     zstyle ':vcs_info:*' check-for-changes true
     zstyle ':vcs_info:*' stagedstr "%F{green}●%f"
     zstyle ':vcs_info:*' unstagedstr "%F{yellow}●%f"
-    zstyle ':vcs_info:git:*' formats "%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f%m"
-    zstyle ':vcs_info:git:*' actionformats "%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f%m"
-    zstyle ':vcs_info:*' formats "%F{$_secondary_color}(%f%F{red}%b%f%c%u%F{$_secondary_color})%f"
-    zstyle ':vcs_info:*' actionformats "%F{$_secondary_color}(%f%F{red}%b%f%c%u|%F{cyan}%a%f%F{$_secondary_color})%f"
-    zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat "%b|%F{cyan}%r%f"
-    zstyle ':vcs_info:git*+set-message:*' hooks git_remote git_changes_fmt
+    zstyle ':vcs_info:git:*' formats "%F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2})%f%m"
+    zstyle ':vcs_info:git:*' actionformats "%F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2}|%f%F{$_c1}%a%f%F{$_c2})%f%m"
+    zstyle ':vcs_info:*' formats "%F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2})%f"
+    zstyle ':vcs_info:*' actionformats "%F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2}|%f%F{$_c1}%a%f%F{$_c2})%f"
+    zstyle ':vcs_info:git*+set-message:*' hooks git_ahead_behind git_changes_fmt
 
     # Define prompts.
-    PROMPT='${_has_tmux}${_pwd}${_docker}${_prompt_ayk_venv}${vcs_info_msg_0_} ${_nvim_term}${editor_info[keymap]}${editor_info[overwrite]} '
-    RPROMPT='%f%(?:: %F{yellow}⏎%f)'
+    PROMPT='${prompt_tmux}${_pwd}${_docker}${_venv}${vcs_info_msg_0_} ${editor_info[keymap]}${editor_info[overwrite]} '
+    RPROMPT='%f%(?::%F{yellow}⏎%f) %F{$_hide}[${_prompt_time}]%f'
 }
 
 prompt_ayk_setup "$@"

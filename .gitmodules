@@ -8,3 +8,6 @@
 [submodule "vim-profiler"]
 	path = vim-profiler
 	url = https://github.com/bchretien/vim-profiler
+[submodule "faster-vcs-info"]
+	path = faster-vcs-info
+	url = https://github.com/kyanagi/faster-vcs-info

@@ -14,9 +14,7 @@
   fi
 } &!
 
-local yellow="\x1b[33m"
-local reset="\x1b[0m"
-echo "${yellow}> Started zsh in about ${$(( $EPOCHREALTIME - $ZSH_START_TIME )):0:5} seconds.${reset}"
+_startup_time_prompt '\x1b[33m'  # yellow
 
 if [[ $ZSH_PROFILE_STARTUP -eq 1 ]]; then
   unsetopt xtrace
