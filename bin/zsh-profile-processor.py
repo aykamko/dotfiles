@@ -39,5 +39,7 @@ for line in fileinput.input(args.profiler_output, inplace=True):
 with open(args.profiler_output + '_max', 'w') as f:
     for _ in range(25):
         time, line = heapq.heappop(sorted_lines)
-        time = -time
+        time = (-time * 1000)
         f.write('%011.8f: %s\n' % (time, line))
+        if not len(sorted_lines):
+            break

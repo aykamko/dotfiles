@@ -16,7 +16,7 @@
 
 _startup_time_prompt '\x1b[33m'  # yellow
 
-if [[ $ZSH_PROFILE_STARTUP -eq 1 ]]; then
+if (( $ZSH_PROFILE_STARTUP )); then
   unsetopt xtrace
   exec 2>&3 3>&-
   if [ -f $DOTFILES/bin/zsh-profile-processor.py ]; then

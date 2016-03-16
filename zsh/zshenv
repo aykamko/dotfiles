@@ -9,20 +9,16 @@
 # Profiler for interactive shell
 if [[ -o INTERACTIVE ]]; then
   zmodload zsh/datetime
-  ZSH_START_TIME=$EPOCHREALTIME
-  _startup_time_prompt() {
-    reset='\x1b[0m'
-    echo "${1}> Started zsh in about ${$(( ($EPOCHREALTIME - $ZSH_START_TIME) * 1000 ))%%\.*} ms.${reset}"
-    unset reset
-  }
 
   #######################################
   #######################################
+
   ZSH_PROFILE_STARTUP=0
+
   #######################################
   #######################################
 
-  if [ $ZSH_PROFILE_STARTUP -eq 1 ]; then
+  if (( $ZSH_PROFILE_STARTUP )); then
     setopt promptsubst
     ZSH_PROFILER_LOG="$HOME/temp/zsh_startlog/${"$(date +%s)":6}_$$"
     mkdir -p ${ZSH_PROFILER_LOG:a:h}
@@ -31,6 +27,13 @@ if [[ -o INTERACTIVE ]]; then
     exec 3>&2 2>$ZSH_PROFILER_LOG
     setopt xtrace prompt_subst
   fi
+
+  ZSH_START_TIME=$EPOCHREALTIME
+  _startup_time_prompt() {
+    reset='\x1b[0m'
+    echo "${1}> Started zsh in about ${$(( ($EPOCHREALTIME - $ZSH_START_TIME) * 1000 ))%%\.*} ms.${reset}"
+    unset reset
+  }
 fi
 
 # Ensure that a non-login, non-interactive shell has a defined environment.
