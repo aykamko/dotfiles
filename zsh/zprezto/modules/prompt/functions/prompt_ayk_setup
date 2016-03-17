@@ -86,8 +86,9 @@ function prompt_ayk_precmd {
 
     virtualenv_info
     docker_mounted
-    xterm_title
     prompt_ayk_pwd
+
+    xterm_title &!
 
     if (( _async_vcs_info_pid != 0 )); then
       kill -s HUP _async_vcs_info_pid &>/dev/null || :
