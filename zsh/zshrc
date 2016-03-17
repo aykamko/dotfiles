@@ -2,15 +2,19 @@
 ###############################################################################
 # Prezto
 ###############################################################################
+# redraw prompt on async vcs_info update
+function TRAPUSR1 {
+  _async_vcs_info_pid=0
+  _prompt_vcs_info=$(cat $HOME/._prompt_vcs_info)
+  zle && zle reset-prompt
+}
+
+# run compinit -S on trusted computers
 export TRUSTED_COMPINIT="HAL 9000"
+
 # don't load prezto outside of tmux to speed up load
 [[ -n "$TMUX" ]] && \
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
-
-# faster git info
-if [ -d $DOTFILES/faster-vcs-info ]; then
-  fpath=($DOTFILES/faster-vcs-info $fpath)
-fi
 
 ###############################################################################
 # Neovim Pane Switching

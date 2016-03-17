@@ -14,182 +14,96 @@ _c5='yellow'
 _hide='240'
 _attn='14'
 
-# get special git action (taken from zsh VCS_INFO source)
-git_getaction() {
-  local gitdir=$1
-  local tmp
-
-  for tmp in "${gitdir}/rebase-apply" "${gitdir}/rebase" "${gitdir}/../.dotest"; do
-    if [[ -d ${tmp} ]] ; then
-      if   [[ -f "${tmp}/rebasing" ]]; then
-        _git_action='rebase'
-        return
-      elif [[ -f "${tmp}/applying" ]]; then
-        _git_action='am'
-        return
-      else
-        _git_action='am/rebase'
-        return
-      fi
-    fi
-  done
-  for tmp in "${gitdir}/rebase-merge/interactive" "${gitdir}/.dotest-merge/interactive"; do
-    if [[ -f "${tmp}" ]] ; then
-      _git_action='rebase-i'
-      return
-    fi
-  done
-  for tmp in "${gitdir}/rebase-merge" "${gitdir}/.dotest-merge"; do
-    if [[ -d "${tmp}" ]] ; then
-      _git_action='rebase-m'
-      return
-    fi
-  done
-  if [[ -f "${gitdir}/MERGE_HEAD" ]]; then
-    _git_action='merge'
-    return
-  fi
-  if [[ -f "${gitdir}/BISECT_LOG" ]]; then
-    _git_action='bisect'
-    return
-  fi
-  if [[ -f "${gitdir}/CHERRY_PICK_HEAD" ]]; then
-    if [[ -d "${gitdir}/sequencer" ]]; then
-      _git_action='cherry-seq'
-      return
-    else
-      _git_action='cherry'
-      return
-    fi
-  fi
-  if [[ -d "${gitdir}/sequencer" ]]; then
-    _git_action='cherry-or-revert'
-    return
-  fi
-
-  unset _git_action
-}
-
 # get the commit difference counts between local and remote.
-function git_ahead_behind {
-    local ahead_and_behind ahead behind
+function vi+git_ahead_behind {
+    local prompt_info ahead_and_behind ahead behind
     ahead_and_behind="$(git rev-list --count --left-right HEAD...@\{upstream\} 2> /dev/null)"
     ahead="$ahead_and_behind[(w)1]"
     behind="$ahead_and_behind[(w)2]"
 
-    _git_ahead_behind=""
+    prompt_info=""
     if (( ahead > 0 )); then
-        _git_ahead_behind+="%F{$_c5}+$ahead%f"
+        prompt_info+="%F{$_c5}+$ahead%f"
     fi
     if (( behind > 0 )); then
-        (( ahead > 0 )) && _git_ahead_behind+="%F{$_c2},%f"
-        _git_ahead_behind+="%F{$_c5}-$behind%f"
+        (( ahead > 0 )) && prompt_info+="%F{$_c2},%f"
+        prompt_info+="%F{$_c5}-$behind%f"
     fi
-    [[ -n $_git_ahead_behind ]] && _git_ahead_behind="%F{$_c2}{%f$_git_ahead_behind%F{$_c2}}%f"
+    [[ -n $prompt_info ]] && hook_com[misc]="%F{$_c2}{%f$prompt_info%F{$_c2}}%f"
+    return 0
 }
 
-# construct git prompt
-function git_prompt {
-  local b="$(command git symbolic-ref --short HEAD 2>/dev/null)";
-  if [[ -n $b ]]; then
-    local AB a s u p
-
-    # check if we're executing a special git action
-    git_getaction $b
-    a=$_git_action
-
-    # count commit difference between local and remote
-    git_ahead_behind
-    AB=$_git_ahead_behind
-
-    # check if staged changes exist
-    command git diff --cached --quiet --ignore-submodules=all || s="%F{green}●%f"
-
-    # check if unstaged changes exist
-    command git diff --quiet --ignore-submodules=all || u="%F{$_c5}●%f"
-
-    # prepend space if changes exist
-    [[ -n $s || -n $u ]] && p=' '
-
-    if [[ -n $a ]]; then
-      _git_prompt="%F{$_c2}(%f%F{$_c4}$b%f$p$s$u%F{$_c2}|%f%F{$_c1}$a%f%F{$_c2})%f$AB"
-    else
-      _git_prompt="%F{$_c2}(%f%F{$_c4}$b%f$p$s$u%f%F{$_c2})%f$AB"
+# prepend space to vcs_info diff info
+function +vi-git_fmt_diff {
+    if [[ -n ${hook_com[staged]} ]]; then
+        hook_com[staged]=" ${hook_com[staged]}"
+    elif [[ -n ${hook_com[unstaged]} ]]; then
+        hook_com[unstaged]=" ${hook_com[unstaged]}"
     fi
-  else
-    unset _git_prompt
-  fi
+    return 0
 }
 
-export VIRTUAL_ENV_DISABLE_PROMPT=1
+# set xterm pane title
+function xterm_title {
+  echo -ne "\033]2;$(egrep -o '[^/]*(\/[^/]*(\/[^/]*)?)?$' <<< "${PWD/#$HOME/~}")\033\\"
+}
+
+# show marker if python virtualenv is active
 function virtualenv_info {
-    if [[ -n ${VIRTUAL_ENV} ]]; then
+    if [[ -n $VIRTUAL_ENV ]]; then
         _venv="%F{$_c2}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
     else
         unset _venv
     fi
 }
 
-# xterm: set pane title
-function xterm_title {
-  # execute in background
-  echo -ne "\033]2;$(egrep -o '[^/]*(\/[^/]*(\/[^/]*)?)?$' <<< "${PWD/#$HOME/~}")\033\\"
-}
-
-# docker: show marker if machine is mounted in env
+# show marker if docker machine is mounted in env
 function docker_mounted {
-    if [[ -n ${DOCKER_MACHINE_NAME} ]]; then
+    if [[ -n $DOCKER_MACHINE_NAME ]]; then
         local machine_name
-        [[ "${DOCKER_MACHINE_NAME}" = "default" ]] && unset machine_name || machine_name="$DOCKER_MACHINE_NAME"
+        [[ $DOCKER_MACHINE_NAME = "default" ]] && \
+          unset machine_name || machine_name=$DOCKER_MACHINE_NAME
         _docker="%F{$_c2}[%f🐳 %F{white}${machine_name}%f%F{$_c2}]%f"
     else
         unset _docker
     fi
 }
 
-# PWD: Add space before prompt extras, if they exist.
+# construct prompt and add space before prompt extras if there any
 function prompt_ayk_pwd {
     _pwd="%F{$_c1}%3~%f"
 
     local prompt_extras
     prompt_extras=(
-        $_git_prompt
         $_venv
         $_docker
     )
-    [[ ${#prompt_extras[@]} -gt 0 ]] && _pwd+=" "
-}
-
-function _start_prompt_profile {
-    setopt promptsubst
-    ZSH_PROMPT_PROFILER_LOG="$HOME/temp/zsh_prompt_startlog/${"$(date +%s)":6}_$$"
-    mkdir -p ${ZSH_PROMPT_PROFILER_LOG:a:h}
-
-    PS4=$'+$EPOCHREALTIME %N:%i> '
-    exec 3>&2 2>$ZSH_PROMPT_PROFILER_LOG
-    setopt xtrace prompt_subst
-}
-
-function _stop_prompt_profile {
-  unsetopt xtrace
-  exec 2>&3 3>&-
-  if [ -f $DOTFILES/bin/zsh-profile-processor.py ]; then
-    $DOTFILES/bin/zsh-profile-processor.py $_prompt_start_time $ZSH_PROMPT_PROFILER_LOG &!
-  fi
+    (( ${#prompt_extras[@]} > 0 )) && _pwd+=" "
 }
 
 function prompt_ayk_precmd {
-    # _start_prompt_profile
-    _prompt_start_time=$EPOCHREALTIME
+    local start_time=$EPOCHREALTIME
 
-    git_prompt
     virtualenv_info
     docker_mounted
     xterm_title
     prompt_ayk_pwd
 
-    _prompt_time=${$(( ($EPOCHREALTIME - $_prompt_start_time) * 1000 ))%%\.*}
-    # _stop_prompt_profile
+    if (( _async_vcs_info_pid != 0 )); then
+      kill -s HUP _async_vcs_info_pid &>/dev/null || :
+    fi
+    if command git rev-parse --show-toplevel &>/dev/null; then
+      {
+        vcs_info
+        echo -n $vcs_info_msg_0_ >! $HOME/._prompt_vcs_info
+        kill -s USR1 $$
+      } &!
+      _async_vcs_info_pid=$!
+    else
+      unset _prompt_vcs_info
+    fi
+
+    _prompt_time=${$(( ($EPOCHREALTIME - $start_time) * 1000 ))%%\.*}
 }
 
 function prompt_ayk_setup {
@@ -199,6 +113,7 @@ function prompt_ayk_setup {
 
     # Load required functions.
     autoload -Uz add-zsh-hook
+    autoload -Uz vcs_info
 
     # Add hook for calling vcs_info before each command.
     add-zsh-hook precmd prompt_ayk_precmd
@@ -207,16 +122,26 @@ function prompt_ayk_setup {
     [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
 
     # If terminal not in tmux, prepend message
-    [[ -z "$TMUX" ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
+    [[ -z $TMUX ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
 
     # Set editor-info parameters.
     zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
-    zstyle ':prezto:module:editor:info:keymap:primary' format "${prompt_emoji}"
+    zstyle ':prezto:module:editor:info:keymap:primary' format "$prompt_emoji"
     zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{$_attn}"
     zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
 
+    # Set vcs_info parameters.
+    zstyle ':vcs_info:*' enable git hg svn
+    zstyle ':vcs_info:*' check-for-changes true
+    zstyle ':vcs_info:*' stagedstr "%F{green}●%f"
+    zstyle ':vcs_info:*' unstagedstr "%F{yellow}●%f"
+    zstyle ':vcs_info:*' formats " %F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2})%f%m"
+    zstyle ':vcs_info:*' actionformats " %F{$_c2}(%f%F{$_c4}%b%f%c%u|%F{cyan}%a%f%F{$_c2})%f%m"
+    zstyle ':vcs_info:svn:*' branchformat "%b|%F{cyan}%r%f"
+    zstyle ':vcs_info:git*+set-message:*' hooks git_ahead_behind git_fmt_diff
+
     # Define prompts.
-    PROMPT='${prompt_tmux}${_pwd}${_docker}${_venv}${_git_prompt} ${editor_info[keymap]}${editor_info[overwrite]} '
+    PROMPT='${prompt_tmux}${_pwd}${_docker}${_venv}${_prompt_vcs_info} ${editor_info[keymap]}${editor_info[overwrite]} '
     RPROMPT='%f%(?::%F{$_c5}$?%f) %F{$_hide}[${_prompt_time}]%f'
 }
 
