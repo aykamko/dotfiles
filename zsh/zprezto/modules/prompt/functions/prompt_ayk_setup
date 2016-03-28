@@ -49,6 +49,7 @@ function xterm_title {
 }
 
 # show marker if python virtualenv is active
+export VIRTUAL_ENV_DISABLE_PROMPT=1
 function virtualenv_info {
     if [[ -n $VIRTUAL_ENV ]]; then
         _venv="%F{$_c2}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"

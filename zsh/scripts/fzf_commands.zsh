@@ -1,5 +1,5 @@
 # Adapted from: https://github.com/junegunn/fzf/wiki/Examples
-ff() {
+fd() {
   local out file key delimiter
   [[ -n $1 ]] && \
     delimiter="--delimiter='^${1}/' --with-nth=2" || \
@@ -15,7 +15,6 @@ ff() {
     fi
   fi
 }
-alias fd=ff
 
 # From: https://github.com/junegunn/fzf/wiki/Examples
 # fe [FUZZY PATTERN] - Open the selected file with the default editor

@@ -16,8 +16,9 @@ zstyle ':prezto:load' pmodule \
   'spectrum' \
   'utility' \
   'completion_insecure' \
-  'prompt' \
-  'history-substring-search'
+  'syntax-highlighting' \
+  'history-substring-search' \
+  'prompt'
 
 ###############################################################################
 # Prompt
