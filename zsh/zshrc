@@ -32,7 +32,7 @@ else
 fi
 
 # only defined in neovim libvterm
-if [[ -n $NVIM_LISTEN_ADDRESS && (( $+commands[nvim-bridge] )) ]]; then
+if [[ -n $NVIM_LISTEN_ADDRESS ]] && (( $+commands[nvim-bridge] )); then
   nvim-bridge &!
   nvim_bridge_send() { nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@" }
   exit_hook() { nvim_bridge_send 'builtin:close' }
@@ -193,7 +193,7 @@ fi
 # TODO(aleks, 03/15/16): the following line is too slow because of brew, but it's also more
 # general. should fix later
 # if [[ (( $+commands[brew] )) && -s $(brew --prefix nvm)/nvm.sh ]]; then
-if [[ (( $+commands[brew] )) && -s usr/local/opt/nvm.sh ]]; then
+if (( $+commands[brew] )) && [[ -s usr/local/opt/nvm.sh ]]; then
   _node_shim() {
     unset -f node
     unset -f npm
