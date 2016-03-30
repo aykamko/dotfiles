@@ -2,10 +2,10 @@
 ###############################################################################
 # Prezto
 ###############################################################################
-# redraw prompt on async vcs_info update
+# redraw prompt on async prompt callback signal
 function TRAPUSR1 {
-  _async_vcs_info_pid=0
-  _prompt_vcs_info=$(cat $HOME/._prompt_vcs_info)
+  _async_prompt_pid=0
+  _async_prompt=$(cat $HOME/._async_prompt)
   zle && zle reset-prompt
 }
 

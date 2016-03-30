@@ -16,31 +16,31 @@ _attn='14'
 
 # get the commit difference counts between local and remote.
 function vi+git_ahead_behind {
-    local prompt_info ahead_and_behind ahead behind
-    ahead_and_behind="$(git rev-list --count --left-right HEAD...@\{upstream\} 2> /dev/null)"
-    ahead="$ahead_and_behind[(w)1]"
-    behind="$ahead_and_behind[(w)2]"
+  local prompt_info ahead_and_behind ahead behind
+  ahead_and_behind="$(git rev-list --count --left-right HEAD...@\{upstream\} 2> /dev/null)"
+  ahead="$ahead_and_behind[(w)1]"
+  behind="$ahead_and_behind[(w)2]"
 
-    prompt_info=""
-    if (( ahead > 0 )); then
-        prompt_info+="%F{$_c5}+$ahead%f"
-    fi
-    if (( behind > 0 )); then
-        (( ahead > 0 )) && prompt_info+="%F{$_c2},%f"
-        prompt_info+="%F{$_c5}-$behind%f"
-    fi
-    [[ -n $prompt_info ]] && hook_com[misc]="%F{$_c2}{%f$prompt_info%F{$_c2}}%f"
-    return 0
+  prompt_info=""
+  if (( ahead > 0 )); then
+    prompt_info+="%F{$_c5}+$ahead%f"
+  fi
+  if (( behind > 0 )); then
+    (( ahead > 0 )) && prompt_info+="%F{$_c2},%f"
+    prompt_info+="%F{$_c5}-$behind%f"
+  fi
+  [[ -n $prompt_info ]] && hook_com[misc]="%F{$_c2}{%f$prompt_info%F{$_c2}}%f"
+  return 0
 }
 
 # prepend space to vcs_info diff info
 function +vi-git_fmt_diff {
-    if [[ -n ${hook_com[staged]} ]]; then
-        hook_com[staged]=" ${hook_com[staged]}"
-    elif [[ -n ${hook_com[unstaged]} ]]; then
-        hook_com[unstaged]=" ${hook_com[unstaged]}"
-    fi
-    return 0
+  if [[ -n ${hook_com[staged]} ]]; then
+    hook_com[staged]=" ${hook_com[staged]}"
+  elif [[ -n ${hook_com[unstaged]} ]]; then
+    hook_com[unstaged]=" ${hook_com[unstaged]}"
+  fi
+  return 0
 }
 
 # set xterm pane title
@@ -51,100 +51,85 @@ function xterm_title {
 # show marker if python virtualenv is active
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 function virtualenv_info {
-    if [[ -n $VIRTUAL_ENV ]]; then
-        _venv="%F{$_c2}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
-    else
-        unset _venv
-    fi
+  if [[ -n $VIRTUAL_ENV ]]; then
+    _venv="%F{$_c2}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
+  else
+    unset _venv
+  fi
 }
 
 # show marker if docker machine is mounted in env
 function docker_mounted {
-    if [[ -n $DOCKER_MACHINE_NAME ]]; then
-        local machine_name
-        [[ $DOCKER_MACHINE_NAME = "default" ]] && \
-          unset machine_name || machine_name=$DOCKER_MACHINE_NAME
-        _docker="%F{$_c2}[%f🐳 %F{white}${machine_name}%f%F{$_c2}]%f"
-    else
-        unset _docker
-    fi
+  if [[ -n $DOCKER_MACHINE_NAME ]]; then
+    local machine_name
+    [[ $DOCKER_MACHINE_NAME = "default" ]] && \
+      unset machine_name || machine_name=$DOCKER_MACHINE_NAME
+    _docker="%F{$_c2}[%f🐳 %F{white}${machine_name}%f%F{$_c2}]%f"
+  else
+    unset _docker
+  fi
 }
 
-# construct prompt and add space before prompt extras if there any
-function prompt_ayk_pwd {
-    _pwd="%F{$_c1}%3~%f"
+function async_prompt {
+  xterm_title
+  virtualenv_info
+  docker_mounted
+  vcs_info
 
-    local prompt_extras
-    prompt_extras=(
-        $_venv
-        $_docker
-    )
-    (( ${#prompt_extras[@]} > 0 )) && _pwd+=" "
+  local info="${_docker}${_venv}${vcs_info_msg_0_}"
+  [ -n "$info" ] && info=" $info"
+  echo -n $info >! $HOME/._async_prompt
+
+  kill -s USR1 $$
 }
 
 function prompt_ayk_precmd {
-    local start_time=$EPOCHREALTIME
+  if (( _async_prompt_pid != 0 )); then
+    kill -s HUP _async_prompt_pid &>/dev/null || :
+  fi
 
-    virtualenv_info
-    docker_mounted
-    prompt_ayk_pwd
-
-    xterm_title &!
-
-    if (( _async_vcs_info_pid != 0 )); then
-      kill -s HUP _async_vcs_info_pid &>/dev/null || :
-    fi
-    if command git rev-parse --show-toplevel &>/dev/null; then
-      {
-        vcs_info
-        echo -n $vcs_info_msg_0_ >! $HOME/._prompt_vcs_info
-        kill -s USR1 $$
-      } &!
-      _async_vcs_info_pid=$!
-    else
-      unset _prompt_vcs_info
-    fi
-
-    _prompt_time=${$(( ($EPOCHREALTIME - $start_time) * 1000 ))%%\.*}
+  async_prompt &!
+  _async_prompt_pid=$!
 }
 
 function prompt_ayk_setup {
-    setopt LOCAL_OPTIONS
-    unsetopt XTRACE KSH_ARRAYS
-    prompt_opts=(cr percent subst)
+  setopt LOCAL_OPTIONS
+  unsetopt XTRACE KSH_ARRAYS
+  prompt_opts=(cr percent subst)
 
-    # Load required functions.
-    autoload -Uz add-zsh-hook
-    autoload -Uz vcs_info
+  # Load required functions.
+  autoload -Uz add-zsh-hook
+  autoload -Uz vcs_info
 
-    # Add hook for calling vcs_info before each command.
-    add-zsh-hook precmd prompt_ayk_precmd
+  # Add hook for calling vcs_info before each command.
+  #
+  add-zsh-hook precmd prompt_ayk_precmd
 
-    # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
-    [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
+  # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
+  [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
 
-    # If terminal not in tmux, prepend message
-    [[ -z $TMUX ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
+  # If terminal not in tmux, prepend message
+  [[ -z $TMUX ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
 
-    # Set editor-info parameters.
-    zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
-    zstyle ':prezto:module:editor:info:keymap:primary' format "$prompt_emoji"
-    zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{$_attn}"
-    zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
+  # Set editor-info parameters.
+  zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
+  zstyle ':prezto:module:editor:info:keymap:primary' format "$prompt_emoji"
+  zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{$_attn}"
+  zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
 
-    # Set vcs_info parameters.
-    zstyle ':vcs_info:*' enable git hg svn
-    zstyle ':vcs_info:*' check-for-changes true
-    zstyle ':vcs_info:*' stagedstr "%F{green}●%f"
-    zstyle ':vcs_info:*' unstagedstr "%F{yellow}●%f"
-    zstyle ':vcs_info:*' formats " %F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2})%f%m"
-    zstyle ':vcs_info:*' actionformats " %F{$_c2}(%f%F{$_c4}%b%f%c%u|%F{cyan}%a%f%F{$_c2})%f%m"
-    zstyle ':vcs_info:svn:*' branchformat "%b|%F{cyan}%r%f"
-    zstyle ':vcs_info:git*+set-message:*' hooks git_ahead_behind git_fmt_diff
+  # Set vcs_info parameters.
+  zstyle ':vcs_info:*' enable git hg svn
+  zstyle ':vcs_info:*' check-for-changes true
+  zstyle ':vcs_info:*' stagedstr "%F{green}●%f"
+  zstyle ':vcs_info:*' unstagedstr "%F{yellow}●%f"
+  zstyle ':vcs_info:*' formats "%F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2})%f%m"
+  zstyle ':vcs_info:*' actionformats "%F{$_c2}(%f%F{$_c4}%b%f%c%u|%F{cyan}%a%f%F{$_c2})%f%m"
+  zstyle ':vcs_info:svn:*' branchformat "%b|%F{cyan}%r%f"
+  zstyle ':vcs_info:git*+set-message:*' hooks git_ahead_behind git_fmt_diff
 
-    # Define prompts.
-    PROMPT='${prompt_tmux}${_pwd}${_docker}${_venv}${_prompt_vcs_info} ${editor_info[keymap]}${editor_info[overwrite]} '
-    RPROMPT='%f%(?::%F{$_c5}$?%f) %F{$_hide}[${_prompt_time}]%f'
+  # Define prompts.
+  PROMPT='${prompt_tmux}%F{$_c1}%3~%f${_async_prompt} ${editor_info[keymap]}${editor_info[overwrite]} '
+  RPROMPT='%f%(?::%F{$_c5}$?%f)'
 }
 
 prompt_ayk_setup "$@"
