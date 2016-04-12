@@ -79,7 +79,7 @@
     sync = "!git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
     clobber = "!BRANCH=`git rev-parse --abbrev-ref HEAD`; \
         git fetch ${1:-origin} $BRANCH; \
-        git checkout FETCH_HEAD; \
+        git checkout FETCH_HEAD || exit; \
         git branch -D $BRANCH; \
         git checkout -b $BRANCH; \
         git branch --set-upstream-to=${1:-origin}/$BRANCH $BRANCH"
@@ -95,6 +95,7 @@
     r = remote -v                     # show remotes (verbose)
 
     # reset
+    cleanall = "!(cd $(git rev-parse --show-toplevel) && git clean -xdf)"
     unstage = reset HEAD              # remove files from index (tracking)
     uncommit = reset --soft HEAD^     # go back before last commit, with files in uncommitted state
     filelog = log -u                  # show changes to a file
@@ -157,6 +158,8 @@
     # instead of a/b/c/d as prefixes for patches
     mnemonicprefix = true
     algorithm = histogram
+[column]
+    ui = auto
 [rerere]
     # Remember my merges
     # http://gitfu.wordpress.com/2008/04/20/git-rerere-rereremember-what-you-did-last-time/

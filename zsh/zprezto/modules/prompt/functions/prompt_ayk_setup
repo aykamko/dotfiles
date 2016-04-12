@@ -77,7 +77,7 @@ function async_prompt {
   vcs_info
 
   local info="${_docker}${_venv}${vcs_info_msg_0_}"
-  [ -n "$info" ] && info=" $info"
+  [[ -n "$info" ]] && info=" $info"
   echo -n $info >! $HOME/._async_prompt
 
   kill -s USR1 $$

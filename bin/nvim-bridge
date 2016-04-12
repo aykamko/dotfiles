@@ -120,14 +120,35 @@ class NvimBridge():
 
     def _edit_in_session(self, cmd):
         term_bufnum = self.nvim.current.buffer.number
-        clientcwd, files_str = cmd.split(':', 1)
-        files = files_str.split()
-        self.nvim.vars['files_to_edit'] = [make_abspath(clientcwd, f) for f in files]
-        for _ in range(len(files)):
+        clientcwd, args_str = cmd.split(':', 1)
+        args_iter = iter(args_str.split())
+
+        f = make_abspath(clientcwd, args_iter.next())  # StopIteration shouldn't happen
+        while True:
             try:
-                self.nvim.command('exe "drop ".remove(g:files_to_edit, 0)')
-            except NvimError as e:
-                pass
+                arg = args_iter.next()
+
+                # jump to end of file
+                if arg == '+':
+                    self.nvim.command('drop %s | $' % (f))
+
+                # jump to first search term
+                elif arg.startswith('+/'):
+                    self.nvim.command('drop %s | ij! %s' % (f, arg[2:]))
+
+                # jump to line number
+                elif arg.startswith('+'):
+                    self.nvim.command('drop %s | %s' % (f, arg[1:]))
+
+                # just open the file
+                else:
+                    self.nvim.command('drop %s' % (f))
+                    f = make_abspath(clientcwd, arg)
+
+            except StopIteration:
+                self.nvim.command('drop %s' % (f))  # open last file arg
+                break
+
         time.sleep(0.05)
         self.nvim.command('bdelete! %d' % term_bufnum)
         return True  # close bridge
@@ -135,6 +156,7 @@ class NvimBridge():
     def _quit_pane(self):
         term_bufnum = self.nvim.current.buffer.number
         self.nvim.input(r'<c-\><c-n><c-w>p')
+
         time.sleep(0.05)
         self.nvim.command('bdelete! %d' % term_bufnum)
         return True  # close bridge

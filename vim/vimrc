@@ -9,6 +9,7 @@ let s:darwin = has('mac')
 let s:tmux = $TMUX != ''
 
 augroup vimrc_folding
+  autocmd!
   autocmd BufNewFile,BufReadPost .vimrc
         \  set foldmethod=marker
         \| set foldlevel=0
@@ -18,11 +19,15 @@ augroup END
 " autoinstall vim-plug
 if empty(glob('~/.vim/autoload/plug.vim'))
   silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
-    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+        \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
   autocmd VimEnter * PlugInstall
 endif
 
 let g:plug_dir = '~/.vim/bundle/'
+function! s:plug_exists(plug)
+  return isdirectory(expand(g:plug_dir.a:plug))
+endfunction
+
 call plug#begin(g:plug_dir)
 
 Plug 'ConradIrwin/vim-bracketed-paste'
@@ -63,16 +68,23 @@ Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
 Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
 Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
-Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 
-autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
+augroup slim_filetype
+  autocmd!
+  autocmd BufNewFile,BufReadPost *.slim set filetype=slim
+augroup END
+Plug 'slim-template/vim-slim',       { 'for': 'slim' }
+
+augroup jsx_filetype
+  autocmd!
+  autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
+augroup END
 Plug 'mxw/vim-jsx',                  { 'for': 'javascript.jsx' }
 
 if has('nvim')
   " Plug 'aykamko/gitsync.nvim'
-  " Plug 'aykamko/async-vimrc'
   Plug 'Shougo/deoplete.nvim'
   Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
   Plug 'Shougo/neosnippet.vim'
@@ -176,7 +188,7 @@ else
 endif
 
 " hack to always display sign column
-augroup DisplaySignCol
+augroup display_sign_col
   autocmd!
   autocmd BufEnter * sign define dummy
   autocmd BufEnter * if &buftype !=# 'terminal' |
@@ -238,10 +250,13 @@ augroup END
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
 if &buftype !=# 'terminal' | set number | set relativenumber | endif
-" autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained * TODO: fix these
-autocmd! InsertEnter,InsertLeave *
-      \ if !get(b:, 'goyo_enabled', 0) && &buftype !=# 'terminal' |
-      \ set invrelativenumber | endif
+augroup line_numbering
+  autocmd!
+  " autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained * TODO: fix these
+  autocmd InsertEnter,InsertLeave *
+        \ if !get(b:, 'goyo_enabled', 0) && &buftype !=# 'terminal' |
+        \ set invrelativenumber | endif
+augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Indentation {{{
@@ -251,7 +266,7 @@ set tabstop=4
 set softtabstop=4
 set expandtab
 set backspace=indent,eol,start
-" set textwidth=99
+set textwidth=99
 
 " vim-indent-guides
 let g:indent_guides_enable_on_vim_startup = 1
@@ -265,14 +280,19 @@ hi IndentGuidesEven ctermbg=234
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " remap j/k for wrapped lines; add relative jumps to jumplist
 " Source: reddit.com/r/vim/comments/3npf1z/using_jk_for_wrapped_lines_and_adding_jk_with_a/cvq2k3x
-function! LineMotion(dir)
-    execute "normal! " . (v:count1 > 1 ? "m'" . v:count1 : "g") . a:dir
+function! s:linemotion(dir)
+  return (v:count1 > 1 ? "m'".v:count1 : 'g').a:dir
 endfunction
-nnoremap <silent> j :<c-u>call LineMotion("j")<cr>
-nnoremap <silent> k :<c-u>call LineMotion("k")<cr>
+nnoremap <silent><expr> j <SID>linemotion('j')
+nnoremap <silent><expr> k <SID>linemotion('k')
+vnoremap <silent><expr> j <SID>linemotion('j')
+vnoremap <silent><expr> k <SID>linemotion('k')
 
 " makes sense
 nnoremap <silent> Y yg_
+nnoremap <silent> yY ^yg_
+nnoremap <silent> dD ^D
+nnoremap <silent> cC ^C
 
 " because I suck
 cnoreabbrev W w
@@ -282,15 +302,15 @@ cnoreabbrev WQ wq
 cnoreabbrev Wq wq
 cnoreabbrev wQ wq
 
-" center screen horizontally
-fu! HorizontalScroll(cols)
-  if a:cols > 0
-    exec "normal ".a:cols."zl"
-  elseif a:cols < 0
-    exec "normal ".-a:cols."zh"
+" move screen by a:cols_dt columns
+function! s:horizontal_scroll(cols_dt)
+  if a:cols_dt > 0
+    return a:cols_dt.'zl'
+  elseif a:cols_dt < 0
+    return -a:cols_dt.'zh'
   endif
-endfu
-nnoremap <silent> z\| :call HorizontalScroll(wincol() - (winwidth(0)/2))<CR>
+endfunction
+nnoremap <silent><expr> z\| <SID>horizontal_scroll(wincol() - (winwidth(0) / 2))
 
 " save to <leader>;
 noremap <silent> <leader><leader> :up<CR>
@@ -307,26 +327,44 @@ noremap <silent> <leader>Q :q!<CR>
 vnoremap <silent> <leader>Q :<C-U>q!<CR>
 
 " bind arrows to pageup/pagedown, since I don't use them otherwise
-function! ScrollHalfScreen(down, visualmode)
-  if !empty(a:visualmode) | exec "normal! gv" | endif
-  let motion = a:down ? 'j' : 'k'
-  exec 'normal! '.winheight('$')/2.motion
+function! s:scroll_half_screen(motion)
+  return (winheight('$') / 2).a:motion
 endfunction
-nnoremap <silent> <Down> :<C-U>call ScrollHalfScreen(1, 0)<CR>
-nnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 0)<CR>
-vnoremap <silent> <Down> :<C-U>call ScrollHalfScreen(1, 1)<CR>
-vnoremap <silent> <Up> :<C-U>call ScrollHalfScreen(0, 1)<CR>
+nnoremap <silent><expr> <Down> <SID>scroll_half_screen('j')
+nnoremap <silent><expr> <Up> <SID>scroll_half_screen('k')
+vnoremap <silent><expr> <Down> 'gv'.<SID>scroll_half_screen('j')
+vnoremap <silent><expr> <Up> 'gv'.<SID>scroll_half_screen('k')
 
-" blackhole paste
-function! BlackHolePaste(type)
-  if a:type ==# 'char'
-    silent exec 'normal! `[v`]"bdp'
-  elseif a:type == 'v'
-    silent exec 'normal! `<v`>"bdp'
+function! s:blackhole_paste(mode)
+  if a:mode ==# 'char'
+    let start_mark='`['
+    let end_mark='`]'
+  elseif index(['v', 'V'], a:mode) >= 0
+    let start_mark='`<'
+    let end_mark='`>'
+  endif
+  silent exec 'normal! '.start_mark
+  let start_col=col('.')
+  silent exec 'normal! v'.end_mark.'"bd'
+  let end_col=col('.')
+  if end_col < start_col  " happens when at end of line
+    silent exec 'normal! p'
+  else
+    silent exec 'normal! P'
   endif
 endfunction
-nnoremap <silent> <leader>p :set operatorfunc=BlackHolePaste<CR>g@
-vnoremap <silent> <leader>p :<c-u>call BlackHolePaste(visualmode())<CR>
+function! s:blackhole_delete(mode)
+  if a:mode ==# 'char'
+    silent exec 'normal! `[v`]"bd'
+  elseif index(['v', 'V'], a:mode) >= 0
+    silent exec 'normal! `<v`>"bd'
+  endif
+endfunction
+nnoremap <silent> mp :set operatorfunc=<SID>blackhole_paste<CR>g@
+vnoremap <silent> mp :<c-u>call <SID>blackhole_paste(visualmode())<CR>
+nnoremap <silent> md :set operatorfunc=<SID>blackhole_delete<CR>g@
+vnoremap <silent> md :<c-u>call <SID>blackhole_delete(visualmode())<CR>
+nnoremap <silent> mm "bdd
 nnoremap <silent> dp "bddP
 
 " directional split for file
@@ -406,13 +444,23 @@ nnoremap <silent> <C-s> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"nam
 " prettify JSON
 command! Prettify %!python -m json.tool
 
+" source: http://stackoverflow.com/a/6271254
+function! s:get_visual_selection()
+  let [lnum1, col1] = getpos("'<")[1:2]
+  let [lnum2, col2] = getpos("'>")[1:2]
+  let lines = getline(lnum1, lnum2)
+  let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
+  let lines[0] = lines[0][col1 - 1:]
+  return join(lines, '\n')
+endfunction
+
 " search/replace visual selection
-fu! ReplaceSelection(hasrange)
+function! s:replace_selection(hasrange)
   if a:hasrange > 0
-    call feedkeys(':%s/'.GetVisualSelection().'/', 'm')
+    call feedkeys(':%s/'.s:get_visual_selection().'/', 'm')
   endif
-endfu
-command! -range=0 ReplaceSelection call ReplaceSelection(<count>)
+endfunction
+command! -range=0 ReplaceSelection call s:replace_selection(<count>)
 vnoremap <leader>r :ReplaceSelection<CR>
 
 " kill any trailing whitespace on save (Credit to Facebook)
@@ -425,14 +473,16 @@ function! s:strip_whitespace()
 endfunction
 augroup kill_whitespace
   autocmd!
-  autocmd BufWritePre <buffer> if index(g:strip_whitespace_blacklist, &ft) < 0 |
-        \ call s:strip_whitespace() | endif
+  autocmd BufWritePre <buffer>
+        \ if index(g:strip_whitespace_blacklist, &ft) < 0 |
+        \ call s:strip_whitespace() |
+        \ endif
 augroup END
 
 " set buffer to unmodifiable if read-only
 function! s:set_unmodifiable()
   if &readonly && &modifiable
-      setlocal nomodifiable
+    setlocal nomodifiable
   endif
 endfu
 augroup set_unmodifiable
@@ -442,15 +492,15 @@ augroup END
 
 " zoom into pane
 function! s:ZoomToggle() abort
-    if exists('t:zoomed') && t:zoomed
-        exec t:zoom_winrestcmd
-        let t:zoomed = 0
-    else
-        let t:zoom_winrestcmd = winrestcmd()
-        resize
-        vertical resize
-        let t:zoomed = 1
-    endif
+  if exists('t:zoomed') && t:zoomed
+    exec t:zoom_winrestcmd
+    let t:zoomed = 0
+  else
+    let t:zoom_winrestcmd = winrestcmd()
+    resize
+    vertical resize
+    let t:zoomed = 1
+  endif
 endfunction
 command! ZoomToggle call s:ZoomToggle()
 nnoremap <silent> <leader>z :ZoomToggle<CR>
@@ -470,8 +520,11 @@ nmap <silent> <C-x> :call TmuxAwareKillpane()<CR>
 " $ tic $TERM.ti
 
 " tmux pane title
-autocmd BufReadPost,FileReadPost,BufNewFile * let &titlestring=expand("%:t")
 set title
+augroup tmux_pane_title
+  autocmd!
+  autocmd BufReadPost,FileReadPost,BufNewFile * let &titlestring=expand("%:t")
+augroup END
 
 if has('nvim')
   " directional term splits
@@ -479,21 +532,32 @@ if has('nvim')
   cnoreabbrev dterm Dterm
   cnoreabbrev dt Dterm
 
+  function! s:localdterm(...) abort
+    let curdir = getcwd()
+    exec join(extend(['Dterm'], a:000))
+    exec 'lcd '.expand('%:p:h')
+  endfunction
+
+  command! -nargs=? LDterm call <sid>localdterm(<f-args>)
+  cnoreabbrev ldterm LDterm
+  cnoreabbrev d. LDterm
+
   " terminal mappings
-  autocmd TermOpen * tnoremap <buffer> <Esc><Esc> <C-\><C-n>
-  autocmd FileType fzf tunmap <buffer> <Esc><Esc>
   tnoremap <C-w>h <C-\><C-n><C-w>h
   tnoremap <C-w>j <C-\><C-n><C-w>j
   tnoremap <C-w>k <C-\><C-n><C-w>k
   tnoremap <C-w>l <C-\><C-n><C-w>l
 
-  " focus terminal if mouse click
-  function! FocusTerm()
-    if &buftype ==# 'terminal'
-      startinsert
-    endif
-  endfunction
-  autocmd BufEnter * call FocusTerm()
+  augroup term_autocmds
+    autocmd!
+
+    " escape terminal mappings
+    autocmd TermOpen * tnoremap <buffer> <Esc><Esc> <C-\><C-n>
+    autocmd FileType fzf tunmap <buffer> <Esc><Esc>
+
+    " focus terminal automatically
+    autocmd BufEnter term://* startinsert
+  augroup END
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -507,17 +571,17 @@ let g:qs_first_occurrence_highlight_color = 39
 let g:qs_second_occurrence_highlight_color = 28
 
 function! Quick_scope_selective(movement)
-    let needs_disabling = 0
-    if !g:qs_enable
-        QuickScopeToggle
-        redraw
-        let needs_disabling = 1
-    endif
-    let letter = nr2char(getchar())
-    if needs_disabling
-       QuickScopeToggle
-    endif
-    return a:movement . letter
+  let needs_disabling = 0
+  if !g:qs_enable
+    QuickScopeToggle
+    redraw
+    let needs_disabling = 1
+  endif
+  let letter = nr2char(getchar())
+  if needs_disabling
+    QuickScopeToggle
+  endif
+  return a:movement . letter
 endfunction
 
 for i in g:qs_enable_char_list
@@ -647,22 +711,26 @@ nnoremap <leader>a :A<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " deoplete {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:deoplete#enable_at_startup = 1
+if s:plug_exists('deoplete.nvim')
+  let g:deoplete#enable_at_startup = 1
 
-imap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "<Tab>"
-imap <silent><expr> <S-Tab> pumvisible() ? "\<C-p>" : "<S-Tab>"
+  imap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "<Tab>"
+  imap <silent><expr> <S-Tab> pumvisible() ? "\<C-p>" : "<S-Tab>"
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " neosnippet {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:neosnippet#snippets_directory = $HOME.'/.vim/snippets'
-let g:neosnippet#disable_runtime_snippets = {
-      \ '_': 1,
-      \ } " disable built-in snippets
+if s:plug_exists('neosnippet.vim')
+  let g:neosnippet#snippets_directory = $HOME.'/.vim/snippets'
+  let g:neosnippet#disable_runtime_snippets = {
+        \ '_': 1,
+        \ } " disable built-in snippets
 
-" expand snippets with Enter
-imap <silent><expr> <CR> neosnippet#expandable_or_jumpable() ?
-      \ "\<Plug>(neosnippet_expand_or_jump)" : "\<CR>"
+  " expand snippets with Enter
+  imap <silent><expr> <CR> neosnippet#expandable_or_jumpable() ?
+        \ "\<Plug>(neosnippet_expand_or_jump)" : "\<CR>"
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Neomake {{{
@@ -697,8 +765,13 @@ nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
 
 command! -nargs=0 DisableNeomake let b:neomake_enabled=0
 
-autocmd! BufWritePost * if !get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1) |
-      \ Neomake | endif
+augroup postwrite_neomake
+  autocmd!
+  autocmd BufWritePost *
+        \ if !get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1) |
+        \ Neomake |
+        \ endif
+augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
@@ -707,37 +780,34 @@ cnoreabbrev fzf FZF
 cnoreabbrev f FZF
 
 let g:fzf_action = {
-  \ 'ctrl-t': 'tab split | drop',
-  \ 'ctrl-x': 'split | drop',
-  \ 'ctrl-v': 'vsplit | drop',
-  \ 'ctrl-s': 'DirectionalSplit' }
+      \ 'ctrl-t': 'tab split | drop',
+      \ 'ctrl-x': 'split | drop',
+      \ 'ctrl-v': 'vsplit | drop',
+      \ 'ctrl-s': 'DirectionalSplit' }
 
-function! GitAwareFZF()
-  let gitroot=system('git rev-parse --show-toplevel')
+function! s:git_fzf(...)
+  if len(a:000) > 0
+    let from_dir=a:000[0]
+  else
+    let from_dir='.'
+  endif
+  let gitroot=system('git -C '.from_dir.' rev-parse --show-toplevel')
   if v:shell_error
-    FZF
+    exec 'FZF --header="Searching from: '.from_dir.'" '.from_dir
   else
     let gitroot=substitute(gitroot, '\n\+$', '', 'g').'/' " strip trailing newlines
-    exec 'FZF -d '.gitroot.' --with-nth=2 --header="Git Repo: '.gitroot.'"'
-  end
+    exec 'FZF -d '.gitroot.' --with-nth=2 --header="Git Repo: '.gitroot.'" '.gitroot
+  endif
 endfunction
 
-nnoremap <silent> <leader>o :call GitAwareFZF()<CR>
+nnoremap <silent> <leader>o :call <SID>git_fzf()<CR>
+nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " ag.vim {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " let g:ag_working_path_mode='r'
 "
-" " source: http://stackoverflow.com/a/6271254
-" function! GetVisualSelection()
-"   let [lnum1, col1] = getpos("'<")[1:2]
-"   let [lnum2, col2] = getpos("'>")[1:2]
-"   let lines = getline(lnum1, lnum2)
-"   let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
-"   let lines[0] = lines[0][col1 - 1:]
-"   return join(lines, "\n")
-" endfunction
 "
 " " redefine Ag to accept visual selections
 " function! AgSelection(bang, args, hasrange)
@@ -760,11 +830,11 @@ nnoremap <silent> <leader>o :call GitAwareFZF()<CR>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Mimic :grep and make ag the default tool.
 let g:grepper = {
-    \ 'tools': ['ag', 'git', 'grep'],
-    \ 'open':  1,
-    \ 'jump':  0,
-    \ 'switch': 1
-    \ }
+      \ 'tools': ['ag', 'git', 'grep'],
+      \ 'open':  1,
+      \ 'jump':  0,
+      \ 'switch': 1
+      \ }
 let g:grepper.ag =
       \ { 'grepprg': 'ag --vimgrep $* `git rev-parse --show-toplevel`' }
 
@@ -831,80 +901,80 @@ function! TextobjUserSetup()
       let tail_pos = getpos('.')
       let non_blank_char_exists_p = getline('.')[head_pos[2] - 1] !~# '\s'
       return
-      \ non_blank_char_exists_p
-      \ ? ['v', head_pos, tail_pos]
-      \ : 0
+            \ non_blank_char_exists_p
+            \ ? ['v', head_pos, tail_pos]
+            \ : 0
     endfunction
 
     " textobj to turn foo_bar_baz into foo_baz *and* quuxSpamEggs into quuxEggs
     " Copied from: https://github.com/Julian/vim-textobj-variable-segment/blob/master/plugin/textobj/variable-segment.vim
     call textobj#user#plugin('variable', {
-        \ '-': {
-        \     'select-a': 'as',  'select-a-function': 'TextobjSelectSegmentA',
-        \     'select-i': 'is',  'select-i-function': 'TextobjSelectSegmentI',
-        \ }})
+          \ '-': {
+          \     'select-a': 'as',  'select-a-function': 'TextobjSelectSegmentA',
+          \     'select-i': 'is',  'select-i-function': 'TextobjSelectSegmentI',
+          \ }})
 
     function! TextobjSelectSegment(object_type, right_boundary)
-        let left_boundaries = ['_\+\i', '\<', '\l\u', '\u\u\ze\l', '\a\d', '\d\a', '#\a']
-        call search(join(left_boundaries, '\|'), 'bce')
-        let start_position = getpos('.')
+      let left_boundaries = ['_\+\i', '\<', '\l\u', '\u\u\ze\l', '\a\d', '\d\a', '#\a']
+      call search(join(left_boundaries, '\|'), 'bce')
+      let start_position = getpos('.')
 
-        call search('\>', 'c')
-        let word_end = getpos('.')
-        call setpos('.', start_position)
+      call search('\>', 'c')
+      let word_end = getpos('.')
+      call setpos('.', start_position)
 
-        call search(a:right_boundary, 'c')
-        for _ in range(v:count1 - 1)
-            if getpos('.') != word_end
-                call search(a:right_boundary)
-            endif
-        endfor
-        let end_position = getpos('.')
+      call search(a:right_boundary, 'c')
+      for _ in range(v:count1 - 1)
+        if getpos('.') != word_end
+          call search(a:right_boundary)
+        endif
+      endfor
+      let end_position = getpos('.')
 
-        return ['v', start_position, end_position]
+      return ['v', start_position, end_position]
     endfunction
 
     function! TextobjSelectSegmentA()
-        let right_boundaries = ['_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>', '\a#']
-        let right_boundary = join(right_boundaries, '\|')
-        let [type, start_position, end_position] = TextobjSelectSegment('a', right_boundary)
-        let [_, start_line, start_column, _] = start_position
+      let right_boundaries = ['_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>', '\a#']
+      let right_boundary = join(right_boundaries, '\|')
+      let [type, start_position, end_position] = TextobjSelectSegment('a', right_boundary)
+      let [_, start_line, start_column, _] = start_position
 
-        call search('\i\>', 'c')
-        if end_position == getpos('.') &&
-         \ getline(start_line)[start_column - 2] =~# '_'
-            let start_position[2] -= 1
+      call search('\i\>', 'c')
+      if end_position == getpos('.') &&
+            \ getline(start_line)[start_column - 2] =~# '_'
+        let start_position[2] -= 1
+      endif
+
+      let was_small_camel = match(expand('<cword>'), '^_*\l.*\u') != -1
+      if was_small_camel
+        call search('\<', 'bc')
+        let [_, _, word_start, _] = getpos('.')
+
+        if start_column - 2 <= word_start ||
+              \ getline(start_line)[:start_column - 2] =~# '^_*$'
+          call setpos('.', end_position)
+          normal! l~
         endif
+      endif
 
-        let was_small_camel = match(expand('<cword>'), '^_*\l.*\u') != -1
-        if was_small_camel
-            call search('\<', 'bc')
-            let [_, _, word_start, _] = getpos('.')
-
-            if start_column - 2 <= word_start ||
-             \ getline(start_line)[:start_column - 2] =~# '^_*$'
-                call setpos('.', end_position)
-                normal! l~
-            endif
-        endif
-
-        return [type, start_position, end_position]
+      return [type, start_position, end_position]
     endfunction
 
     function! TextobjSelectSegmentI()
-        let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>', '\a#']
-        return TextobjSelectSegment('i', join(right_boundaries, '\|'))
+      let right_boundaries = ['\i_', '\l\u', '\u\u\l', '\a\d', '\d\a', '\i\>', '\a#']
+      return TextobjSelectSegment('i', join(right_boundaries, '\|'))
     endfunction
 
     " select entire file
     " Source: https://github.com/kana/vim-textobj-entire
     call textobj#user#plugin('entire', {
-    \      '-': {
-    \        '*sfile*': expand('<sfile>:p'),
-    \        'select-a': 'ae',  '*select-a-function*': 'TextobjSelectEntireA',
-    \        'select-i': 'ie',  '*select-i-function*': 'TextobjSelectEntireI'
-    \      }
-    \    })
+          \      '-': {
+          \        '*sfile*': expand('<sfile>:p'),
+          \        'select-a': 'ae',  '*select-a-function*': 'TextobjSelectEntireA',
+          \        'select-i': 'ie',  '*select-i-function*': 'TextobjSelectEntireI'
+          \      }
+          \    })
 
     function! TextobjSelectEntireA()
       " To easily back to the last position after a command.
@@ -959,7 +1029,10 @@ function! s:goyo_enter()
   let b:goyo_enabled = 1
   let b:quitting = 0
   let b:quitting_bang = 0
-  autocmd QuitPre <buffer> let b:quitting = 1
+  augroup goyo_quitpre
+    autocmd!
+    autocmd QuitPre <buffer> let b:quitting = 1
+  augroup END
   cabbrev <buffer> q! let b:quitting_bang = 1 <bar> q!
 endfunction
 
@@ -975,28 +1048,19 @@ function! s:goyo_leave()
       qa
     endif
   endif
+  autocmd! goyo_quitpre
 endfunction
 
-autocmd! User GoyoEnter nested call <SID>goyo_enter()
-autocmd! User GoyoLeave nested call <SID>goyo_leave()
+augroup goyo
+  autocmd!
+  autocmd User GoyoEnter nested call <SID>goyo_enter()
+  autocmd User GoyoLeave nested call <SID>goyo_leave()
+augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Gitsync {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:gitsync_callback = 'lightline#update'
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" VimFiler {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if exists(':VimFilerRead')
-  let g:vimfiler_as_default_explorer = 1
-
-  call vimfiler#custom#profile('default', 'context', {
-        \ 'columns': '',
-        \ })
-
-  nnoremap <silent> <leader>k :VimFiler -split -find -winwidth=35 -project<CR>
-endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " NERDTree {{{
@@ -1010,7 +1074,10 @@ function! s:plugasync_nerdtree_checkForBrowse(dir)
     call nerdtree#checkForBrowse(dir)
   endif
 endfunction
-autocmd VimEnter * call s:plugasync_nerdtree_checkForBrowse(expand("<amatch>"))
+augroup async_nerdtree
+  autocmd!
+  autocmd VimEnter * call s:plugasync_nerdtree_checkForBrowse(expand("<amatch>"))
+augroup END
 
 nnoremap <silent> <leader>k :NERDTreeFind<CR>
 nnoremap <silent> <leader>l :NERDTreeToggle<CR>
@@ -1019,23 +1086,19 @@ let g:NERDTreeWinSize = 35
 let g:NERDTreeQuitOnOpen = 1
 
 " close Vim if NERDTree is the only window left
-autocmd BufEnter * if (winnr("$")==1 && exists("b:NERDTree") && b:NERDTree.isTabTree())|q|endif
+augroup nerdtree_solo_close
+  autocmd!
+  autocmd BufEnter *
+        \ if (winnr("$")==1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) |
+        \ q |
+        \ endif
+augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-autocmd BufNewFile,BufReadPost *.md set filetype=markdown
-autocmd BufNewFile,BufReadPost *.hn set filetype=horn
-autocmd BufNewFile,BufReadPost *.slim set filetype=slim
-autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
-autocmd FileType vim,javascript,coffee,html,jinja setl sw=2 sts=2 et
-autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
-      \ set textwidth=72 |
-      \ set colorcolumn=71,72 |
-      \ call matchaddpos('ColorColumn', [[1, 49, 2]])
-
 " line wrap sucks for some files, but it's nice to choose the wrap width
-function! ManualFormat(type, ...)
+function! s:manual_format(type, ...)
   let og_width = &textwidth
   exec 'set textwidth='.get(b:, 'textwidth_manual', &textwidth)
 
@@ -1052,16 +1115,26 @@ function! ManualFormat(type, ...)
   exec 'set textwidth='.og_width
 endfunction!
 
-autocmd Filetype tex,markdown,noft,text
-      \ set wrap |
-      \ set breakindent |
-      \ set linebreak |
-      \ set textwidth=9999 |
-      \ exec 'nnoremap <silent> $ g$' |
-      \ exec 'nnoremap <silent> ^ g^' |
-      \ let b:textwidth_manual = 119 |
-      \ exec 'nnoremap <silent> gq :set opfunc=ManualFormat<CR>g@' |
-      \ exec 'vnoremap <silent> gq :<C-U>call ManualFormat(visualmode(), 1)<CR>'
+augroup vimrc_filetype
+  autocmd!
+  autocmd BufNewFile,BufReadPost *.md set filetype=markdown
+  autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
+  autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 sts=2 et
+  autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
+        \ set textwidth=72 |
+        \ set colorcolumn=71,72 |
+        \ call matchaddpos('ColorColumn', [[1, 49, 2]])
+  autocmd Filetype tex,markdown,noft,text
+        \ set wrap |
+        \ set breakindent |
+        \ set linebreak |
+        \ set textwidth=9999 |
+        \ exec 'nnoremap <silent> $ g$' |
+        \ exec 'nnoremap <silent> ^ g^' |
+        \ let b:textwidth_manual = 119 |
+        \ exec 'nnoremap <silent> gq :set opfunc=<SID>manual_format<CR>g@' |
+        \ exec 'vnoremap <silent> gq :<C-U>call <SID>manual_format(visualmode(), 1)<CR>'
+augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Fugitive {{{
@@ -1077,6 +1150,6 @@ function! s:fugitiveLazy(...)
   exe printf(':%s', join(a:000, ' '))
 endfunction
 command! -nargs=* FugitiveLazy call s:fugitiveLazy(<f-args>)
-command! -nargs=* Gdiff :call s:fugitiveLazy('Gdiff', <f-args>)
-command! -nargs=* Gblame :call s:fugitiveLazy('Gblame', <f-args>)
+command! -nargs=* Gdiff call s:fugitiveLazy('Gdiff', <f-args>)
+command! -nargs=* Gblame call s:fugitiveLazy('Gblame', <f-args>)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

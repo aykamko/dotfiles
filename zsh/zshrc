@@ -6,19 +6,24 @@
 function TRAPUSR1 {
   _async_prompt_pid=0
   _async_prompt=$(cat $HOME/._async_prompt)
-  zle && zle reset-prompt
+  zle && zle .reset-prompt
 }
 
 # run compinit -S on trusted computers
 export TRUSTED_COMPINIT="HAL 9000"
 
 # don't load prezto outside of tmux to speed up load
-[[ -n "$TMUX" ]] && \
+[[ -n $TMUX ]] && \
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+
+  for keymap in 'emacs' 'viins'; do
+    bindkey -M "$keymap" "$key_info[Control]U" history-substring-search-up
+    bindkey -M "$keymap" "$key_info[Control]D" history-substring-search-down
+  done
 
 # make Escape in vicmd mode do nothing
 unset BEEP
-bindkey -M vicmd "\e" beep
+bindkey -M vicmd '\e' beep
 
 ###############################################################################
 # Neovim Pane Switching
@@ -72,7 +77,7 @@ alias restart="exec $SHELL"
 alias c=clear
 clr() {
   clear
-  [ -n $TMUX ] && tmux clear-history
+  [[ -n $TMUX ]] && tmux clear-history
 }
 stripansi() {
   [[ $UNAME == darwin ]] && \
@@ -154,7 +159,7 @@ rpdb() {
   socat readline tcp:${2:-0.0.0.0}:${1:-4444}
 }
 
-if [ -f /usr/local/bin/virtualenvwrapper.sh ]; then
+if [[ -f /usr/local/bin/virtualenvwrapper.sh ]]; then
   workon() { unset -f workon && source /usr/local/bin/virtualenvwrapper.sh && workon "$@"; }
   [[ -n ${VIRTUAL_ENV} ]] && workon ${VIRTUAL_ENV:t} # autostart virtualenv
 fi
@@ -172,8 +177,8 @@ fi
 upsearch() {
   local curdir="$PWD"
   while 1; do
-    [ -f "$curdir/$1" ] && echo "$curdir/$1" && return
-    [[ "$curdir" == "/" ]] && return
+    [[ -f "$curdir/$1" ]] && echo "$curdir/$1" && return
+    [[ $curdir == "/" ]] && return
     curdir=$(dirname "$curdir")
   done
 }
@@ -228,7 +233,7 @@ alias texclean='rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null'
 ###############################################################################
 # Builtin overrides
 ###############################################################################
-[[ "$OSTYPE" == *"darwin"* ]] && \
+[[ $UNAME == darwin ]] && \
   alias fancyls="ls -G" || \
   alias fancyls="ls --group-directories-first --color=auto"
 
@@ -249,7 +254,7 @@ dotfiles() { cd $DOTFILES/$1; }
 compctl -f -W $DOTFILES/ dotfiles
 
 # override cat
-_cat_ls() { [ -d $1 ] && fancyls $1 || command cat "$@"; }
+_cat_ls() { [[ -d $1 ]] && fancyls $1 || command cat "$@"; }
 alias cat=_cat_ls
 
 ###############################################################################
@@ -262,12 +267,12 @@ alias cat=_cat_ls
 ###############################################################################
 # z
 ###############################################################################
-[ -f $DOTFILES/z/z.sh ] && source $DOTFILES/z/z.sh
+[[ -f $DOTFILES/z/z.sh ]] && source $DOTFILES/z/z.sh
 
 ###############################################################################
 # vim fzf
 ###############################################################################
-if [ -f ~/.fzf.zsh ]; then
+if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
   export FZF_DEFAULT_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g "" `git rev-parse --show-toplevel 2>/dev/null`'
@@ -278,7 +283,7 @@ fi
 ###############################################################################
 # zsh scripts
 ###############################################################################
-if [ -d $DOTFILES/zsh/scripts ]; then
+if [[ -d $DOTFILES/zsh/scripts ]]; then
   for f in $DOTFILES/zsh/scripts/*; do
     source $f
   done
