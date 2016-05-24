@@ -15,8 +15,8 @@
     untracked = red
 [alias]
     # add
-    a = add                           # add
-    chunkyadd = add --patch           # stage commits chunk by chunk
+    a = add
+    chunkyadd = add --patch
 
     # via http://blog.apiaxle.com/post/handy-git-tips-to-stop-you-getting-fired/
     snapshot = !git stash save "snapshot: $(date)" && git stash apply "stash@{0}"
@@ -34,35 +34,37 @@
     recent-branches = !git for-each-ref --count=15 --sort=-committerdate refs/heads/ --format='%(refname:short)'
 
     # branch
-    b = branch -v                     # branch (verbose)
+    b = branch -v
 
     # commit
     c = commit
-    cm = commit -m                    # commit with message
-    ca = commit -am                   # commit all with message
-    ci = commit                       # commit
-    amend = commit --amend            # ammend your last commit
-    ammend = commit --amend           # ammend your last commit
-    oops = commit --amend --no-edit   # ammend your last commit without editing commit message
-    empty = commit --allow-empty -m   # empty commit
+    cm = commit -m
+    ca = commit -am
+    ci = commit
+    amend = commit --amend
+    ammend = commit --amend
+    oops = commit --amend --no-edit
+    empty = commit --allow-empty -m
 
     # checkout
-    co = checkout                     # checkout
-    nb = checkout -b                  # create and switch to a new branch (mnemonic: "git new branch branchname...")
+    co = checkout
+    nb = checkout -b
     ours = checkout --ours
     theirs = checkout --theirs
 
     # cherry-pick
-    cp = cherry-pick                  # grab a change from a branch
+    cp = cherry-pick
 
     # diff
-    d = diff                          # diff unstaged changes
-    ds = diff --staged                # diff staged changes
-    last = diff HEAD^                 # diff last committed change
+    d = diff
+    ds = diff --staged
+    last = diff HEAD^
 
     # log
     l = log --graph --date=short
     ls = log --graph --date=short -n 10
+    l1 = log --format=fuller -n 1
+    ls1 = log --format=fuller -n 1
     changes = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\" --name-status
     short = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\"
     simple = log --pretty=format:\" * %s\"
@@ -72,54 +74,51 @@
     tagcommit = !sh -c 'git rev-list $0 | head -n 1'
 
     # pull
-    pl = pull                         # pull
-
-    # push
-    ps = push                         # push
-    sync = "!git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
+    pl = pull
     clobber = "!BRANCH=`git rev-parse --abbrev-ref HEAD`; \
         git fetch ${1:-origin} $BRANCH; \
         git checkout FETCH_HEAD || exit; \
         git branch -D $BRANCH; \
         git checkout -b $BRANCH; \
         git branch --set-upstream-to=${1:-origin}/$BRANCH $BRANCH"
+
+    # push
+    ps = push
+    sync = "!git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
     track = branch --track
     upstream = branch --track
-    shove = push -f # use with caution
+    shove = push -f
 
     # rebase
-    rc = rebase --continue            # continue rebase
-    rs = rebase --skip                # skip rebase
+    rb = rebase
+    rbC = rebase --continue
+    rbS = rebase --skip
+    rbA = rebase --abort
 
     # remote
-    r = remote -v                     # show remotes (verbose)
+    r = remote -v
 
     # reset
     cleanall = "!(cd $(git rev-parse --show-toplevel) && git clean -xdf)"
-    unstage = reset HEAD              # remove files from index (tracking)
-    uncommit = reset --soft HEAD^     # go back before last commit, with files in uncommitted state
-    filelog = log -u                  # show changes to a file
-    mt = mergetool                    # fire up the merge tool
+    unstage = reset HEAD
+    uncommit = reset --soft HEAD^
+    filelog = log -u
+    mt = mergetool
 
     # stash
-    ss = stash                        # stash changes
-    sl = stash list                   # list stashes
-    sa = stash apply                  # apply stash (restore changes)
-    sd = stash drop                   # drop stashes (destory changes)
+    ss = stash
+    sl = stash list
+    sa = stash apply
+    sd = stash drop
     stashf = "!f() { [ -f $HOME/dotfiles/bin/git_stash_fzf ] && zsh $HOME/dotfiles/bin/git_stash_fzf || echo 'FZF stash script not found!'; }; f"
 
     # status
-    s = status                        # status
-    st = status                       # status
-    stat = status                     # status
+    s = status
+    st = status
+    stat = status
 
     # tag
-    t = tag -n                        # show tags with <n> lines of each tag message
-
-    # svn helers
-    svnr = svn rebase
-    svnd = svn dcommit
-    svnl = svn log --oneline --show-commit
+    t = tag -n
 
     # arc
     arc-clean = "!for b in $(git branch --color=never | egrep -e '^\\s+arcpatch'); do \
@@ -147,7 +146,6 @@
 [core]
     autocrlf = false
     excludesfile = ~/.gitignore_global
-    # editor = "type _nvim_gitcommit >/dev/null 2>&1 && echo _nvim_gitcommit || echo vim"
     editor = "type nvim-bridge >/dev/null 2>&1 && \
         nvim-bridge-send \"builtin:gitcommit:$@\" || \
         vim"
@@ -167,3 +165,7 @@
 [include]
     path = .gitconfig.user
     path = .gitconfig.os
+[filter "lfs"]
+	clean = git-lfs clean %f
+	smudge = git-lfs smudge %f
+	required = true

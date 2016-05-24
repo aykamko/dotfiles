@@ -31,7 +31,7 @@ endfunction
 call plug#begin(g:plug_dir)
 
 Plug 'ConradIrwin/vim-bracketed-paste'
-Plug 'aykamko/neomake'
+Plug 'benekastah/neomake'
 Plug 'aykamko/vim-textobj-user'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'haya14busa/incsearch.vim'
@@ -44,7 +44,6 @@ Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
-Plug 'unblevable/quick-scope'
 Plug 'aykamko/targets.vim'
 
 Plug 'easymotion/vim-easymotion'
@@ -62,7 +61,6 @@ Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
 Plug 'hynek/vim-python-pep8-indent', { 'for': 'python' }
-Plug 'jason0x43/vim-js-indent',      { 'for': 'javascript' }
 Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
 Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
@@ -77,11 +75,12 @@ augroup slim_filetype
 augroup END
 Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 
-augroup jsx_filetype
-  autocmd!
-  autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
-augroup END
-Plug 'mxw/vim-jsx',                  { 'for': 'javascript.jsx' }
+" augroup jsx_filetype
+"   autocmd!
+"   autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
+" augroup END
+Plug 'pangloss/vim-javascript'
+Plug 'mxw/vim-jsx'
 
 if has('nvim')
   " Plug 'aykamko/gitsync.nvim'
@@ -156,7 +155,7 @@ set scrolljump=5    " scroll five lines at a time vertically
 set sidescroll=10   " minumum columns to scroll horizontally
 
 " Search
-set nohlsearch        " persist search highlighting, initially
+set nohlsearch      " persist search highlighting, initially
 set incsearch       " search with typeahead
 
 " Indent
@@ -215,25 +214,53 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Colorscheme {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 syntax enable
 
-let g:hybrid_use_iTerm_colors = 1
-colorscheme hybrid-ayk
-set t_Co=256            " tell vim that terminal supports 256 colors
+set background=dark
+try
+  colorscheme hybrid-ayk
+catch /:E185:/
+  " silently ignore if colorscheme not found
+endtry
 
-" highlight columns 79, 80, 119, 120
-highlight ColorColumn ctermbg=234
+function! GetHiKey(group, key)
+  redir => highlight_output
+  exec "silent highlight ".a:group
+  redir END
+  for key_val in split(highlight_output)
+    if key_val =~ '^'.a:key
+      return key_val[(len(a:key) + 1):]
+    endif
+  endfor
+endfunction
+function! Adjust(color, amount)
+  let color = (a:color[0] == '#') ? a:color[1:] : a:color
+  if type(a:amount) == 5  " float
+    let amount = a:amount
+  else
+    let amount = (a:amount / 100.0)
+  endif
+  let adj = float2nr(255 * amount)
+  let r = max([str2nr(color[0:1], 16) + adj, 0])
+  let g = max([str2nr(color[2:3], 16) + adj, 0])
+  let b = max([str2nr(color[4:5], 16) + adj, 0])
+  return join(['#', printf('%.2x', r), printf('%.2x', g), printf('%.2x', b)], '')
+endfunction
+function! Darken(color, amount)
+  return Adjust(a:color, -a:amount)
+endfunction
+function! Lighten(color, amount)
+  return Adjust(a:color, a:amount)
+endfunction
+
+exec 'highlight! ColorColumn ctermbg=234 guibg='.
+            \ Darken(GetHiKey('Normal', 'guibg'), 0.015)
 set colorcolumn=79,80,99,100,119,120
 
 " change vim split line color to differentiate from tmux
-highlight StatusLineNC ctermfg=5
-highlight VertSplit ctermfg=5
-
-" unhighlight search terms
-highlight Search ctermbg=236
-
-" unhighlight sign column
-highlight SignColumn cterm=NONE ctermbg=NONE
+highlight! StatusLineNC ctermfg=5
+highlight! VertSplit ctermfg=5
 
 " add some extra keywords to Todo highlight group
 fu! ExtraTodoHi()
@@ -267,6 +294,10 @@ set softtabstop=4
 set expandtab
 set backspace=indent,eol,start
 set textwidth=99
+augroup modify_textwidth
+  autocmd!
+  autocmd FileType sh,bash,zsh set textwidth=79
+augroup END
 
 " vim-indent-guides
 let g:indent_guides_enable_on_vim_startup = 1
@@ -520,10 +551,15 @@ nmap <silent> <C-x> :call TmuxAwareKillpane()<CR>
 " $ tic $TERM.ti
 
 " tmux pane title
+function! s:xterm_title()
+  let title=expand('%:t')
+  return empty(title) ? '[No Name]' : title
+endfunction
 set title
 augroup tmux_pane_title
   autocmd!
-  autocmd BufReadPost,FileReadPost,BufNewFile * let &titlestring=expand("%:t")
+  autocmd BufReadPost,FileReadPost,BufNewFile,BufEnter *
+        \ let &titlestring=s:xterm_title()
 augroup END
 
 if has('nvim')
@@ -561,34 +597,6 @@ if has('nvim')
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" quick-scope {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Source: https://gist.github.com/cszentkiralyi/dc61ee28ab81d23a67aa
-" Only enable the quick-scope plugin's highlighting when using the f/F/t/T movements
-let g:qs_enable = 0
-let g:qs_enable_char_list = [ 'f', 'F', 't', 'T' ]
-let g:qs_first_occurrence_highlight_color = 39
-let g:qs_second_occurrence_highlight_color = 28
-
-function! Quick_scope_selective(movement)
-  let needs_disabling = 0
-  if !g:qs_enable
-    QuickScopeToggle
-    redraw
-    let needs_disabling = 1
-  endif
-  let letter = nr2char(getchar())
-  if needs_disabling
-    QuickScopeToggle
-  endif
-  return a:movement . letter
-endfunction
-
-for i in g:qs_enable_char_list
-  execute 'noremap <expr> <silent>' . i . " Quick_scope_selective('". i . "')"
-endfor
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " tComment {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Use <leader>c to comment lines of code
@@ -603,13 +611,14 @@ let g:lightline = {
       \   'colorscheme': 'Tomorrow_Night',
       \   'active': {
       \     'left': [['zoom', 'mode', 'paste'], ['fileinfo', 'syntax_err', 'syntax_war']],
-      \     'right': [['lineinfo'], ['fugitive'], ['gitsync', 'filetype']]
+      \     'right': [['lineinfo'], ['fugitive'], ['filetype', 'winnr']]
       \   },
       \   'inactive': {
       \     'left': [['fileinfo']],
-      \     'right': [['lineinfo'], ['fugitive'], ['gitsync', 'filetype']]
+      \     'right': [['lineinfo'], ['fugitive'], ['filetype', 'winnr']]
       \   },
       \   'component': {
+      \     'winnr': '%{winnr()}',
       \     'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}',
       \   },
       \   'component_function' : {
@@ -671,7 +680,7 @@ function! LLReadonly()
   return index(['help', 'nerdtree'], &ft) < 0 && &readonly ? '🔒' : ''
 endfunction
 function! LLTrucatedFilePath()
-  if &ft =~ 'nerdtree' | return '' | endif
+  if (&ft =~ 'nerdtree' || &buftype ==# 'terminal') | return '' | endif
   let fullpath = expand('%:p:~')
   return empty(fullpath) ? '[No Name]' :
         \ matchstr(fullpath,
@@ -1100,7 +1109,9 @@ augroup END
 " line wrap sucks for some files, but it's nice to choose the wrap width
 function! s:manual_format(type, ...)
   let og_width = &textwidth
-  exec 'set textwidth='.get(b:, 'textwidth_manual', &textwidth)
+  let manual_width = get(b:, 'tw', -1)
+  if manual_width == -1 | let manual_width = get(g:, 'tw', &textwidth) | endif
+  exec 'set textwidth='.manual_width
 
   if a:0  " Invoked from Visual mode
     silent exe "normal! '<v'>gq"
@@ -1131,7 +1142,7 @@ augroup vimrc_filetype
         \ set textwidth=9999 |
         \ exec 'nnoremap <silent> $ g$' |
         \ exec 'nnoremap <silent> ^ g^' |
-        \ let b:textwidth_manual = 119 |
+        \ let b:tw = 119 |
         \ exec 'nnoremap <silent> gq :set opfunc=<SID>manual_format<CR>g@' |
         \ exec 'vnoremap <silent> gq :<C-U>call <SID>manual_format(visualmode(), 1)<CR>'
 augroup END
@@ -1152,4 +1163,11 @@ endfunction
 command! -nargs=* FugitiveLazy call s:fugitiveLazy(<f-args>)
 command! -nargs=* Gdiff call s:fugitiveLazy('Gdiff', <f-args>)
 command! -nargs=* Gblame call s:fugitiveLazy('Gblame', <f-args>)
+
+if get(g:, 'colors_name', 'NONE') == 'hybrid'
+  hi! DiffAdd    guifg=NONE guibg=#1d2821
+  hi! DiffChange guifg=NONE guibg=#1d1f34
+  exec "hi! DiffDelete guifg=".GetHiKey('Normal', 'guibg')." guibg=#381f21"
+  exec "hi! DiffText   guifg=".GetHiKey('Normal', 'guifg')." guibg=#1d1f60"
+endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

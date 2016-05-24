@@ -7,9 +7,7 @@ call plug#begin(g:plug_dir)
 
 Plug 'christoomey/vim-tmux-navigator'
 
-Plug 'aykamko/gitsync.nvim'
-Plug 'bling/vim-airline'
-Plug 'tpope/vim-fugitive'
+Plug 'mxw/vim-jsx'
 
 call plug#end()
 filetype plugin indent on
@@ -71,8 +69,12 @@ set viminfo='50,"50   " '=marks for x files, "=registers for x files
 " Colorscheme
 syntax enable
 
-let g:hybrid_use_iTerm_colors = 1
-colorscheme hybrid-ayk
+set background=dark
+try
+  colorscheme hybrid-ayk
+catch /:E185:/
+  " silently ignore if colorscheme not found
+endtry
 
 " highlight columns 79, 80, 119, 120
 highlight ColorColumn ctermbg=234

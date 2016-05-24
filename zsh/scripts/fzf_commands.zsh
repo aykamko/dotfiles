@@ -1,28 +1,28 @@
-# Adapted from: https://github.com/junegunn/fzf/wiki/Examples
 fd() {
-  local out file key delimiter
-  [[ -n $1 ]] && \
-    delimiter="--delimiter='^${1}/' --with-nth=2" || \
-    delimiter=""
-  out=$(ag --nocolor --hidden --ignore-dir=.git -g "" ${1:-.} | \
-      fzf-tmux $delimiter  --header="Searching from: ${1-.}/" --expect=ctrl-d,f1)
-  key=$(head -1 <<< "$out")
-  file=$(tail -1 <<< "$out")
-  if [[ -n "$file" ]]; then
-    cd $(dirname "$file")
-    if [[ "$key" != 'f1' && "$key" != 'ctrl-d' ]]; then
-      ${EDITOR:-vim} "$file"
-    fi
+  local root fzfcmd filter out dir
+  root=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ $? -eq 0 ]]; then
+    filter="--delimiter='$root/' --with-nth=2 --header='Searching from: $root/'"
+  else
+    root=$PWD
   fi
+  fzfcmd="fzf-tmux $filter --query='$1' --select-1 --exit-0"
+  out=$(find -L $root -type d -not -path '*\.*' | eval $fzfcmd)
+  key=$(head -1 <<< "$out")
+  dir=$(tail -1 <<< "$out")
+  [[ -n $dir ]] && cd $dir
 }
 
-# From: https://github.com/junegunn/fzf/wiki/Examples
-# fe [FUZZY PATTERN] - Open the selected file with the default editor
-#   - Bypass fuzzy finder if there's only one match (--select-1)
-#   - Exit if there's no match (--exit-0)
 fe() {
-  local file key
-  out=$(fzf-tmux --query="$1" --select-1 --exit-0 --expect=ctrl-d,f1)
+  local root fzfcmd filter out file key
+  root=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ $? -eq 0 ]]; then
+    filter="--delimiter='$root/' --with-nth=2 --header='Searching from: $root/'"
+  else
+    root=$PWD
+  fi
+  fzfcmd="fzf-tmux $filter --query='$1' --select-1 --exit-0 --expect=ctrl-d,f1"
+  out=$(ag --nocolor --hidden --ignore-dir=.git -g '' $root | eval $fzfcmd)
   key=$(head -1 <<< "$out")
   file=$(tail -1 <<< "$out")
   if [[ -n "$file" ]]; then
@@ -32,24 +32,6 @@ fe() {
       ${EDITOR:-vim} "$file"
     fi
   fi
-}
-
-# From: https://github.com/junegunn/fzf/wiki/Examples
-# chrome - browse chrome history
-chrome() {
-  local cols sep
-  cols=$(( COLUMNS / 3 ))
-  sep='{{::}}'
-
-  # Copy History DB to circumvent the lock
-  # - See http://stackoverflow.com/questions/8936878 for the file path
-  yes | cp -f ~/Library/Application\ Support/Google/Chrome/Default/History /tmp/h
-
-  sqlite3 -separator $sep /tmp/h \
-    "select substr(title, 1, $cols), url
-     from urls order by last_visit_time desc" |
-  awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\n", $1, $2}' |
-  fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs open
 }
 
 # From: https://github.com/junegunn/fzf/wiki/Examples

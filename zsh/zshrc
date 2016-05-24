@@ -16,10 +16,10 @@ export TRUSTED_COMPINIT="HAL 9000"
 [[ -n $TMUX ]] && \
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
-  for keymap in 'emacs' 'viins'; do
-    bindkey -M "$keymap" "$key_info[Control]U" history-substring-search-up
-    bindkey -M "$keymap" "$key_info[Control]D" history-substring-search-down
-  done
+for keymap in 'emacs' 'viins'; do
+  bindkey -M "$keymap" "$key_info[Control]U" history-substring-search-up
+  bindkey -M "$keymap" "$key_info[Control]D" history-substring-search-down
+done
 
 # make Escape in vicmd mode do nothing
 unset BEEP
@@ -40,8 +40,6 @@ fi
 if [[ -n $NVIM_LISTEN_ADDRESS ]] && (( $+commands[nvim-bridge] )); then
   nvim-bridge &!
   nvim_bridge_send() { nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@" }
-  exit_hook() { nvim_bridge_send 'builtin:close' }
-  trap exit_hook EXIT
 
   _nvim_up()    { nvim_bridge_send 'command:TmuxNavigateUp' }
   _nvim_right() { nvim_bridge_send 'command:TmuxNavigateRight' }
@@ -145,6 +143,19 @@ tkill() {
   esac
 }
 
+# CSV
+# source: https://chrisjean.com/view-csv-data-from-the-command-line/
+
+csvless() {
+  local outputcmd
+  if [[ -n $2 ]]; then
+    outputcmd="head -n $2"
+  else
+    outputcmd="cat"
+  fi
+  eval "$outputcmd $1" | sed -e 's/,,/, ,/g' | column -s, -t | less -#5 -N -S
+}
+
 # julia
 alias jl=julia
 
@@ -198,7 +209,7 @@ fi
 # TODO(aleks, 03/15/16): the following line is too slow because of brew, but it's also more
 # general. should fix later
 # if [[ (( $+commands[brew] )) && -s $(brew --prefix nvm)/nvm.sh ]]; then
-if (( $+commands[brew] )) && [[ -s usr/local/opt/nvm.sh ]]; then
+if (( $+commands[brew] )) && [[ -s /usr/local/opt/nvm/nvm.sh ]]; then
   _node_shim() {
     unset -f node
     unset -f npm
@@ -275,7 +286,7 @@ alias cat=_cat_ls
 if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
-  export FZF_DEFAULT_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g "" `git rev-parse --show-toplevel 2>/dev/null`'
+  export FZF_DEFAULT_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g "" $(git rev-parse --show-toplevel 2>/dev/null)'
   export FZF_CTRL_T_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g ""'
   export FZF_DEFAULT_OPTS='--ansi -m --bind=alt-k:up,alt-j:down'
 fi

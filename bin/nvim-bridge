@@ -175,4 +175,8 @@ if __name__ == '__main__':
             sys.stderr.write('Not running in libvterm!')
             sys.exit(1)
 
+    # add daemon process to parent shell's process group to ensure they die together
+    shell_pgid = os.getpgid(os.getppid())
+    os.setpgid(os.getpid(), shell_pgid)
+
     NvimBridge(addr).run_until_interrupt()

@@ -60,6 +60,11 @@ _zprofile_paths() {
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
+if [[ $UNAME == darwin ]]; then
+  # used by Homebrew
+  path=(/usr/local/sbin $path)
+fi
+
 if [[ -d $HOME/.pyenv ]]; then
   export PYENV_SHIMS=$HOME/.pyenv/shims
   path=($PYENV_SHIMS $path)
