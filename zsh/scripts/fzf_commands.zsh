@@ -133,3 +133,50 @@ z() {
 zz() {
   cd "$(_z -l 2>&1 | sed 's/^[0-9,.]* *//' | fzf -q $_last_z_args)"
 }
+
+f() {
+  local out file key
+
+  command rm -f ~/.f_cache; touch ~/.f_cache
+  {
+    find -L $HOME -type d -not -path '*/\.*' -maxdepth 1 >> ~/.f_cache
+    for d ({1..8}); do
+      find -L $BOOKMARKS -type d -not -path '*/\.*' \
+        -mindepth $d -maxdepth $d >> ~/.f_cache
+    done
+    kill -HUP "$(cat ~/.f_cache_tail.pid)" &>/dev/null || :
+  } &!
+
+  out=$((tail -f ~/.f_cache & print $! >! ~/.f_cache_tail.pid) | \
+      fzf-tmux -q "$*" -1 -0 --expect=ctrl-d,f1)
+  key=$(head -1 <<< "$out")
+  file=$(tail -1 <<< "$out")
+  if [[ -n "$file" ]]; then
+    cd "$file"
+  fi
+}
+
+ff() {
+  local out file key
+
+  command rm -f ~/.ff_cache; touch ~/.ff_cache
+  {
+    find -L $HOME -type f -maxdepth 1 >> ~/.ff_cache
+    for d ({1..8}); do
+      find -L $BOOKMARKS -type f -not -path '*/\.*' \
+        -mindepth $d -maxdepth $d >> ~/.ff_cache
+    done
+    kill -HUP "$(cat ~/.ff_cache_tail.pid)" &>/dev/null || :
+  } &!
+
+  out=$((tail -f ~/.ff_cache & print $! >! ~/.ff_cache_tail.pid) | \
+      fzf-tmux -q "$*" -1 -0 --expect=ctrl-d,f1)
+  key=$(head -1 <<< "$out")
+  file=$(tail -1 <<< "$out")
+  if [[ -n "$file" ]]; then
+    cd $(dirname "$file")
+    if [[ "$key" != 'f1' && "$key" != 'ctrl-d' ]]; then
+      ${EDITOR:-vim} "$file"
+    fi
+  fi
+}

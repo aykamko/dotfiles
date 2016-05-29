@@ -25,6 +25,11 @@ done
 unset BEEP
 bindkey -M vicmd '\e' beep
 
+# load shell bookmarks
+if [[ -f $HOME/.shell_bookmarks ]]; then
+  source $HOME/.shell_bookmarks
+fi
+
 ###############################################################################
 # Neovim Pane Switching
 ###############################################################################
