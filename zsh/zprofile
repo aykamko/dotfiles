@@ -65,6 +65,10 @@ if [[ $UNAME == darwin ]]; then
   path=(/usr/local/sbin $path)
 fi
 
+if (( $+commands[go] )); then
+  path+=(/usr/local/opt/go/libexec/bin)
+fi
+
 if [[ -d $HOME/.pyenv ]]; then
   export PYENV_SHIMS=$HOME/.pyenv/shims
   path=($PYENV_SHIMS $path)

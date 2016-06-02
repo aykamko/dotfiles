@@ -49,9 +49,7 @@ class NvimBridge():
     def handle_client(self, clientsock):
         cmds = clientsock.recv(1024).split('^^')
         for c in cmds:
-            close = self.handle_cmd(clientsock, c.strip())
-            if close is True:
-                self.close_bridge(clientsock)
+            self.handle_cmd(clientsock, c.strip())
         clientsock.close()
 
     def filter_eof(self, cmd):
@@ -62,31 +60,31 @@ class NvimBridge():
     def handle_cmd(self, clientsock, cmd):
         cmd = self.filter_eof(cmd)
         if cmd.startswith('input:'):
-            return self.nvim.input(cmd[6:].strip())
+            self.nvim.input(cmd[6:].strip())
 
         elif cmd.startswith('command:'):
-            return self.nvim.command(cmd[8:].strip())
+            self.nvim.command(cmd[8:].strip())
 
         elif cmd.startswith('builtin:'):
             close = self.execute_builtin(cmd[8:])
-            if close is True:
-                return close
+            if close and close == True:
+                self.close_bridge(clientsock)
 
-        return self.no_handler_error(clientsock, cmd)
+        else:
+            self.no_handler_error(clientsock, cmd)
 
     def execute_builtin(self, cmd):
         if cmd.startswith('edit:'):
-            return self._edit_in_session(cmd[5:])
+            self._edit_in_session(cmd[5:])
         elif cmd.startswith('gitcommit:'):
-            return self._git_commit(cmd[10:])
+            self._git_commit(cmd[10:])
         elif cmd == 'q':
-            return self._quit_pane()
+            self._quit_pane()
         elif cmd == 'close':
             return True
 
     def no_handler_error(self, clientsock, cmd):
         clientsock.send('Unknown message: %s\n' % cmd)
-        return False
 
     def get_listed_buffers(self):
         return set(buf.number for buf in self.nvim.buffers
@@ -116,7 +114,6 @@ class NvimBridge():
         self.nvim.command('argdel *')
         self.nvim.command('autocmd! BufDelete,BufHidden,BufUnload <buffer=%d>' % commit_buf)
         self.nvim.command('bdelete! %d' % commit_buf)
-        return False
 
     def _edit_in_session(self, cmd):
         term_bufnum = self.nvim.current.buffer.number
@@ -149,34 +146,18 @@ class NvimBridge():
                 self.nvim.command('drop %s' % (f))  # open last file arg
                 break
 
-        time.sleep(0.05)
         self.nvim.command('bdelete! %d' % term_bufnum)
-        return True  # close bridge
 
     def _quit_pane(self):
         term_bufnum = self.nvim.current.buffer.number
         self.nvim.input(r'<c-\><c-n><c-w>p')
 
-        time.sleep(0.05)
         self.nvim.command('bdelete! %d' % term_bufnum)
-        return True  # close bridge
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sock', help='Neovim unix socket')
+    parser.add_argument('--sock', required=True, help='Neovim unix socket')
     args = parser.parse_args()
 
-    if args.sock:
-        addr = args.sock
-    else:
-        addr = os.environ.get('NVIM_LISTEN_ADDRESS', None)
-        if not addr:
-            sys.stderr.write('Not running in libvterm!')
-            sys.exit(1)
-
-    # add daemon process to parent shell's process group to ensure they die together
-    shell_pgid = os.getpgid(os.getppid())
-    os.setpgid(os.getpid(), shell_pgid)
-
-    NvimBridge(addr).run_until_interrupt()
+    NvimBridge(args.sock).run_until_interrupt()

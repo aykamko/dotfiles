@@ -43,7 +43,6 @@ fi
 
 # only defined in neovim libvterm
 if [[ -n $NVIM_LISTEN_ADDRESS ]] && (( $+commands[nvim-bridge] )); then
-  nvim-bridge &!
   nvim_bridge_send() { nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@" }
 
   _nvim_up()    { nvim_bridge_send 'command:TmuxNavigateUp' }

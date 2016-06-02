@@ -45,6 +45,7 @@ Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'aykamko/targets.vim'
+Plug 'tpope/vim-fugitive'
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -54,8 +55,6 @@ Plug 'mattn/webapi-vim'
 Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
 Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
-" lazy-loaded via FugitiveLazy to reduce VimEnter time
-Plug 'tpope/vim-fugitive',       { 'on': [] }
 
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
@@ -127,7 +126,7 @@ let mapleader = ' '
 let maplocalleader = ' '
 
 let s:E = '✖'
-let s:W = '⚠'
+let s:W = '!'
 
 " skip checks
 let g:python_host_skip_check = 1
@@ -212,12 +211,12 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Colorscheme {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let $NVIM_TUI_ENABLE_TRUE_COLOR=1
+set termguicolors
 syntax enable
 
 set background=dark
 try
-  colorscheme hybrid-ayk
+  colorscheme hybrid_ayk
 catch /:E185:/
   " silently ignore if colorscheme not found
 endtry
@@ -252,7 +251,7 @@ function! Lighten(color, amount)
   return Adjust(a:color, a:amount)
 endfunction
 
-exec 'highlight! ColorColumn ctermbg=234 guibg='.
+exec 'highlight! ColorColumn ctermbg=235 guibg='.
             \ Darken(GetHiKey('Normal', 'guibg'), 0.015)
 set colorcolumn=79,80,99,100,119,120
 
@@ -744,8 +743,8 @@ endif
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:neomake_verbose = 0 " useful for debug
 
-hi NeomakeError ctermfg=red
-hi NeomakeWarning ctermfg=yellow
+exec "highlight! NeomakeError ctermfg=red guifg=".GetHiKey('Error', 'guifg')
+exec "highlight! NeomakeWarning ctermfg=yellow guifg=".GetHiKey('Function', 'guifg')
 let g:neomake_error_sign = {
       \ 'text': s:E,
       \ 'texthl': 'NeomakeError',
@@ -772,11 +771,17 @@ nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
 
 command! -nargs=0 DisableNeomake let b:neomake_enabled=0
 
+function! NeomakeLightlineCallback(callback_dict)
+  if !a:callback_dict['has_next']
+    call lightline#update()
+  endif
+endfunction
+
 augroup postwrite_neomake
   autocmd!
-  autocmd BufWritePost *
+  autocmd BufWinEnter,BufWritePost *
         \ if !get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1) |
-        \ Neomake |
+        \ call neomake#Make(1, [], function("NeomakeLightlineCallback")) |
         \ endif
 augroup END
 
@@ -1148,24 +1153,20 @@ augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Fugitive {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" lazy load/exec fugitive commands
-function! s:fugitiveLazy(...)
-  if !exists('#fugitive')
-    echo "Loading Fugitive..."
-    call plug#load('vim-fugitive')
-    echo
-  endif
-  call fugitive#detect(getcwd())
-  exe printf(':%s', join(a:000, ' '))
-endfunction
-command! -nargs=* FugitiveLazy call s:fugitiveLazy(<f-args>)
-command! -nargs=* Gdiff call s:fugitiveLazy('Gdiff', <f-args>)
-command! -nargs=* Gblame call s:fugitiveLazy('Gblame', <f-args>)
-
-if get(g:, 'colors_name', 'NONE') == 'hybrid'
+if get(g:, 'colors_name', 'NONE') == 'hybrid_ayk'
   hi! DiffAdd    guifg=NONE guibg=#1d2821
   hi! DiffChange guifg=NONE guibg=#1d1f34
   exec "hi! DiffDelete guifg=".GetHiKey('Normal', 'guibg')." guibg=#381f21"
   exec "hi! DiffText   guifg=".GetHiKey('Normal', 'guifg')." guibg=#1d1f60"
 endif
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" nvim-bridge {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has('nvim')
+  augroup LaunchNvimBridge
+    autocmd!
+    autocmd VimEnter * let g:nvim_bridge_jid = jobstart(split('nvim-bridge --sock '.$NVIM_LISTEN_ADDRESS))
+          \ | autocmd! extraTodoHi
+  augroup END
+end
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
