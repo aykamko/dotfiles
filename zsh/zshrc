@@ -86,6 +86,9 @@ stripansi() {
     sed -E "s/"$'\E'"\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g" ||
     sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g"
 }
+word() {
+  awk "{print \$$1}"
+}
 
 alias unixtime='date +%s'
 

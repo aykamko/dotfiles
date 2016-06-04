@@ -31,21 +31,22 @@ endfunction
 call plug#begin(g:plug_dir)
 
 Plug 'ConradIrwin/vim-bracketed-paste'
-Plug 'benekastah/neomake'
+Plug 'aykamko/targets.vim'
 Plug 'aykamko/vim-textobj-user'
+Plug 'benekastah/neomake'
 Plug 'christoomey/vim-tmux-navigator'
+Plug 'drn/zoomwin-vim'
 Plug 'haya14busa/incsearch.vim'
 Plug 'itchyny/lightline.vim'
 Plug 'junegunn/vim-easy-align'
-Plug 'nathanaelkane/vim-indent-guides'
 Plug 'mhinz/vim-grepper'
+Plug 'nathanaelkane/vim-indent-guides'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
-Plug 'aykamko/targets.vim'
-Plug 'tpope/vim-fugitive'
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -126,7 +127,7 @@ let mapleader = ' '
 let maplocalleader = ' '
 
 let s:E = '✖'
-let s:W = '!'
+let s:W = '▲'
 
 " skip checks
 let g:python_host_skip_check = 1
@@ -251,9 +252,22 @@ function! Lighten(color, amount)
   return Adjust(a:color, a:amount)
 endfunction
 
+" adjust colorcolumn
 exec 'highlight! ColorColumn ctermbg=235 guibg='.
             \ Darken(GetHiKey('Normal', 'guibg'), 0.015)
-set colorcolumn=79,80,99,100,119,120
+
+let g:colorcolumn_blacklist = ['qf']
+augroup display_colorcolumn
+  autocmd!
+  autocmd Filetype <buffer>
+        \ if index(g:colorcolumn_blacklist, &ft) < 0 |
+        \ setlocal colorcolumn=79,80,99,100,119,120 |
+        \ endif
+augroup END
+
+" adjust Search highlighting
+exec 'highlight! Search guifg=NONE guibg='.
+            \ Lighten(GetHiKey('Normal', 'guibg'), 10)
 
 " change vim split line color to differentiate from tmux
 highlight! StatusLineNC ctermfg=5
@@ -401,7 +415,7 @@ function! OpenDirectionalSplit(file, ...)
     let dirchoice = a:000[0]
   else
     echohl Question
-    echom 'Choose split direction. [hjkl or Enter] '
+    echom 'Choose split direction. [hjklt or Enter] '
     echohl Normal
     call inputsave()
     let char = getchar()
@@ -424,6 +438,8 @@ function! OpenDirectionalSplit(file, ...)
     exec 'aboveleft sp | drop '.a:file
   elseif dirchoice == 'l'
     exec 'belowright vsp | drop '.a:file
+  elseif dirchoice == 't'
+    exec 'tabnew | drop '.a:file
   else
     echohl Error
     echom 'Unknown direction: '.dirchoice
@@ -457,6 +473,11 @@ nnoremap Q @q
 
 " toggle fold more easily
 nnoremap z<Space> za
+
+" switching tabs
+for i in range(0, 9)
+  exec 'nnoremap t'.i.' '.i.'gt'
+endfor
 
 " paste in insert mode
 " (depends on clipboard setting)
@@ -519,19 +540,23 @@ augroup set_unmodifiable
 augroup END
 
 " zoom into pane
-function! s:ZoomToggle() abort
-  if exists('t:zoomed') && t:zoomed
-    exec t:zoom_winrestcmd
-    let t:zoomed = 0
-  else
-    let t:zoom_winrestcmd = winrestcmd()
-    resize
-    vertical resize
-    let t:zoomed = 1
-  endif
+if has('nvim')
+    " removed 'key', 'oft', 'sn', 'tx' options which do not work with nvim
+    let g:zoomwin_localoptlist = [
+          \ "ai","ar","bh","bin","bl","bomb","cfu","ci","cin","cink",
+          \ "cino","cinw","cms","com","cpt","diff","efm","eol","ep","et",
+          \ "fenc","fex","ff","flp","fo","ft","gp","imi","ims","inde","inex",
+          \ "indk","inf","isk","kmp","lisp","mps","ml","ma","mod","nf","ofu",
+          \ "pi","qe","ro","sw","si","sts","spc","spf","spl","sua","swf",
+          \ "smc","syn","ts","tw","udf","wfh","wfw","wm"
+          \ ]
+endif
+
+function! s:zoomwin_wrapper()
+  let t:zoomed = !get(t:, 'zoomed', 0)
+  ZoomWin
 endfunction
-command! ZoomToggle call s:ZoomToggle()
-nnoremap <silent> <leader>z :ZoomToggle<CR>
+nnoremap <silent> <leader>z :call <SID>zoomwin_wrapper()<CR>
 
 " vim-tmux aware killpane
 function! TmuxAwareKillpane()
@@ -644,13 +669,13 @@ endfunction
 
 function! SyntaxError()
   if !exists('*neomake#statusline#LoclistCounts') | return '' | endif
-  let counts = neomake#statusline#LoclistCounts()
+  let counts = b:neomake_loclist_counts
   if !has_key(counts, 'E') | return '' | endif
   return printf('%s %d', s:E, counts['E'])
 endfunction
 function! SyntaxWarning()
   if !exists('*neomake#statusline#LoclistCounts') | return '' | endif
-  let counts = neomake#statusline#LoclistCounts()
+  let counts = b:neomake_loclist_counts
   if !has_key(counts, 'W') | return '' | endif
   return printf('%s %d', s:W, counts['W'])
 endfunction
@@ -744,7 +769,8 @@ endif
 let g:neomake_verbose = 0 " useful for debug
 
 exec "highlight! NeomakeError ctermfg=red guifg=".GetHiKey('Error', 'guifg')
-exec "highlight! NeomakeWarning ctermfg=yellow guifg=".GetHiKey('Function', 'guifg')
+exec "highlight! NeomakeWarning ctermfg=yellow guifg=".GetHiKey('Todo', 'guifg')
+
 let g:neomake_error_sign = {
       \ 'text': s:E,
       \ 'texthl': 'NeomakeError',
@@ -773,6 +799,8 @@ command! -nargs=0 DisableNeomake let b:neomake_enabled=0
 
 function! NeomakeLightlineCallback(callback_dict)
   if !a:callback_dict['has_next']
+    " TODO: figure out with neomake supports per-buffer loclist counts by default
+    let b:neomake_loclist_counts = neomake#statusline#LoclistCounts()
     call lightline#update()
   endif
 endfunction
@@ -816,41 +844,18 @@ nnoremap <silent> <leader>o :call <SID>git_fzf()<CR>
 nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" ag.vim {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:ag_working_path_mode='r'
-"
-"
-" " redefine Ag to accept visual selections
-" function! AgSelection(bang, args, hasrange)
-"   if a:hasrange > 0
-"     let selection = GetVisualSelection()
-"     call ag#Ag(a:bang, a:args == '' ? selection : a:args.' '.selection) | return
-"   endif
-"   call ag#Ag(a:bang, a:args)
-" endfunction
-"
-" augroup redefine_ag
-"   autocmd!
-"   autocmd! BufEnter *
-"         \  exec "command! -bang -nargs=* -range=0 -complete=file Ag call AgSelection('grep<bang>', <q-args>, <count>)"
-"         \| autocmd! redefine_ag
-" augroup END
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-grepper {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Mimic :grep and make ag the default tool.
 let g:grepper = {
       \ 'tools': ['ag', 'git', 'grep'],
-      \ 'open':  1,
-      \ 'jump':  0,
-      \ 'switch': 1
+      \ 'open': 1,
+      \ 'jump': 0,
       \ }
+
 let g:grepper.ag =
       \ { 'grepprg': 'ag --vimgrep $* `git rev-parse --show-toplevel`' }
 
-command! -nargs=* -complete=file Ag Grepper -tool ag -query <args>
+command! -nargs=* Ag Grepper -noprompt -tool ag -query <args>
 cnoreabbrev ag Ag
 
 nmap gs <plug>(GrepperOperator)
