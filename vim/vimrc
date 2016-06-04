@@ -200,7 +200,7 @@ augroup display_sign_col
 augroup END
 
 " remove small delay when leaving insert mode
-if !has('gui_running')
+if !has('nvim') && !has('gui_running')
   set ttimeoutlen=10
   augroup fast_escape
     autocmd!
@@ -409,13 +409,25 @@ vnoremap <silent> md :<c-u>call <SID>blackhole_delete(visualmode())<CR>
 nnoremap <silent> mm "bdd
 nnoremap <silent> dp "bddP
 
-" directional split for file
-function! OpenDirectionalSplit(file, ...)
+" directional split for files or new buffers
+function! OpenDirectionalSplit(...)
+  let file = ''
   if len(a:000) > 0
-    let dirchoice = a:000[0]
+    let file = a:000[0]
+    if file == 'NONE'
+      let file = ''
+    endif
+  endif
+
+  if len(a:000) > 1
+    let dirchoice = a:000[1]
   else
     echohl Question
-    echom 'Choose split direction. [hjklt or Enter] '
+    if !empty(file)
+      echom 'Choose split direction. [hjklt or Enter] '
+    else
+      echom 'Choose split direction. [hjklt] '
+    endif
     echohl Normal
     call inputsave()
     let char = getchar()
@@ -428,25 +440,35 @@ function! OpenDirectionalSplit(file, ...)
     end
   end
 
-  if dirchoice == 'e'
-    exec 'drop '.a:file
-  elseif dirchoice == 'h'
-    exec 'aboveleft vsp | drop '.a:file
-  elseif dirchoice == 'j'
-    exec 'belowright sp | drop '.a:file
-  elseif dirchoice == 'k'
-    exec 'aboveleft sp | drop '.a:file
-  elseif dirchoice == 'l'
-    exec 'belowright vsp | drop '.a:file
-  elseif dirchoice == 't'
-    exec 'tabnew | drop '.a:file
+  if !empty(file)
+    let dirmap = {
+                \ 'e': 'drop',
+                \ 'h': 'aboveleft vsp | drop',
+                \ 'j': 'belowright sp | drop',
+                \ 'k': 'aboveleft sp | drop',
+                \ 'l': 'belowright vsp | drop',
+                \ 't': 'tabnew | drop',
+                \ }
   else
+    let dirmap = {
+                \ 'h': 'aboveleft vnew',
+                \ 'j': 'belowright new',
+                \ 'k': 'aboveleft new',
+                \ 'l': 'belowright vnew',
+                \ 't': 'tabnew',
+                \ }
+  endif
+
+  let action = get(dirmap, dirchoice)
+  if empty(action)
     echohl Error
     echom 'Unknown direction: '.dirchoice
     echohl Normal
+  else
+    exec join([action, file])
   endif
 endfunction
-command! -bar -nargs=+ DirectionalSplit call OpenDirectionalSplit(<f-args>)
+command! -bar -nargs=* DirectionalSplit call OpenDirectionalSplit(<f-args>)
 
 " vimrc and help
 command! -nargs=? Vimrc DirectionalSplit $MYVIMRC <args>
@@ -591,14 +613,15 @@ if has('nvim')
   cnoreabbrev dt Dterm
 
   function! s:localdterm(...) abort
-    let curdir = getcwd()
-    exec join(extend(['Dterm'], a:000))
-    exec 'lcd '.expand('%:p:h')
+    let localdir = expand('%:p:h')
+    let dirsplit_cmd = join(extend(['DirectionalSplit', 'NONE'], a:000))
+    exec dirsplit_cmd." | lcd ".localdir." | term"
   endfunction
 
   command! -nargs=? LDterm call <sid>localdterm(<f-args>)
   cnoreabbrev ldterm LDterm
   cnoreabbrev d. LDterm
+  cnoreabbrev d, LDterm
 
   " terminal mappings
   tnoremap <C-w>h <C-\><C-n><C-w>h
@@ -622,7 +645,7 @@ endif
 " tComment {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Use <leader>c to comment lines of code
-map <leader>c :TComment<CR>
+vmap <leader>c :TComment<CR>
 vmap <leader>c :TComment<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -842,6 +865,20 @@ endfunction
 
 nnoremap <silent> <leader>o :call <SID>git_fzf()<CR>
 nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
+
+let g:fzf_colors =
+\ { 'fg':      ['fg', 'Normal'],
+  \ 'bg':      ['bg', 'Normal'],
+  \ 'hl':      ['fg', 'Comment'],
+  \ 'fg+':     ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
+  \ 'bg+':     ['bg', 'CursorLine', 'CursorColumn'],
+  \ 'hl+':     ['fg', 'Statement'],
+  \ 'info':    ['fg', 'PreProc'],
+  \ 'prompt':  ['fg', 'Conditional'],
+  \ 'pointer': ['fg', 'Exception'],
+  \ 'marker':  ['fg', 'Keyword'],
+  \ 'spinner': ['fg', 'Label'],
+  \ 'header':  ['fg', 'Comment'] }
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-grepper {{{
@@ -1165,13 +1202,14 @@ if get(g:, 'colors_name', 'NONE') == 'hybrid_ayk'
   exec "hi! DiffText   guifg=".GetHiKey('Normal', 'guifg')." guibg=#1d1f60"
 endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" nvim-bridge {{{
+" git commit through nvr {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if has('nvim')
-  augroup LaunchNvimBridge
-    autocmd!
-    autocmd VimEnter * let g:nvim_bridge_jid = jobstart(split('nvim-bridge --sock '.$NVIM_LISTEN_ADDRESS))
-          \ | autocmd! extraTodoHi
-  augroup END
-end
+function! s:nvr_git_commit(commit_msg)
+  exec 'split '.a:commit_msg |
+              \ autocmd BufDelete,BufHidden,BufUnload <buffer>
+                \ call system('touch '.expand('%:p:h').'/.nvr_finished_commit') |
+                \ bwipeout |
+                \ autocmd!
+endfunction
+command! -nargs=1 NvrGitCommit call <SID>nvr_git_commit(<f-args>)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

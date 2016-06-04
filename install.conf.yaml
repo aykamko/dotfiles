@@ -93,9 +93,10 @@
         darwin: |
           brew tap neovim/neovim
           brew install --HEAD neovim
-          brew install python python3
+          brew install python python3 fswatch
           pip install neovim
-          pip3 install neovim
+          # TODO(aleks, 06/04/16): re: neovim-remote, check to see if my +cmd PR is merged
+          pip3 install neovim neovim-remote
 
         linux:
           - condition: '! hash apt-get 2>/dev/null || test -h $(which apt-get)'

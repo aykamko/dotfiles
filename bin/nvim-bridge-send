@@ -1,3 +1,0 @@
-#!/bin/zsh
-_eof=$(echo -e '\x04')
-nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@${_eof}"

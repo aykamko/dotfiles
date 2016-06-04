@@ -42,30 +42,30 @@ else
 fi
 
 # only defined in neovim libvterm
-if [[ -n $NVIM_LISTEN_ADDRESS ]] && (( $+commands[nvim-bridge] )); then
-  nvim_bridge_send() { nc -U "${NVIM_LISTEN_ADDRESS}_bridge" <<< "$@" }
+if [[ -n $NVIM_LISTEN_ADDRESS ]]; then
 
-  _nvim_up()    { nvim_bridge_send 'command:TmuxNavigateUp' }
-  _nvim_right() { nvim_bridge_send 'command:TmuxNavigateRight' }
-  _nvim_down()  { nvim_bridge_send 'command:TmuxNavigateDown' }
-  _nvim_left()  { nvim_bridge_send 'command:TmuxNavigateLeft' }
-  zle -N nvim_up _nvim_up
-  zle -N nvim_right _nvim_right
-  zle -N nvim_down _nvim_down
-  zle -N nvim_left _nvim_left
-  bindkey '^K' nvim_up
-  bindkey '^L' nvim_right
-  bindkey '^J' nvim_down
-  bindkey '^H' nvim_left
+  _nvr_up()    { nvr -c 'TmuxNavigateUp' }
+  _nvr_right() { nvr -c 'TmuxNavigateRight' }
+  _nvr_down()  { nvr -c 'TmuxNavigateDown' }
+  _nvr_left()  { nvr -c 'TmuxNavigateLeft' }
+  zle -N nvr_up _nvr_up
+  zle -N nvr_right _nvr_right
+  zle -N nvr_down _nvr_down
+  zle -N nvr_left _nvr_left
+  bindkey '^K' nvr_up
+  bindkey '^L' nvr_right
+  bindkey '^J' nvr_down
+  bindkey '^H' nvr_left
 
-  _nvim_quit_pane() { nvim_bridge_send "builtin:q" }
-  alias ':q'=_nvim_quit_pane
+  alias ':q'='nvr -c "q"'
+  sp () { nvr -o $@ }
+  vsp () { nvr -O $@ }
+  ds() { nvr -c "DirectionalSplit $@" }
 
-  _nvim_client() { nvim_bridge_send "builtin:edit:$(pwd):$@" }
-  alias nvim=_nvim_client
-  alias vim=_nvim_client
-  alias vi=_nvim_client
-  export EDITOR=_nvim_client
+  alias nvim=nvr
+  alias vim=nvr
+  alias vi=nvr
+  export EDITOR=nvr
 
 elif [[ -n $TMUX ]]; then
   alias ':q'='tmux kill-pane'
@@ -129,6 +129,10 @@ alias zshrc='vi ~/.zshrc'
 alias zprofile='vi ~/.zprofile'
 alias zpreztorc='vi ~/.zpreztorc'
 alias zlogin='vi ~/.zlogin'
+
+# git
+alias gitconfig='vi ~/.gitconfig'
+alias gitignore_global='vi ~/.gitignore_global'
 
 # tmux
 alias t='tmux'
@@ -293,9 +297,10 @@ alias cat=_cat_ls
 if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
-  export FZF_DEFAULT_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g "" $(git rev-parse --show-toplevel 2>/dev/null)'
-  export FZF_CTRL_T_COMMAND='ag --nocolor --hidden --ignore-dir=.git -g ""'
+  export FZF_DEFAULT_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g "" $(git rev-parse --show-toplevel 2>/dev/null)'
+  export FZF_CTRL_T_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g ""'
   export FZF_DEFAULT_OPTS='--ansi -m --bind=alt-k:up,alt-j:down'
+  bindkey '^F' fzf-file-widget
 fi
 
 ###############################################################################
