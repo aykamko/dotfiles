@@ -1175,7 +1175,7 @@ augroup vimrc_filetype
   autocmd!
   autocmd BufNewFile,BufReadPost *.md set filetype=markdown
   autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
-  autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 sts=2 et
+  autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 ts=2 sts=2 et
   autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
         \ set textwidth=72 |
         \ set colorcolumn=71,72 |
