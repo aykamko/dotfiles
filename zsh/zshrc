@@ -90,6 +90,10 @@ word() {
   awk "{print \$$1}"
 }
 
+alias cm='command'
+
+alias rrm='command rm'
+
 alias unixtime='date +%s'
 
 alias vimrc='vi ~/.vimrc'

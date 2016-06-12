@@ -84,7 +84,7 @@
 
     # push
     ps = push
-    sync = "!git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
+    sync = "!sync(){ git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`; }; sync"
     track = branch --track
     upstream = branch --track
     shove = push -f

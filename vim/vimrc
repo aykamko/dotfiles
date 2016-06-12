@@ -24,15 +24,12 @@ if empty(glob('~/.vim/autoload/plug.vim'))
 endif
 
 let g:plug_dir = '~/.vim/bundle/'
-function! s:plug_exists(plug)
-  return isdirectory(expand(g:plug_dir.a:plug))
-endfunction
 
 call plug#begin(g:plug_dir)
 
 Plug 'ConradIrwin/vim-bracketed-paste'
-Plug 'aykamko/targets.vim'
-Plug 'aykamko/vim-textobj-user'
+Plug 'wellle/targets.vim'
+Plug 'kana/vim-textobj-user'
 Plug 'benekastah/neomake'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'drn/zoomwin-vim'
@@ -83,42 +80,19 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 
 if has('nvim')
-  " Plug 'aykamko/gitsync.nvim'
   Plug 'Shougo/deoplete.nvim'
   Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
   Plug 'Shougo/neosnippet.vim'
 endif
 
-Plug 'junegunn/fzf', {
-      \ 'dir': '~/.fzf',
-      \ 'do': 'yes \| ./install' }
-
-" Don't install the following plugins on initial PlugInstall (must use PlugInstall! instead)
-" Also disable these for now, way too slow
-
-" if empty(glob(g:plug_dir.'YouCompleteMe')) |
-"       \ call mkdir(expand(g:plug_dir.'YouCompleteMe'), 'p') | endif
-" Plug 'Valloric/YouCompleteMe', {
-"       \ 'frozen': 1,
-"       \ 'do': './install.py --clang-completer --gocode-completer --tern-completer' ,
-"       \ 'on': [] } " lazy loaded through async-vimrc
-"
-" if empty(glob(g:plug_dir.'YCM-Generator')) |
-"       \ call mkdir(expand(g:plug_dir.'YCM-Generator'), 'p') | endif
-" Plug 'rdnetto/YCM-Generator',  {
-"       \ 'frozen': 1,
-"       \ 'branch': 'stable',
-"       \ 'for': ['c', 'cpp', 'make'] }
-
-" if empty(glob(g:plug_dir.'ultisnips')) |
-"       \ call mkdir(expand(g:plug_dir.'ultisnips'), 'p') | endif
-" Plug 'SirVer/ultisnips', {
-"       \ 'frozen': 1,
-"       \ 'for': [] } " lazy loaded through async-vimrc
-"
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 
 call plug#end()
 filetype plugin indent on " required
+
+function! s:plug_loaded(plug_name) abort
+    return !empty(get(g:plugs, a:plug_name))
+endfunction
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " General Settings {{{
@@ -132,12 +106,6 @@ let s:W = '▲'
 " skip checks
 let g:python_host_skip_check = 1
 let g:python3_host_skip_check = 1
-
-" Don't use virtualenv python
-" if !empty($PYENV_SHIMS)
-"   let g:python_host_prog='$PYENV_SHIMS/python'
-"   let g:python3_host_prog='$PYENV_SHIMS/python3'
-" end
 
 " Display
 set ruler           " show cursor position
@@ -212,7 +180,9 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Colorscheme {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set termguicolors
+if has('nvim')
+    set termguicolors
+endif
 syntax enable
 
 set background=dark
@@ -259,7 +229,7 @@ exec 'highlight! ColorColumn ctermbg=235 guibg='.
 let g:colorcolumn_blacklist = ['qf']
 augroup display_colorcolumn
   autocmd!
-  autocmd Filetype <buffer>
+  autocmd Filetype *
         \ if index(g:colorcolumn_blacklist, &ft) < 0 |
         \ setlocal colorcolumn=79,80,99,100,119,120 |
         \ endif
@@ -270,17 +240,17 @@ exec 'highlight! Search guifg=NONE guibg='.
             \ Lighten(GetHiKey('Normal', 'guibg'), 10)
 
 " change vim split line color to differentiate from tmux
-highlight! StatusLineNC ctermfg=5
-highlight! VertSplit ctermfg=5
+exec 'highlight! StatusLineNC ctermfg=5 guifg='.g:terminal_color_5
+exec 'highlight! VertSplit ctermfg=5 guifg='.g:terminal_color_5
 
 " add some extra keywords to Todo highlight group
-fu! ExtraTodoHi()
+function! s:extra_todo_hi()
   syn keyword extraTodo HACK INFO BUG NOTE containedin=.*Comment.*
   hi def link extraTodo Todo
-endfu
+endfunction
 augroup extraTodoHi
   autocmd!
-  autocmd VimEnter * call ExtraTodoHi() | autocmd! extraTodoHi
+  autocmd VimEnter * call s:extra_todo_hi()
 augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -501,6 +471,9 @@ for i in range(0, 9)
   exec 'nnoremap t'.i.' '.i.'gt'
 endfor
 
+" command-line history
+set cedit=<C-R>
+
 " paste in insert mode
 " (depends on clipboard setting)
 set pastetoggle=<F2>
@@ -512,7 +485,7 @@ nnoremap <silent> <C-s> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"nam
       \ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
       \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 
-" prettify JSON
+" prettify JSON/XML
 command! Prettify %!python -m json.tool
 
 " source: http://stackoverflow.com/a/6271254
@@ -536,17 +509,18 @@ vnoremap <leader>r :ReplaceSelection<CR>
 
 " kill any trailing whitespace on save (Credit to Facebook)
 let g:strip_whitespace_blacklist = ['snippets']
-function! s:strip_whitespace()
+function! StripWhitespace()
   let l = line(".")
   let c = col(".")
   %s/\s\+$//e
   call cursor(l, c)
 endfunction
+command! -bar -nargs=0 StripWhitespace call StripWhitespace()
 augroup kill_whitespace
   autocmd!
-  autocmd BufWritePre <buffer>
+  autocmd BufWritePre *
         \ if index(g:strip_whitespace_blacklist, &ft) < 0 |
-        \ call s:strip_whitespace() |
+        \ StripWhitespace |
         \ endif
 augroup END
 
@@ -563,7 +537,7 @@ augroup END
 
 " zoom into pane
 if has('nvim')
-    " removed 'key', 'oft', 'sn', 'tx' options which do not work with nvim
+    " removed 'key', 'oft', 'sn', 'tx', 'bt' options which do not work with nvim
     let g:zoomwin_localoptlist = [
           \ "ai","ar","bh","bin","bl","bomb","cfu","ci","cin","cink",
           \ "cino","cinw","cms","com","cpt","diff","efm","eol","ep","et",
@@ -589,8 +563,7 @@ function! TmuxAwareKillpane()
   endif
 endfunction
 nmap <silent> <C-x> :call TmuxAwareKillpane()<CR>
-" TODO: look this up
-" run this command in shell if vim-tmux-navigator isn't working in nvim
+" HACK: run this command in shell if vim-tmux-navigator isn't working in nvim
 " $ infocmp $TERM | sed 's/kbs=^[hH]/kbs=\\177/' > $TERM.ti
 " $ tic $TERM.ti
 
@@ -645,7 +618,7 @@ endif
 " tComment {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Use <leader>c to comment lines of code
-vmap <leader>c :TComment<CR>
+nmap <leader>c :TComment<CR>
 vmap <leader>c :TComment<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -692,13 +665,13 @@ endfunction
 
 function! SyntaxError()
   if !exists('*neomake#statusline#LoclistCounts') | return '' | endif
-  let counts = b:neomake_loclist_counts
+  let counts = neomake#statusline#LoclistCounts()
   if !has_key(counts, 'E') | return '' | endif
   return printf('%s %d', s:E, counts['E'])
 endfunction
 function! SyntaxWarning()
   if !exists('*neomake#statusline#LoclistCounts') | return '' | endif
-  let counts = b:neomake_loclist_counts
+  let counts = neomake#statusline#LoclistCounts()
   if !has_key(counts, 'W') | return '' | endif
   return printf('%s %d', s:W, counts['W'])
 endfunction
@@ -747,6 +720,7 @@ function! LLLineInfo()
   return &ft
 endfunction
 
+autocmd WinEnter * call lightline#update()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easyalign {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -765,7 +739,7 @@ nnoremap <leader>a :A<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " deoplete {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if s:plug_exists('deoplete.nvim')
+if s:plug_loaded('deoplete.nvim')
   let g:deoplete#enable_at_startup = 1
 
   imap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "<Tab>"
@@ -775,7 +749,7 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " neosnippet {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if s:plug_exists('neosnippet.vim')
+if s:plug_loaded('neosnippet.vim')
   let g:neosnippet#snippets_directory = $HOME.'/.vim/snippets'
   let g:neosnippet#disable_runtime_snippets = {
         \ '_': 1,
@@ -803,7 +777,6 @@ let g:neomake_warning_sign = {
       \ 'texthl': 'NeomakeWarning',
       \ }
 
-let g:neomake_statusline_callback = 'lightline#update'
 if executable('pylama')
   let g:neomake_python_enabled_makers = ['pylama']
 endif
@@ -821,11 +794,7 @@ nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
 command! -nargs=0 DisableNeomake let b:neomake_enabled=0
 
 function! NeomakeLightlineCallback(callback_dict)
-  if !a:callback_dict['has_next']
-    " TODO: figure out with neomake supports per-buffer loclist counts by default
-    let b:neomake_loclist_counts = neomake#statusline#LoclistCounts()
-    call lightline#update()
-  endif
+  if !a:callback_dict['has_next'] | call lightline#update() | endif
 endfunction
 
 augroup postwrite_neomake
@@ -865,20 +834,6 @@ endfunction
 
 nnoremap <silent> <leader>o :call <SID>git_fzf()<CR>
 nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
-
-let g:fzf_colors =
-\ { 'fg':      ['fg', 'Normal'],
-  \ 'bg':      ['bg', 'Normal'],
-  \ 'hl':      ['fg', 'Comment'],
-  \ 'fg+':     ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
-  \ 'bg+':     ['bg', 'CursorLine', 'CursorColumn'],
-  \ 'hl+':     ['fg', 'Statement'],
-  \ 'info':    ['fg', 'PreProc'],
-  \ 'prompt':  ['fg', 'Conditional'],
-  \ 'pointer': ['fg', 'Exception'],
-  \ 'marker':  ['fg', 'Keyword'],
-  \ 'spinner': ['fg', 'Label'],
-  \ 'header':  ['fg', 'Comment'] }
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-grepper {{{

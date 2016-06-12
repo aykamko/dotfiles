@@ -1,0 +1,8 @@
+snippet	remote_pdb
+alias	rpdb remote 'from remote'
+options	head
+	from remote_pdb import RemotePdb; RemotePdb('127.0.0.1', 4444).set_trace()
+
+snippet	pdb
+options	head
+	import pdb; pdb.set_trace()
