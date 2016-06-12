@@ -198,3 +198,9 @@
         path: virtualenv/postdeactivate
         relink: true
         create: true
+
+# ----- pry -----
+- link:
+    ~/.pryrc:
+        path: pryrc
+        relink: true

@@ -202,6 +202,9 @@ function! GetHiKey(group, key)
     endif
   endfor
 endfunction
+function! RGBtoHex(r, g, b)
+  return join(['#', printf('%.2x', a:r), printf('%.2x', a:g), printf('%.2x', a:b)], '')
+endfunction
 function! Adjust(color, amount)
   let color = (a:color[0] == '#') ? a:color[1:] : a:color
   if type(a:amount) == 5  " float
@@ -213,7 +216,7 @@ function! Adjust(color, amount)
   let r = max([str2nr(color[0:1], 16) + adj, 0])
   let g = max([str2nr(color[2:3], 16) + adj, 0])
   let b = max([str2nr(color[4:5], 16) + adj, 0])
-  return join(['#', printf('%.2x', r), printf('%.2x', g), printf('%.2x', b)], '')
+  return RGBtoHex(r, g, b)
 endfunction
 function! Darken(color, amount)
   return Adjust(a:color, -a:amount)
@@ -284,8 +287,8 @@ augroup END
 let g:indent_guides_enable_on_vim_startup = 1
 let g:indent_guides_auto_colors = 0
 let g:indent_guides_start_level = 2
-hi IndentGuidesOdd ctermbg=NONE
-hi IndentGuidesEven ctermbg=234
+hi! IndentGuidesOdd ctermbg=NONE guibg=NONE
+exec 'hi! IndentGuidesEven ctermbg=234 guibg='.Darken(GetHiKey('Normal', 'guibg'), 0.015)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Commands/Mappings {{{
@@ -509,13 +512,13 @@ vnoremap <leader>r :ReplaceSelection<CR>
 
 " kill any trailing whitespace on save (Credit to Facebook)
 let g:strip_whitespace_blacklist = ['snippets']
-function! StripWhitespace()
+function! s:strip_whitespace()
   let l = line(".")
   let c = col(".")
   %s/\s\+$//e
   call cursor(l, c)
 endfunction
-command! -bar -nargs=0 StripWhitespace call StripWhitespace()
+command! -bar -nargs=0 StripWhitespace call s:strip_whitespace()
 augroup kill_whitespace
   autocmd!
   autocmd BufWritePre *
@@ -584,6 +587,7 @@ if has('nvim')
   command! -nargs=? Dterm DirectionalSplit term://$SHELL <args> | startinsert
   cnoreabbrev dterm Dterm
   cnoreabbrev dt Dterm
+  nnoremap <leader>d :Dterm<CR>
 
   function! s:localdterm(...) abort
     let localdir = expand('%:p:h')
@@ -860,9 +864,9 @@ xmap gs <plug>(GrepperOperator)
 map <leader> <Plug>(easymotion-prefix)
 
 " blue and green ayyy lmao
-hi EasyMotionTarget ctermfg=39
-hi EasyMotionTarget2First ctermfg=40
-hi EasyMotionTarget2Second ctermfg=28
+exec 'hi! EasyMotionTarget ctermfg=39 guifg='.RGBtoHex(26, 155, 252)
+exec 'hi! EasyMotionTarget2First ctermfg=40 guifg='.RGBtoHex(31, 202, 35)
+exec 'hi! EasyMotionTarget2Second ctermfg=28 guifg='.RGBtoHex(10, 101, 12)
 
 " vim-easyoperator-line
 let s:EasyOperator_line_do_mapping = 0

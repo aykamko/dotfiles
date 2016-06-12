@@ -238,7 +238,7 @@ if (( $+commands[brew] )) && [[ -s /usr/local/opt/nvm/nvm.sh ]]; then
 fi
 
 # git
-(( $+commands[hub] )) && alias git=hub
+# (( $+commands[hub] )) && alias git=hub TODO: fix hub branch completion
 alias g='git'
 
 # context from root of git directory
@@ -303,7 +303,7 @@ if [[ -f ~/.fzf.zsh ]]; then
   export FZF_COMPLETION_TRIGGER='jk'
   export FZF_DEFAULT_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g "" $(git rev-parse --show-toplevel 2>/dev/null)'
   export FZF_CTRL_T_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g ""'
-  export FZF_DEFAULT_OPTS='--ansi -m --bind=alt-k:up,alt-j:down'
+  export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget
 fi
 
