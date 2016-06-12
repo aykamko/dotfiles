@@ -12,28 +12,29 @@
 - clean: ['~/.zprezto/modules/prompt/functions']
 
 - shell++:
-    - description: Install zsh
-      condition: '! hash zsh'
-    - stdall: true
-      platforms:
-        linux: sudo apt-get install -y zsh
-        darwin: brew install zsh
+  - description: Install zsh
+    condition: '! hash zsh'
+  - stdall: true
+    platforms:
+      linux: sudo apt-get install -y zsh
+      darwin: brew install zsh
 
 - shell++:
-    - description: Set zsh as default shell
-      stdall: true
-      command: sudo chsh -s $(which zsh) $(whoami)
+  - description: Set zsh as default shell
+    condition: '! echo $SHELL | grep -q zsh'
+  - stdall: true
+    command: sudo chsh -s $(which zsh) $(whoami)
 
 - shell++:
-    - description: Install zprezto
-      condition: '[ ! -d "${ZDOTFIR:-$HOME}/.zprezto" ]'
-    - command: |
-        git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-        for rcfile in $(find "${ZDOTDIR:-$HOME}"/.zprezto/runcoms -not -path '*\.md' -type f); do
-            ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}"
-        done
-    - platforms:
-        darwin: sudo rm -f /etc/zshenv && sudo ln -s $HOME/dotfiles/zsh/etc/zshenv.os.darwin /etc/zshenv
+  - description: Install zprezto
+    condition: '[ ! -d "${ZDOTFIR:-$HOME}/.zprezto" ]'
+  - command: |
+      git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+      for rcfile in $(find "${ZDOTDIR:-$HOME}"/.zprezto/runcoms -not -path '*\.md' -type f); do
+          ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}"
+      done
+  - platforms:
+    darwin: sudo rm -f /etc/zshenv && sudo ln -s $HOME/dotfiles/zsh/etc/zshenv.os.darwin /etc/zshenv
 
 - platform-link:
     darwin:
@@ -71,85 +72,84 @@
 - link:
     ~/.vimrc: vim/vimrc
     ~/.vim/vimrc_small:
-        path: vim/vimrc_small
-        create: true
+      path: vim/vimrc_small
+      create: true
     ~/.vim/snippets:
-        path: vim/vim/snippets
-        create: true
+      path: vim/vim/snippets
+      create: true
     ~/.vim/colors/hybrid_ayk.vim:
-        path: vim/vim/colors/hybrid_ayk.vim
-        create: true
+      path: vim/vim/colors/hybrid_ayk.vim
+      create: true
 
 - shell++:
-    - description: Install Neovim
-      condition: '! hash nvim'
-    - prompt: Install Neovim? (May require building from source)
-      default: true
-    - stdall: true
-      platforms:
-        darwin: |
-          brew tap neovim/neovim
-          brew install --HEAD neovim
-          brew install python python3 fswatch
-          pip install neovim
-          # TODO(aleks, 06/04/16): re: neovim-remote, check to see if my +cmd PR is merged
-          pip3 install neovim neovim-remote
+  - description: Install Neovim
+    condition: '! hash nvim'
+  - prompt: Install Neovim? (May require building from source)
+    default: true
+  - stdall: true
+    platforms:
+      darwin: |
+        brew tap neovim/neovim
+        brew install --HEAD neovim
+        brew install python python3 fswatch
+        pip install neovim
+        pip3 install neovim neovim-remote
 
-        linux:
-          - condition: '! hash apt-get 2>/dev/null || test -h $(which apt-get)'
-            branch:
-              0:
-                - prompt: Neovim has to build from source! Continue anyway?
-                  default: True
-                - stdall: True
-                  command: |
-                    sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip xclip
-                    git clone https://github.com/neovim/neovim ~/neovim
-                    pushd ~/neovim
-                    make
-                    sudo make install
-                    popd
+      linux:
+        - condition: '! hash apt-get 2>/dev/null || test -h $(which apt-get)'
+          branch:
+            0:
+              - prompt: Neovim has to build from source! Continue anyway?
+                default: True
+              - stdall: True
+                command: |
+                  sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip xclip
+                  git clone https://github.com/neovim/neovim ~/neovim
+                  pushd ~/neovim
+                  make
+                  sudo make install
+                  popd
 
-                - prompt: Delete Neovim folder at ~/neovim?
-                  default: False
-                - command: rm -rf ~/neovim
+              - prompt: Delete Neovim folder at ~/neovim?
+                default: False
+              - command: rm -rf ~/neovim
 
-              1:
-                - stdall: true
-                  command: |
-                    sudo apt-get install -y software-properties-common
-                    sudo add-apt-repository -y ppa:neovim-ppa/unstable
-                    sudo apt-get update
-                    sudo apt-get install -y neovim
-                    sudo apt-get install -y python-dev python-pip python3-dev python3-pip xclip
+            1:
+              - stdall: true
+                command: |
+                  sudo apt-get install -y software-properties-common
+                  sudo add-apt-repository -y ppa:neovim-ppa/unstable
+                  sudo apt-get update
+                  sudo apt-get install -y neovim
+                  sudo apt-get install -y python-dev python-pip python3-dev python3-pip xclip
 
-          - stdall: true
-            command: |
-              sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
-              sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
-              sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
-              sudo update-alternatives --auto vi
-              sudo update-alternatives --auto vim
-              sudo update-alternatives --auto editor
+        - stdall: true
+          command: |
+            sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 60
+            sudo update-alternatives --install /usr/bin/vim vim /usr/bin/nvim 60
+            sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
+            sudo update-alternatives --auto vi
+            sudo update-alternatives --auto vim
+            sudo update-alternatives --auto editor
 
-              sudo pip install neovim
-              if hash pip3 2>/dev/null; then
-                  sudo pip3 install neovim
-              fi
+            sudo pip install neovim
+            if hash pip3 2>/dev/null; then
+                sudo pip3 install neovim
+            fi
 
 - shell++:
-    - description: Link neovim to vim
-      command: |
-        mkdir -p ${XDG_CONFIG_HOME:=$HOME/.config}
-        ln -sf ~/.vim $XDG_CONFIG_HOME/nvim
-        ln -sf ~/.vimrc $XDG_CONFIG_HOME/nvim/init.vim
+  - description: Link neovim to vim
+    command: |
+      mkdir -p ${XDG_CONFIG_HOME:=$HOME/.config}
+      ln -sf ~/.vim $XDG_CONFIG_HOME/nvim
+      ln -sf ~/.vimrc $XDG_CONFIG_HOME/nvim/init.vim
 
 
 # ----- git -----
 - link:
     ~/.gitconfig:
-        path: git/gitconfig
-        relink: true
+      path: git/gitconfig
+      relink: true
     ~/.gitconfig.user: git/gitconfig.user
     ~/.gitignore_global: git/gitignore_global
 
@@ -164,43 +164,49 @@
     ~/.tmux.conf: tmux/tmux.conf
 
 - shell++:
-    - description: Build tmux 2.2 from source
-      condition: '! hash tmux 2>/dev/null || ! tmux -V | grep -q 2.2'
-    - prompt: Download and build tmux v2.2? (May require additional packages)
-      default: true
-    - stdall: true
-      platforms:
-        darwin: echo #TODO
-        linux: sudo apt-get install -y automake pkg-config libevent-dev ncurses-dev
-    - stdall: true
-      command: |
-
-        TMUX_GITREF=9a4b45d
-        curl -L "https://api.github.com/repos/tmux/tmux/tarball/$TMUX_GITREF" > /tmp/tmux-2.2.tar.gz
-        cd /tmp
-        tar -zxvf tmux-2.2.tar.gz
-        cd "tmux-tmux-$TMUX_GITREF"
-        sh autogen.sh
-        ./configure
-        make
-        sudo make install
-        cd ..
-        rm -rf tmux-2.2.tar.gz "tmux-tmux-$TMUX_GITREF"
+  - description: Build tmux 2.2 from source
+    condition: '! hash tmux 2>/dev/null || ! tmux -V | grep -q 2.2'
+  - prompt: Download and build tmux v2.2? (May require additional packages)
+    default: true
+  - stdall: true
+    platforms:
+      darwin: echo #TODO
+      linux: sudo apt-get install -y automake pkg-config libevent-dev ncurses-dev
+  - stdall: true
+    command: |
+      TMUX_GITREF=9a4b45d
+      curl -L "https://api.github.com/repos/tmux/tmux/tarball/$TMUX_GITREF" > /tmp/tmux-2.2.tar.gz
+      cd /tmp
+      tar -zxvf tmux-2.2.tar.gz
+      cd "tmux-tmux-$TMUX_GITREF"
+      sh autogen.sh
+      ./configure
+      make
+      sudo make install
+      cd ..
+      rm -rf tmux-2.2.tar.gz "tmux-tmux-$TMUX_GITREF"
 
 # ----- virtualenv -----
 - clean: ['~/.pyvirtualenvs']
 - link:
     ~/.pyvirtualenvs/postactivate:
-        path: virtualenv/postactivate
-        relink: true
-        create: true
+      path: virtualenv/postactivate
+      relink: true
+      create: true
     ~/.pyvirtualenvs/postdeactivate:
-        path: virtualenv/postdeactivate
-        relink: true
-        create: true
+      path: virtualenv/postdeactivate
+      relink: true
+      create: true
 
 # ----- pry -----
 - link:
     ~/.pryrc:
-        path: pryrc
-        relink: true
+      path: pryrc
+      relink: true
+
+# ----- karibiner -----
+- link:
+    ~/Library/Application Support/Karabiner:
+      path: karibiner/private.xml
+      create: true
+      relink: true
