@@ -17,8 +17,8 @@ export TRUSTED_COMPINIT="HAL 9000"
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
 for keymap in 'emacs' 'viins'; do
-  bindkey -M "$keymap" "$key_info[Control]U" history-substring-search-up
-  bindkey -M "$keymap" "$key_info[Control]D" history-substring-search-down
+  bindkey -M "$keymap" "$key_info[Control]P" history-substring-search-up
+  bindkey -M "$keymap" "$key_info[Control]N" history-substring-search-down
 done
 
 # make Escape in vicmd mode do nothing
