@@ -13,7 +13,7 @@ function TRAPUSR1 {
 export TRUSTED_COMPINIT="HAL 9000"
 
 # don't load prezto outside of tmux to speed up load
-[[ -n $TMUX ]] && \
+[[ -n $TMUX ]] || [[ -f "$HOME/.no_tmux" ]] && \
   [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
 for keymap in 'emacs' 'viins'; do
@@ -120,7 +120,9 @@ vimreplace() {
   while read line; do
     matches+=$line
   done < <(eval $search)
-  vim -c "bufdo %s/$1/$2/gec | update" ${matches}
+
+  # eventignore magic from http://stackoverflow.com/a/12487439
+  vim -c "bufdo set eventignore-=Syntax | %s/$1/$2/gec | update" ${matches}
 }
 
 # Facebook Path Picker
@@ -190,6 +192,13 @@ if [[ -f /usr/local/bin/virtualenvwrapper.sh ]]; then
   [[ -n ${VIRTUAL_ENV} ]] && workon ${VIRTUAL_ENV:t} # autostart virtualenv
 fi
 
+ctags() {
+  unset -f ctags && \
+    brew list ctags >/dev/null 2>&1 && \
+    alias ctags="$(brew --prefix)/bin/ctags"
+  ctags "$@"
+}
+
 # if (( $+commands[pylama] )); then
 #   pylama() { # pylama should use pylama.ini at root of git repo
 #     local gitroot=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -248,13 +257,34 @@ gr() {
 }
 
 if (( $+commands[tag] )); then
-  ag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
+  # export TAG_ALIAS_CMD_FMT_STRING='nvim {{.Filename}} +{{.LineNumber}}'
   tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
+  alias ag=tag
 fi
 
 # other
 alias temp="cd $HOME/temp"
 alias texclean='rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null'
+
+# NOTE: overrides unix `last` command, but that's not too useful anyway
+last() {
+  [[ -z $TMUX && -z $NVIM_LISTEN_ADDRESS ]] && echo 'Sorry, not in tmux or nvim. :(' && return
+
+  local prev_cmd
+  prev_cmd=$(fc -ln -1 | sed -e 's/[\/&]/\\&/g')
+
+  local last_out=$TMPDIR/last.$$
+  if [[ -n $NVIM_LISTEN_ADDRESS ]]; then
+    nvr -c "w! $last_out" >/dev/null
+  else
+    tmux capture-pane -pe -S - >! $last_out
+  fi
+
+  tail -r $last_out | awk "/$PROMPT_DELIM/{p=!p;if(p){next}else{exit}} p" | tail -r
+}
+if (( $+commands[fpp] )); then
+  alias lp='last | fpp'
+fi
 
 ###############################################################################
 # Builtin overrides
@@ -306,6 +336,14 @@ if [[ -f ~/.fzf.zsh ]]; then
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget
 fi
+
+###############################################################################
+# Stripe
+###############################################################################
+pay() {
+  /Users/aleks/stripe/pay-server/scripts/bin/$1 ${@:2}
+}
+compctl -f -W /Users/aleks/stripe/pay-server/scripts/bin/ pay
 
 ###############################################################################
 # zsh scripts

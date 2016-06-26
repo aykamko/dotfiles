@@ -134,20 +134,57 @@ zz() {
   cd "$(_z -l 2>&1 | sed 's/^[0-9,.]* *//' | fzf -q $_last_z_args)"
 }
 
+fgit() {
+  local root pipecmd out dir
+  root=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ $? -ne 0 ]]; then
+    echo 'Not a git repo! Aborting.'
+    return
+  fi
+
+  if [[ -n $1 ]]; then
+    pipecmd="(git diff --name-only $1; git ls-files --other --exclude-standard)"
+  else
+    pipecmd="git status --porcelain | awk '{print \$2}'"
+  fi
+
+  out=$(eval $pipecmd | \
+      fzf-tmux --header="Searching from: $root/" --query="$2" --exit-0)
+  key=$(head -1 <<< "$out")
+  file=$(tail -1 <<< "$out")
+  if [[ -n "$file" ]]; then
+    file="$PWD/$file"
+    if [[ "$key" = 'ctrl-d' || "$key" = 'f1' ]]; then
+      cd $(dirname "$file")
+    else
+      ${EDITOR:-vim} "$file"
+    fi
+  fi
+}
+alias gf=fgit
+
 f() {
   local out file key
 
   command rm -f ~/.f_cache; touch ~/.f_cache
   {
-    find -L $HOME -type d -not -path '*/\.*' -maxdepth 1 >> ~/.f_cache
-    for d ({1..8}); do
-      find -L $BOOKMARKS -type d -not -path '*/\.*' \
-        -mindepth $d -maxdepth $d >> ~/.f_cache
+    local max_depth bookmark_path
+    for mark in $BOOKMARKS; do
+      max_depth=${mark%%_*}
+      bookmark_path=${mark##*_}
+      if (( $max_depth < 1 )); then
+        echo $bookmark_path >> ~/.f_cache
+      else
+        for d ({1..$max_depth}); do
+          find -L $bookmark_path -type d -not -path '*/\.*' \
+            -mindepth $d -maxdepth $d >> ~/.f_cache
+        done
+      fi
     done
-    kill -HUP "$(cat ~/.f_cache_tail.pid)" &>/dev/null || :
+    kill -HUP "$(command cat ~/.f_cache_tail.pid)" &>/dev/null || :
   } &!
 
-  out=$((tail -f ~/.f_cache & print $! >! ~/.f_cache_tail.pid) | \
+  out=$((tail -f -n+1 ~/.f_cache & print $! >! ~/.f_cache_tail.pid) | \
       fzf-tmux -q "$*" -1 -0 --expect=ctrl-d,f1)
   key=$(head -1 <<< "$out")
   file=$(tail -1 <<< "$out")
@@ -169,7 +206,7 @@ ff() {
     kill -HUP "$(cat ~/.ff_cache_tail.pid)" &>/dev/null || :
   } &!
 
-  out=$((tail -f ~/.ff_cache & print $! >! ~/.ff_cache_tail.pid) | \
+  out=$((tail -f -n+1 ~/.ff_cache & print $! >! ~/.ff_cache_tail.pid) | \
       fzf-tmux -q "$*" -1 -0 --expect=ctrl-d,f1)
   key=$(head -1 <<< "$out")
   file=$(tail -1 <<< "$out")

@@ -152,6 +152,7 @@
       relink: true
     ~/.gitconfig.user: git/gitconfig.user
     ~/.gitignore_global: git/gitignore_global
+    ~/.git_template: git/git_template
 
 - platform-link:
     linux:

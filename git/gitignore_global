@@ -3,6 +3,7 @@
 .agignore
 .ycm_extra_conf.pyc
 node_modules/
+.ctags
 
 # Created by http://www.gitignore.io
 

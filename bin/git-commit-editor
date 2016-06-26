@@ -1,0 +1,8 @@
+#!/bin/bash
+shell_git_commit() {
+  hash nvim >/dev/null 2>&1 && nvim $@ || vim $@
+}
+nvr_git_commit() {
+  nvr -c "NvrGitCommit $1" && fswatch -1 "${1%/*}/.nvr_finished_commit" >/dev/null
+}
+[[ -z $NVIM_LISTEN_ADDRESS ]] && shell_git_commit $@ || nvr_git_commit $@

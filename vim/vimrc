@@ -1,10 +1,12 @@
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " {{{ vim-plug
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if has('vim_starting')
+if has('vim-starting')
   set encoding=utf-8 " necessary to show Unicode glyphs
-endif
-set nocompatible   " be iMproved
+end
+if !has('nvim')
+  set nocompatible   " be iMproved
+end
 let s:darwin = has('mac')
 let s:tmux = $TMUX != ''
 
@@ -28,22 +30,25 @@ let g:plug_dir = '~/.vim/bundle/'
 call plug#begin(g:plug_dir)
 
 Plug 'ConradIrwin/vim-bracketed-paste'
-Plug 'wellle/targets.vim'
-Plug 'kana/vim-textobj-user'
-Plug 'benekastah/neomake'
+" Plug 'benekastah/neomake'
+Plug 'ivalkeen/neomake', {'branch': 'place-all-signs'}
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'drn/zoomwin-vim'
 Plug 'haya14busa/incsearch.vim'
 Plug 'itchyny/lightline.vim'
+" Plug 'jeetsukumaran/vim-buffergator'
 Plug 'junegunn/vim-easy-align'
+Plug 'kana/vim-textobj-user'
 Plug 'mhinz/vim-grepper'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
+Plug 'wellle/targets.vim'
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -63,8 +68,8 @@ Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
 Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
 Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
-Plug 'tpope/vim-rails',              { 'for': 'ruby' }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
+Plug 'jez/vim-github-hub',           { 'for': 'markdown.ghpull' }
 
 augroup slim_filetype
   autocmd!
@@ -86,13 +91,29 @@ if has('nvim')
 endif
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
+Plug 'junegunn/fzf.vim'
+
+function! s:gitroot(...)
+  let from_dir = a:0 ? a:1 : '.'
+  let gitroot = system('git -C '.from_dir.' rev-parse --show-toplevel')
+  if !v:shell_error
+    return substitute(gitroot, '\n\+$', '', 'g').'/'
+  endif
+endfunction
+command! -nargs=? Groot echo s:gitroot(<f-args>)
+
+let gitroot = s:gitroot()
+if executable(gitroot.'bin/rails') || executable(gitroot.'script/rails')
+  Plug 'tpope/vim-rails', { 'for': 'ruby' }
+end
 
 call plug#end()
 filetype plugin indent on " required
 
 function! s:plug_loaded(plug_name) abort
-    return !empty(get(g:plugs, a:plug_name))
+  return !empty(get(g:plugs, a:plug_name))
 endfunction
+command! -nargs=1 PlugLoaded echo s:plug_loaded(<f-args>)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " General Settings {{{
@@ -143,7 +164,7 @@ endif
 " Other
 set noerrorbells      " no bells in terminal
 
-set tags=tags;/       " search up the directory tree for tags
+set tags=.git/tags,tags;/       " search up the directory tree for tags
 
 set undolevels=1000   " number of undos stored
 if has('nvim')
@@ -177,13 +198,15 @@ if !has('nvim') && !has('gui_running')
   augroup END
 endif
 
+let g:loaded_matchparen = 1  " disable matchparen
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Colorscheme {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if has('nvim')
-    set termguicolors
+  set termguicolors
 endif
 syntax enable
+set lazyredraw  " lifesaver
 
 set background=dark
 try
@@ -227,7 +250,7 @@ endfunction
 
 " adjust colorcolumn
 exec 'highlight! ColorColumn ctermbg=235 guibg='.
-            \ Darken(GetHiKey('Normal', 'guibg'), 0.015)
+      \ Darken(GetHiKey('Normal', 'guibg'), 0.015)
 
 let g:colorcolumn_blacklist = ['qf']
 augroup display_colorcolumn
@@ -240,21 +263,15 @@ augroup END
 
 " adjust Search highlighting
 exec 'highlight! Search guifg=NONE guibg='.
-            \ Lighten(GetHiKey('Normal', 'guibg'), 10)
+      \ Lighten(GetHiKey('Normal', 'guibg'), 10)
 
 " change vim split line color to differentiate from tmux
 exec 'highlight! StatusLineNC ctermfg=5 guifg='.g:terminal_color_5
 exec 'highlight! VertSplit ctermfg=5 guifg='.g:terminal_color_5
 
 " add some extra keywords to Todo highlight group
-function! s:extra_todo_hi()
-  syn keyword extraTodo HACK INFO BUG NOTE containedin=.*Comment.*
-  hi def link extraTodo Todo
-endfunction
-augroup extraTodoHi
-  autocmd!
-  autocmd VimEnter * call s:extra_todo_hi()
-augroup END
+syn keyword extraTodo HACK INFO BUG NOTE containedin=.*Comment.*
+hi! def link extraTodo Todo
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Line Numbering {{{
@@ -317,6 +334,12 @@ cnoreabbrev WQ wq
 cnoreabbrev Wq wq
 cnoreabbrev wQ wq
 
+" Easily move to start/end of line
+nnoremap H 0
+vnoremap H 0
+nnoremap L $
+vnoremap L $
+
 " move screen by a:cols_dt columns
 function! s:horizontal_scroll(cols_dt)
   if a:cols_dt > 0
@@ -347,8 +370,8 @@ function! s:scroll_half_screen(motion)
 endfunction
 nnoremap <silent><expr> <Down> <SID>scroll_half_screen('j')
 nnoremap <silent><expr> <Up> <SID>scroll_half_screen('k')
-vnoremap <silent><expr> <Down> 'gv'.<SID>scroll_half_screen('j')
-vnoremap <silent><expr> <Up> 'gv'.<SID>scroll_half_screen('k')
+vnoremap <silent><expr> <Down> <SID>scroll_half_screen('j')
+vnoremap <silent><expr> <Up> <SID>scroll_half_screen('k')
 
 function! s:blackhole_paste(mode)
   if a:mode ==# 'char'
@@ -383,7 +406,9 @@ nnoremap <silent> mm "bdd
 nnoremap <silent> dp "bddP
 
 " directional split for files or new buffers
-function! OpenDirectionalSplit(...)
+function! OpenDirectionalSplit(...) abort
+  let g:last_direction_split = 0
+
   let file = ''
   if len(a:000) > 0
     let file = a:000[0]
@@ -396,17 +421,15 @@ function! OpenDirectionalSplit(...)
     let dirchoice = a:000[1]
   else
     echohl Question
-    if !empty(file)
-      echom 'Choose split direction. [hjklt or Enter] '
-    else
-      echom 'Choose split direction. [hjklt] '
-    endif
+    echom 'Choose split direction. [hjklt or Enter] '
     echohl Normal
     call inputsave()
     let char = getchar()
     call inputrestore()
     redraw!
-    if char == 13  " Enter
+    if char == 27 " Esc
+      return
+    elseif char == 13  " Enter
       let dirchoice = 'e'
     else
       let dirchoice = nr2char(char)
@@ -415,21 +438,22 @@ function! OpenDirectionalSplit(...)
 
   if !empty(file)
     let dirmap = {
-                \ 'e': 'drop',
-                \ 'h': 'aboveleft vsp | drop',
-                \ 'j': 'belowright sp | drop',
-                \ 'k': 'aboveleft sp | drop',
-                \ 'l': 'belowright vsp | drop',
-                \ 't': 'tabnew | drop',
-                \ }
+          \ 'e': 'drop',
+          \ 'h': 'aboveleft vsp | drop',
+          \ 'j': 'belowright sp | drop',
+          \ 'k': 'aboveleft sp | drop',
+          \ 'l': 'belowright vsp | drop',
+          \ 't': 'tabnew | drop',
+          \ }
   else
     let dirmap = {
-                \ 'h': 'aboveleft vnew',
-                \ 'j': 'belowright new',
-                \ 'k': 'aboveleft new',
-                \ 'l': 'belowright vnew',
-                \ 't': 'tabnew',
-                \ }
+          \ 'e': '',
+          \ 'h': 'aboveleft vnew',
+          \ 'j': 'belowright new',
+          \ 'k': 'aboveleft new',
+          \ 'l': 'belowright vnew',
+          \ 't': 'tabnew',
+          \ }
   endif
 
   let action = get(dirmap, dirchoice)
@@ -438,6 +462,7 @@ function! OpenDirectionalSplit(...)
     echom 'Unknown direction: '.dirchoice
     echohl Normal
   else
+    let g:last_direction_split = dirchoice
     exec join([action, file])
   endif
 endfunction
@@ -475,7 +500,7 @@ for i in range(0, 9)
 endfor
 
 " command-line history
-set cedit=<C-R>
+" set cedit=<C-R>
 
 " paste in insert mode
 " (depends on clipboard setting)
@@ -518,11 +543,16 @@ function! s:strip_whitespace()
   %s/\s\+$//e
   call cursor(l, c)
 endfunction
+function! s:should_strip_whitespace()
+  return index(g:strip_whitespace_blacklist, &ft) < 0 &&
+              \ get(g:, 'strip_whitespace_pls', 1) &&
+              \ &buftype !=# 'terminal'
+endfunction
 command! -bar -nargs=0 StripWhitespace call s:strip_whitespace()
 augroup kill_whitespace
   autocmd!
   autocmd BufWritePre *
-        \ if index(g:strip_whitespace_blacklist, &ft) < 0 |
+        \ if s:should_strip_whitespace() |
         \ StripWhitespace |
         \ endif
 augroup END
@@ -540,15 +570,15 @@ augroup END
 
 " zoom into pane
 if has('nvim')
-    " removed 'key', 'oft', 'sn', 'tx', 'bt' options which do not work with nvim
-    let g:zoomwin_localoptlist = [
-          \ "ai","ar","bh","bin","bl","bomb","cfu","ci","cin","cink",
-          \ "cino","cinw","cms","com","cpt","diff","efm","eol","ep","et",
-          \ "fenc","fex","ff","flp","fo","ft","gp","imi","ims","inde","inex",
-          \ "indk","inf","isk","kmp","lisp","mps","ml","ma","mod","nf","ofu",
-          \ "pi","qe","ro","sw","si","sts","spc","spf","spl","sua","swf",
-          \ "smc","syn","ts","tw","udf","wfh","wfw","wm"
-          \ ]
+  " removed 'key', 'oft', 'sn', 'tx', 'bt' options which do not work with nvim
+  let g:zoomwin_localoptlist = [
+        \ "ai","ar","bh","bin","bl","bomb","cfu","ci","cin","cink",
+        \ "cino","cinw","cms","com","cpt","diff","efm","eol","ep","et",
+        \ "fenc","fex","ff","flp","fo","ft","gp","imi","ims","inde","inex",
+        \ "indk","inf","isk","kmp","lisp","mps","ml","ma","mod","nf","ofu",
+        \ "pi","qe","ro","sw","si","sts","spc","spf","spl","sua","swf",
+        \ "smc","syn","ts","tw","udf","wfh","wfw","wm"
+        \ ]
 endif
 
 function! s:zoomwin_wrapper()
@@ -582,6 +612,29 @@ augroup tmux_pane_title
         \ let &titlestring=s:xterm_title()
 augroup END
 
+" jump to tag
+function! s:directional_tag(tag)
+  let tselect_out = ''
+  try
+    redir => tselect_out
+    silent exec 'tselect '.a:tag
+    redir END
+  catch /:E426/
+    echohl Error
+    echom "Tag '".a:tag."' not found!"
+    return
+  endtry
+
+  let tag_cmd = len(split(tselect_out, '\n')) > 5 ? 'tselect' : 'tag'
+  DirectionalSplit
+  if !empty(g:last_direction_split)
+    exec join([tag_cmd, a:tag])
+  endif
+endfunction
+command! -nargs=1 Dtag call s:directional_tag(<f-args>)
+nnoremap ts :exec 'Dtag '.expand('<cword>')<CR>
+vnoremap <silent> ts :<C-U>exec 'Dtag '.<SID>get_visual_selection()<CR>
+
 if has('nvim')
   " directional term splits
   command! -nargs=? Dterm DirectionalSplit term://$SHELL <args> | startinsert
@@ -614,9 +667,12 @@ if has('nvim')
     autocmd FileType fzf tunmap <buffer> <Esc><Esc>
 
     " focus terminal automatically
-    autocmd BufEnter term://* startinsert
+    exec 'autocmd BufEnter term://$SHELL startinsert'
   augroup END
 endif
+
+command! ProfileStart profile start ~/temp/profile.log | profile func * | profile file *
+command! ProfileDone profile pause | noautocmd qall!
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " tComment {{{
@@ -682,9 +738,14 @@ endfunction
 
 " mode
 function! LLMode()
-  return  &ft =~ 'nerdtree' ? 'nerdtree' :
-        \ &ft =~ 'fzf' ? 'FZF' :
-        \ lightline#mode()
+  let mode = get({
+        \ 'nerdtree': 'nerdtree',
+        \ 'fzf': 'FZF',
+        \ }, &ft)
+  if empty(mode)
+    let mode = lightline#mode()
+  endif
+  return mode
 endfunction
 
 " zoom
@@ -703,12 +764,19 @@ function! LLReadonly()
 endfunction
 function! LLTrucatedFilePath()
   if (&ft =~ 'nerdtree' || &buftype ==# 'terminal') | return '' | endif
-  let fullpath = expand('%:p:~')
-  return empty(fullpath) ? '[No Name]' :
-        \ matchstr(fullpath,
-        \   printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$',
-        \   get(g:, 'pathname_depth', 3)))
+  let bufnr = bufnr('%')
+  let buf_trunc_path = getbufvar(bufnr, 'trunc_path')
+  if empty(buf_trunc_path)
+    let fullpath = expand('%:p:~')
+    let buf_trunc_path = empty(fullpath) ? '[No Name]' :
+          \ matchstr(fullpath,
+          \   printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$',
+          \   get(g:, 'pathname_depth', 3)))
+    call setbufvar(bufnr, 'trunc_path', buf_trunc_path)
+  endif
+  return buf_trunc_path
 endfunction
+autocmd BufNewFile * unlet b:trunc_path
 function! LLFileInfo()
   if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
   let segments = [LLReadonly(), LLTrucatedFilePath(), LLModified()]
@@ -724,7 +792,6 @@ function! LLLineInfo()
   return &ft
 endfunction
 
-autocmd WinEnter * call lightline#update()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easyalign {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -767,77 +834,93 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Neomake {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:neomake_verbose = 0 " useful for debug
+if s:plug_loaded('neomake')
+  let g:neomake_verbose = 0 " useful for debug
 
-exec "highlight! NeomakeError ctermfg=red guifg=".GetHiKey('Error', 'guifg')
-exec "highlight! NeomakeWarning ctermfg=yellow guifg=".GetHiKey('Todo', 'guifg')
+  exec "highlight! NeomakeError ctermfg=red guifg=".GetHiKey('Error', 'guifg')
+  exec "highlight! NeomakeWarning ctermfg=yellow guifg=".GetHiKey('Todo', 'guifg')
 
-let g:neomake_error_sign = {
-      \ 'text': s:E,
-      \ 'texthl': 'NeomakeError',
-      \ }
-let g:neomake_warning_sign = {
-      \ 'text': s:W,
-      \ 'texthl': 'NeomakeWarning',
-      \ }
+  let g:neomake_error_sign = {
+        \ 'text': s:E,
+        \ 'texthl': 'NeomakeError',
+        \ }
+  let g:neomake_warning_sign = {
+        \ 'text': s:W,
+        \ 'texthl': 'NeomakeWarning',
+        \ }
 
-if executable('pylama')
-  let g:neomake_python_enabled_makers = ['pylama']
-endif
-let g:neomake_tex_enabled_makers = []
-
-function! ToggleLocationList()
-  if empty(filter(tabpagebuflist(), 'getbufvar(v:val, "&buftype") is# "quickfix"'))
-    lwindow
-  else
-    lclose
+  if executable('pylama')
+    let g:neomake_python_enabled_makers = ['pylama']
   endif
-endfunction
-nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
+  let g:neomake_tex_enabled_makers = []
 
-command! -nargs=0 DisableNeomake let b:neomake_enabled=0
+  function! ToggleLocationList()
+    if empty(filter(tabpagebuflist(), 'getbufvar(v:val, "&buftype") is# "quickfix"'))
+      lwindow
+    else
+      lclose
+    endif
+  endfunction
+  nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
 
-function! NeomakeLightlineCallback(callback_dict)
-  if !a:callback_dict['has_next'] | call lightline#update() | endif
-endfunction
+  command! -nargs=0 DisableNeomake let b:neomake_enabled=0
 
-augroup postwrite_neomake
-  autocmd!
-  autocmd BufWinEnter,BufWritePost *
-        \ if !get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1) |
-        \ call neomake#Make(1, [], function("NeomakeLightlineCallback")) |
-        \ endif
-augroup END
+  function! NeomakeLightlineCallback(callback_dict)
+    if !a:callback_dict['has_next'] | call lightline#update() | endif
+  endfunction
+
+  augroup postwrite_neomake
+    autocmd!
+    autocmd BufWinEnter,BufWritePost *
+          \ if !get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1) |
+          \ call neomake#Make(1, [], function("NeomakeLightlineCallback")) |
+          \ endif
+  augroup END
+
+  let g:neomake_place_signs_at_once = 1
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-cnoreabbrev fzf FZF
-cnoreabbrev f FZF
+if s:plug_loaded('fzf')
+  cnoreabbrev fzf FZF
+  cnoreabbrev f FZF
 
-let g:fzf_action = {
-      \ 'ctrl-t': 'tab split | drop',
-      \ 'ctrl-x': 'split | drop',
-      \ 'ctrl-v': 'vsplit | drop',
-      \ 'ctrl-s': 'DirectionalSplit' }
+  let g:fzf_action = {
+        \ 'ctrl-t': 'tab split | drop',
+        \ 'ctrl-x': 'split | drop',
+        \ 'ctrl-v': 'vsplit | drop',
+        \ 'ctrl-s': 'DirectionalSplit',
+        \ 'enter': 'DirectionalSplit' }
 
-function! s:git_fzf(...)
-  if len(a:000) > 0
-    let from_dir=a:000[0]
-  else
-    let from_dir='.'
-  endif
-  let gitroot=system('git -C '.from_dir.' rev-parse --show-toplevel')
-  if v:shell_error
-    exec 'FZF --header="Searching from: '.from_dir.'" '.from_dir
-  else
-    let gitroot=substitute(gitroot, '\n\+$', '', 'g').'/' " strip trailing newlines
-    exec 'FZF -d '.gitroot.' --with-nth=2 --header="Git Repo: '.gitroot.'" '.gitroot
-  endif
-endfunction
+  function! s:git_fzf(...)
+    let from_dir = a:0 ? a:1 : '.'
+    let gitroot = s:gitroot(from_dir)
+    if empty(gitroot)
+      exec 'FZF --header="Searching from: '.from_dir.'" '.from_dir
+    else
+      exec 'FZF -d '.gitroot.' --with-nth=2 --header="Git Repo: '.gitroot.'" '.gitroot
+    endif
+  endfunction
 
-nnoremap <silent> <leader>o :call <SID>git_fzf()<CR>
-nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
+  nnoremap <silent> <leader>j :call <SID>git_fzf()<CR>
+  nnoremap <silent> <leader>o :echo 'Use j instead bruh'<CR>
+  nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
+end
+
+if s:plug_loaded('fzf.vim')
+  nnoremap <silent> <leader>t :Tags<CR>
+  nnoremap <silent> <leader>gf :GFiles?<CR>
+
+  if has('nvim')
+    function! s:fzf_statusline()
+      " do nothing, default statusbar pls
+    endfunction
+    autocmd! User FzfStatusLine call s:fzf_statusline()
+  end
+end
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-grepper {{{
@@ -889,7 +972,7 @@ augroup TextobjUserSetup
 augroup END
 
 function! TextobjUserSetup()
-  if get(g:, 'textobj_user_loaded', 0)
+  if s:plug_loaded('vim-textobj-user')
     " textobj for current line
     " Copied from: https://github.com/kana/vim-textobj-user
     call textobj#user#plugin('line', {
@@ -1071,11 +1154,6 @@ augroup goyo
 augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" Gitsync {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:gitsync_callback = 'lightline#update'
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " NERDTree {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " let NERDTree hijack netrw while still having async load
@@ -1130,15 +1208,19 @@ function! s:manual_format(type, ...)
   exec 'set textwidth='.og_width
 endfunction!
 
+function! s:git_commit_ft()
+  set textwidth=72
+  set colorcolumn=71,72
+  call matchaddpos('ColorColumn', [[1, 49, 2]])
+endfunction
+
 augroup vimrc_filetype
   autocmd!
   autocmd BufNewFile,BufReadPost *.md set filetype=markdown
   autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
   autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 ts=2 sts=2 et
-  autocmd BufNewFile,BufReadPost COMMIT_EDITMSG
-        \ set textwidth=72 |
-        \ set colorcolumn=71,72 |
-        \ call matchaddpos('ColorColumn', [[1, 49, 2]])
+  autocmd BufNewFile,BufReadPost PULLREQ_EDITMSG set filetype=markdown.ghpull
+  autocmd BufNewFile,BufReadPost COMMIT_EDITMSG call s:git_commit_ft()
   autocmd Filetype tex,markdown,noft,text
         \ set wrap |
         \ set breakindent |
@@ -1165,10 +1247,25 @@ endif
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! s:nvr_git_commit(commit_msg)
   exec 'split '.a:commit_msg |
-              \ autocmd BufDelete,BufHidden,BufUnload <buffer>
-                \ call system('touch '.expand('%:p:h').'/.nvr_finished_commit') |
-                \ bwipeout |
-                \ autocmd!
+        \ autocmd BufDelete,BufHidden,BufUnload <buffer>
+        \ call system('touch '.expand('%:p:h').'/.nvr_finished_commit') |
+        \ bwipeout |
+        \ autocmd!
 endfunction
 command! -nargs=1 NvrGitCommit call <SID>nvr_git_commit(<f-args>)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" Stripe {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:run_payserver_test(...)
+  let gitroot = system('git rev-parse --show-toplevel')
+  let gitroot = substitute(gitroot, '\n\+$', '', 'g').'/' " strip whitespace
+
+  let line_number = a:1 ? '' : ':'.line('.')
+  let test_file = expand('%:p').line_number
+
+  belowright new | call termopen([gitroot.'scripts/bin/test', test_file])
+endfunction
+command! -bang PSTest call s:run_payserver_test(<bang>0)
+
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

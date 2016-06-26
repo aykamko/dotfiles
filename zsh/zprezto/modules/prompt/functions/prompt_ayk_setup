@@ -11,6 +11,7 @@ _c2='blue'
 _c3='magenta'
 _c4='red'
 _c5='yellow'
+_really_hide='234'
 _hide='240'
 _attn='14'
 
@@ -107,9 +108,10 @@ function prompt_ayk_setup {
 
   # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
   [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
+  PROMPT_DELIM=$prompt_emoji
 
   # If terminal not in tmux, prepend message
-  [[ -z $TMUX ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
+  # [[ -z $TMUX ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
 
   # Set editor-info parameters.
   zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
