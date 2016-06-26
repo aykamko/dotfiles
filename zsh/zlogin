@@ -35,6 +35,6 @@ elif [[ -z "$TMUX" ]]; then
     command rm -f $HOME/.tmux_new
     tmux new
   else
-    tmux attach || sleep 0.01 && tmux
+    sleep 0.01; tmux new -A -s main
   fi
 fi

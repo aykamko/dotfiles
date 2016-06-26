@@ -81,7 +81,8 @@ Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 "   autocmd!
 "   autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
 " augroup END
-Plug 'pangloss/vim-javascript'
+Plug 'othree/yajs.vim', { 'for': 'javascript' }
+Plug 'gavocanov/vim-js-indent', { 'for': 'javascript' }
 Plug 'mxw/vim-jsx'
 
 if has('nvim')

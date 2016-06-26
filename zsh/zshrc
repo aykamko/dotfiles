@@ -147,6 +147,9 @@ alias detach='tmux detach'
 alias tmuxconf="vi ~/.tmux.conf"
 alias tconf='tmuxconf'
 alias tname='tmux rename-session'
+if [[ -z $TMUX ]]; then
+  tmux() { [[ -z "$@" ]] && command tmux new -A -s main || command tmux "$@" }
+fi
 
 tkill() {
   case $1 in
