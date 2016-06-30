@@ -103,8 +103,8 @@ function! s:gitroot(...)
 endfunction
 command! -nargs=? Groot echo s:gitroot(<f-args>)
 
-let gitroot = s:gitroot()
-if executable(gitroot.'bin/rails') || executable(gitroot.'script/rails')
+let g:gitroot = s:gitroot()
+if executable(g:gitroot.'bin/rails') || executable(g:gitroot.'script/rails')
   Plug 'tpope/vim-rails', { 'for': 'ruby' }
 end
 
@@ -768,11 +768,26 @@ function! LLTrucatedFilePath()
   let bufnr = bufnr('%')
   let buf_trunc_path = getbufvar(bufnr, 'trunc_path')
   if empty(buf_trunc_path)
-    let fullpath = expand('%:p:~')
-    let buf_trunc_path = empty(fullpath) ? '[No Name]' :
-          \ matchstr(fullpath,
-          \   printf('\(\~\)\?\(/[0-9a-zA-Z_~\-. ]\+\)\{,%d}/[0-9a-zA-Z_\-. ]\+$',
-          \   get(g:, 'pathname_depth', 3)))
+    let gitroot = s:gitroot(expand('%:p:h'))
+    if !empty(gitroot)
+      let filepath = split(expand('%:p'), gitroot)[0]
+    else
+      let filepath = expand('%:p:~')
+    endif
+
+    let buf_trunc_path = '[No Name]'
+    if !empty(filepath)
+      let path_parts = split(filepath, '/')
+      let depth = -get(g:, 'pathname_depth', 3)
+      let depth = depth < -len(path_parts) ? -len(path_parts) : depth
+      let buf_trunc_path =
+                  \ join(map(copy(path_parts[:depth-1]), "v:val[0].'/'"), '').
+                  \ join(path_parts[depth:], '/')
+      if !empty(gitroot)
+        let buf_trunc_path = '$/'.buf_trunc_path
+      end
+    endif
+
     call setbufvar(bufnr, 'trunc_path', buf_trunc_path)
   endif
   return buf_trunc_path

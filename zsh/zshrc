@@ -258,6 +258,7 @@ gr() {
   local root=$(command git rev-parse --show-toplevel 2> /dev/null)
   [[ $? == 0 ]] && cd $root || cd "$@"
 }
+alias '$'=gr
 
 if (( $+commands[tag] )); then
   # export TAG_ALIAS_CMD_FMT_STRING='nvim {{.Filename}} +{{.LineNumber}}'
