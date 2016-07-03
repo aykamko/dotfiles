@@ -1,0 +1,8 @@
+#!/bin/zsh
+if (( $+commands[fzf] )); then
+  local target
+  target=$(git branch | sed "s/.* //" | fzf-tmux -d10 -- --ansi --select-1 --query="$@") || return
+  git checkout $target
+else
+  git checkout
+fi

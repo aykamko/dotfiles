@@ -57,7 +57,6 @@ if [[ -n $NVIM_LISTEN_ADDRESS ]]; then
   bindkey '^J' nvr_down
   bindkey '^H' nvr_left
 
-  alias ':q'='nvr -c "q"'
   sp () { nvr -o $@ }
   vsp () { nvr -O $@ }
   ds() { nvr -c "DirectionalSplit $@" }
@@ -66,6 +65,16 @@ if [[ -n $NVIM_LISTEN_ADDRESS ]]; then
   alias vim=nvr
   alias vi=nvr
   export EDITOR=nvr
+
+  command_not_found_handler() {
+    if [[ "$@" =~ ^: ]]; then
+      nvr -c ${@:1}
+    else
+      return 127
+    fi
+  }
+
+  fe() { nvr --remote-send "<esc><esc>:GitFZF $PWD<cr>" }
 
 elif [[ -n $TMUX ]]; then
   alias ':q'='tmux kill-pane'
@@ -261,7 +270,6 @@ gr() {
 alias '$'=gr
 
 if (( $+commands[tag] )); then
-  # export TAG_ALIAS_CMD_FMT_STRING='nvim {{.Filename}} +{{.LineNumber}}'
   tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
   alias ag=tag
 fi

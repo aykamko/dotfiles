@@ -29,11 +29,10 @@ let g:plug_dir = '~/.vim/bundle/'
 
 call plug#begin(g:plug_dir)
 
-Plug 'ConradIrwin/vim-bracketed-paste'
 " Plug 'benekastah/neomake'
 Plug 'ivalkeen/neomake', {'branch': 'place-all-signs'}
 Plug 'christoomey/vim-tmux-navigator'
-Plug 'drn/zoomwin-vim'
+" Plug 'drn/zoomwin-vim'
 Plug 'haya14busa/incsearch.vim'
 Plug 'itchyny/lightline.vim'
 " Plug 'jeetsukumaran/vim-buffergator'
@@ -59,6 +58,7 @@ Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
 Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
 
+Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
@@ -95,7 +95,7 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 Plug 'junegunn/fzf.vim'
 
 function! s:gitroot(...)
-  let from_dir = a:0 ? a:1 : '.'
+  let from_dir = a:0 ? a:1 : expand('%:p:h')
   let gitroot = system('git -C '.from_dir.' rev-parse --show-toplevel')
   if !v:shell_error
     return substitute(gitroot, '\n\+$', '', 'g').'/'
@@ -115,6 +115,10 @@ function! s:plug_loaded(plug_name) abort
   return !empty(get(g:plugs, a:plug_name))
 endfunction
 command! -nargs=1 PlugLoaded echo s:plug_loaded(<f-args>)
+
+if !empty(gitroot)
+  exec 'cd '.gitroot
+end
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " General Settings {{{
@@ -198,8 +202,6 @@ if !has('nvim') && !has('gui_running')
     autocmd InsertLeave * set timeoutlen=1000
   augroup END
 endif
-
-let g:loaded_matchparen = 1  " disable matchparen
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Colorscheme {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -448,7 +450,7 @@ function! OpenDirectionalSplit(...) abort
           \ }
   else
     let dirmap = {
-          \ 'e': '',
+          \ 'e': 'edit',
           \ 'h': 'aboveleft vnew',
           \ 'j': 'belowright new',
           \ 'k': 'aboveleft new',
@@ -569,24 +571,14 @@ augroup set_unmodifiable
   autocmd BufReadPost * call s:set_unmodifiable()
 augroup END
 
-" zoom into pane
-if has('nvim')
-  " removed 'key', 'oft', 'sn', 'tx', 'bt' options which do not work with nvim
-  let g:zoomwin_localoptlist = [
-        \ "ai","ar","bh","bin","bl","bomb","cfu","ci","cin","cink",
-        \ "cino","cinw","cms","com","cpt","diff","efm","eol","ep","et",
-        \ "fenc","fex","ff","flp","fo","ft","gp","imi","ims","inde","inex",
-        \ "indk","inf","isk","kmp","lisp","mps","ml","ma","mod","nf","ofu",
-        \ "pi","qe","ro","sw","si","sts","spc","spf","spl","sua","swf",
-        \ "smc","syn","ts","tw","udf","wfh","wfw","wm"
-        \ ]
-endif
-
-function! s:zoomwin_wrapper()
-  let t:zoomed = !get(t:, 'zoomed', 0)
-  ZoomWin
+" 'zoom' into pane
+function! s:break_to_tab()
+  let bufnr = bufnr('%')
+  let winnr = winnr()
+  close
+  exec 'tab new | b '.bufnr
 endfunction
-nnoremap <silent> <leader>z :call <SID>zoomwin_wrapper()<CR>
+nnoremap <silent> <leader>z :call <SID>break_to_tab()<CR>
 
 " vim-tmux aware killpane
 function! TmuxAwareKillpane()
@@ -792,7 +784,7 @@ function! LLTrucatedFilePath()
   endif
   return buf_trunc_path
 endfunction
-autocmd BufNewFile * unlet b:trunc_path
+autocmd BufNewFile * unlet! b:trunc_path
 function! LLFileInfo()
   if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
   let segments = [LLReadonly(), LLTrucatedFilePath(), LLModified()]
@@ -907,10 +899,10 @@ if s:plug_loaded('fzf')
         \ 'ctrl-t': 'tab split | drop',
         \ 'ctrl-x': 'split | drop',
         \ 'ctrl-v': 'vsplit | drop',
-        \ 'ctrl-s': 'DirectionalSplit',
-        \ 'enter': 'DirectionalSplit' }
+        \ 'ctrl-s': 'DirectionalSplit'
+        \ }
 
-  function! s:git_fzf(...)
+  function! s:git_fzf(...) abort
     let from_dir = a:0 ? a:1 : '.'
     let gitroot = s:gitroot(from_dir)
     if empty(gitroot)
@@ -919,6 +911,7 @@ if s:plug_loaded('fzf')
       exec 'FZF -d '.gitroot.' --with-nth=2 --header="Git Repo: '.gitroot.'" '.gitroot
     endif
   endfunction
+  command! -nargs=? -bar GitFZF call s:git_fzf(<f-args>)
 
   nnoremap <silent> <leader>j :call <SID>git_fzf()<CR>
   nnoremap <silent> <leader>o :echo 'Use j instead bruh'<CR>
@@ -926,15 +919,21 @@ if s:plug_loaded('fzf')
 end
 
 if s:plug_loaded('fzf.vim')
-  nnoremap <silent> <leader>t :Tags<CR>
-  nnoremap <silent> <leader>gf :GFiles?<CR>
+  function! s:fzf(opts)
+    call fzf#run(extend(fzf#vim#wrap(a:opts), fzf#vim#layout()))
+  endfunction
 
-  if has('nvim')
-    function! s:fzf_statusline()
-      " do nothing, default statusbar pls
-    endfunction
-    autocmd! User FzfStatusLine call s:fzf_statusline()
-  end
+  nnoremap <silent> <leader>t :Tags<CR>
+
+  function! s:gitfiles_fzf()
+    call s:fzf({
+    \ 'source': 'git diff --name-only $(git merge-base --fork-point master)',
+    \ 'options': '--prompt "gf> "',
+    \})
+  endfunction
+  nnoremap <silent> <leader>gf :call <SID>gitfiles_fzf()<CR>
+
+  let g:fzf_nvim_statusline = 0
 end
 
 
@@ -1243,7 +1242,7 @@ augroup vimrc_filetype
   autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 ts=2 sts=2 et
   autocmd BufNewFile,BufReadPost PULLREQ_EDITMSG set filetype=markdown.ghpull
   autocmd BufNewFile,BufReadPost COMMIT_EDITMSG call s:git_commit_ft()
-  autocmd Filetype tex,markdown,noft,text
+  autocmd Filetype tex,markdown,markdown.ghpull,noft,text
         \ set wrap |
         \ set breakindent |
         \ set linebreak |
@@ -1276,6 +1275,28 @@ function! s:nvr_git_commit(commit_msg)
 endfunction
 command! -nargs=1 NvrGitCommit call <SID>nvr_git_commit(<f-args>)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" bracketed paste {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if !has('nvim')
+  " Source: https://git.io/voxGp
+  let &t_ti .= '\<Esc>[?2004h'
+  let &t_te .= '\<Esc>[?2004l'
+
+  function! XTermPasteBegin(ret)
+    set pastetoggle=<f29>
+    set paste
+    return a:ret
+  endfunction
+
+  execute "set <f28>=\<Esc>[200~"
+  execute "set <f29>=\<Esc>[201~"
+  map <expr> <f28> XTermPasteBegin("i")
+  imap <expr> <f28> XTermPasteBegin("")
+  vmap <expr> <f28> XTermPasteBegin("c")
+  cmap <f28> <nop>
+  cmap <f29> <nop>
+end
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Stripe {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! s:run_payserver_test(...)
@@ -1288,6 +1309,5 @@ function! s:run_payserver_test(...)
   belowright new | call termopen([gitroot.'scripts/bin/test', test_file])
 endfunction
 command! -bang PSTest call s:run_payserver_test(<bang>0)
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

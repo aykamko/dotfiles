@@ -7,13 +7,13 @@ fd() {
     root=$PWD
   fi
   fzfcmd="fzf-tmux $filter --query='$1' --select-1 --exit-0"
-  out=$(find -L $root -type d -not -path '*\.*' | eval $fzfcmd)
+  out=$(find -L $root -type d -not -path '*\/\.*' | eval $fzfcmd)
   key=$(head -1 <<< "$out")
   dir=$(tail -1 <<< "$out")
   [[ -n $dir ]] && cd $dir
 }
 
-fe() {
+(( $+functions[fe] )) || fe() {
   local root fzfcmd filter out file key
   root=$(git rev-parse --show-toplevel 2>/dev/null)
   if [[ $? -eq 0 ]]; then
@@ -145,7 +145,7 @@ fgit() {
   if [[ -n $1 ]]; then
     pipecmd="(git diff --name-only $1; git ls-files --other --exclude-standard)"
   else
-    pipecmd="git status --porcelain | awk '{print \$2}'"
+    pipecmd="(git diff --name-only $(git merge-base --fork-point master); git ls-files --other --exclude-standard)"
   fi
 
   out=$(eval $pipecmd | \
@@ -185,7 +185,7 @@ f() {
   } &!
 
   out=$((tail -f -n+1 ~/.f_cache & print $! >! ~/.f_cache_tail.pid) | \
-      fzf-tmux -q "$*" -1 -0 --expect=ctrl-d,f1)
+      fzf-tmux -d15 -- -q "$*" -1 -0 --expect=ctrl-d,f1)
   key=$(head -1 <<< "$out")
   file=$(tail -1 <<< "$out")
   if [[ -n "$file" ]]; then
@@ -217,3 +217,5 @@ ff() {
     fi
   fi
 }
+
+alias fco=fzf-git-checkout
