@@ -80,6 +80,9 @@
     ~/.vim/colors/hybrid_ayk.vim:
       path: vim/vim/colors/hybrid_ayk.vim
       create: true
+    ~/.vim/autoload/test:
+      path: vim/vim/autoload/test
+      create: true
 
 - shell++:
   - description: Install Neovim

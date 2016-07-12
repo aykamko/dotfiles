@@ -145,7 +145,7 @@ fgit() {
   if [[ -n $1 ]]; then
     pipecmd="(git diff --name-only $1; git ls-files --other --exclude-standard)"
   else
-    pipecmd="(git diff --name-only $(git merge-base --fork-point master); git ls-files --other --exclude-standard)"
+    pipecmd="(git diff --name-only $(git merge-base HEAD master); git ls-files --other --exclude-standard)"
   fi
 
   out=$(eval $pipecmd | \

@@ -48,6 +48,9 @@ Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'wellle/targets.vim'
+Plug 'junegunn/vim-peekaboo'
+Plug 'kassio/neoterm'
+Plug 'janko-m/vim-test'
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -275,7 +278,6 @@ exec 'highlight! VertSplit ctermfg=5 guifg='.g:terminal_color_5
 " add some extra keywords to Todo highlight group
 syn keyword extraTodo HACK INFO BUG NOTE containedin=.*Comment.*
 hi! def link extraTodo Todo
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Line Numbering {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -401,12 +403,19 @@ function! s:blackhole_delete(mode)
     silent exec 'normal! `<v`>"bd'
   endif
 endfunction
-nnoremap <silent> mp :set operatorfunc=<SID>blackhole_paste<CR>g@
-vnoremap <silent> mp :<c-u>call <SID>blackhole_paste(visualmode())<CR>
-nnoremap <silent> md :set operatorfunc=<SID>blackhole_delete<CR>g@
-vnoremap <silent> md :<c-u>call <SID>blackhole_delete(visualmode())<CR>
-nnoremap <silent> mm "bdd
-nnoremap <silent> dp "bddP
+function! s:blackhole_bindings()
+  if &ft =~ 'nerdtree' | return | endif
+  nnoremap <buffer><silent> mp :set operatorfunc=<SID>blackhole_paste<CR>g@
+  vnoremap <buffer><silent> mp :<c-u>call <SID>blackhole_paste(visualmode())<CR>
+  nnoremap <buffer><silent> md :set operatorfunc=<SID>blackhole_delete<CR>g@
+  vnoremap <buffer><silent> md :<c-u>call <SID>blackhole_delete(visualmode())<CR>
+  nnoremap <buffer><silent> mm "bdd
+  nnoremap <buffer><silent> dp "bddP
+endfunction
+augroup blackhole_bindings
+  autocmd!
+  autocmd FileType * call s:blackhole_bindings()
+augroup END
 
 " directional split for files or new buffers
 function! OpenDirectionalSplit(...) abort
@@ -500,6 +509,8 @@ nnoremap z<Space> za
 " switching tabs
 for i in range(0, 9)
   exec 'nnoremap t'.i.' '.i.'gt'
+  exec 'nnoremap <A-'.i.'> '.i.'gt'
+  exec 'vnoremap <A-'.i.'> '.i.'gt'
 endfor
 
 " command-line history
@@ -681,39 +692,33 @@ set laststatus=2   " Always show the statusline
 let g:lightline = {
       \   'colorscheme': 'Tomorrow_Night',
       \   'active': {
-      \     'left': [['zoom', 'mode', 'paste'], ['fileinfo', 'syntax_err', 'syntax_war']],
-      \     'right': [['lineinfo'], ['fugitive'], ['filetype', 'winnr']]
+      \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_err', 'syntax_war']],
+      \     'right': [['lineinfo'], ['fugitive'], ['filetype']]
       \   },
       \   'inactive': {
       \     'left': [['fileinfo']],
-      \     'right': [['lineinfo'], ['fugitive'], ['filetype', 'winnr']]
-      \   },
-      \   'component': {
-      \     'winnr': '%{winnr()}',
-      \     'fugitive': '%{exists("*fugitive#head")?fugitive#head(5):""}',
+      \     'right': [['lineinfo'], ['fugitive'], ['filetype']]
       \   },
       \   'component_function' : {
-      \     'zoom': 'LLZoom',
       \     'mode': 'LLMode',
       \     'fileinfo': 'LLFileInfo',
       \     'lineinfo': 'LLLineInfo',
       \     'filetype': 'LLFileType',
       \   },
       \   'component_expand' : {
-      \     'gitsync': 'Gitsync',
+      \     'fugitive': 'FugitiveHead',
       \     'syntax_err': 'SyntaxError',
       \     'syntax_war': 'SyntaxWarning',
       \   },
       \   'component_type': {
-      \     'gitsync': 'error',
       \     'syntax_err': 'error',
       \     'syntax_war': 'warning',
       \   },
       \ }
 
-function! Gitsync()
-  if !get(g:, 'gitsync_initialized', 0) | return '' | endif
-  return GitsyncStatus(bufnr('%'))
+function! FugitiveHead()
+  if !exists('*fugitive#head') | return '' | endif
+  return substitute(fugitive#head(), '^aleks/', '', '')
 endfunction
 
 function! SyntaxError()
@@ -734,6 +739,7 @@ function! LLMode()
   let mode = get({
         \ 'nerdtree': 'nerdtree',
         \ 'fzf': 'FZF',
+        \ 'peekaboo': 'peekaboo',
         \ }, &ft)
   if empty(mode)
     let mode = lightline#mode()
@@ -741,28 +747,30 @@ function! LLMode()
   return mode
 endfunction
 
-" zoom
-function! LLZoom()
-  return (exists('t:zoomed') && t:zoomed) ? 'ZOOM' : ''
-endfunction
-
 " filename and fileinfo
 let g:pathname_depth = 3
 function! LLModified()
-  return index(['help', 'nerdtree'], &ft) > -1 ? '' :
+  return index(['help', 'nerdtree', 'peekaboo'], &ft) > -1 ? '' :
         \ &modified ? '+' : ''
 endfunction
 function! LLReadonly()
-  return index(['help', 'nerdtree'], &ft) < 0 && &readonly ? '🔒' : ''
+  return index(['help', 'nerdtree', 'peekaboo'], &ft) < 0 && &readonly ? '🔒' : ''
 endfunction
 function! LLTrucatedFilePath()
-  if (&ft =~ 'nerdtree' || &buftype ==# 'terminal') | return '' | endif
+  if index(['qf', 'nerdtree', 'peekaboo'], &ft) > -1 | return '' | endif
+  if &buftype ==# 'terminal' | return '' | endif
   let bufnr = bufnr('%')
   let buf_trunc_path = getbufvar(bufnr, 'trunc_path')
   if empty(buf_trunc_path)
     let gitroot = s:gitroot(expand('%:p:h'))
     if !empty(gitroot)
-      let filepath = split(expand('%:p'), gitroot)[0]
+      let split_filepath = split(expand('%:p'), gitroot)
+      if empty(split_filepath)
+        let gitroot = ''
+        let filepath = ''
+      else
+        let filepath = split(expand('%:p'), gitroot)[0]
+      endif
     else
       let filepath = expand('%:p:~')
     endif
@@ -927,7 +935,7 @@ if s:plug_loaded('fzf.vim')
 
   function! s:gitfiles_fzf()
     call s:fzf({
-    \ 'source': 'git diff --name-only $(git merge-base --fork-point master)',
+    \ 'source': 'git diff --name-only $(git merge-base HEAD master)',
     \ 'options': '--prompt "gf> "',
     \})
   endfunction
@@ -1206,6 +1214,12 @@ augroup nerdtree_solo_close
         \ endif
 augroup END
 
+augroup nerdtree_unmap_mx
+  autocmd!
+  autocmd FileType nerdtree
+              \| autocmd BufEnter * for x in ['m', 'd', 'p'] | exec 'unmap <buffer> m'.x | endfor
+augroup END
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1299,15 +1313,17 @@ end
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Stripe {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! s:run_payserver_test(...)
-  let gitroot = system('git rev-parse --show-toplevel')
-  let gitroot = substitute(gitroot, '\n\+$', '', 'g').'/' " strip whitespace
-
-  let line_number = a:1 ? '' : ':'.line('.')
-  let test_file = expand('%:p').line_number
-
-  belowright new | call termopen([gitroot.'scripts/bin/test', test_file])
-endfunction
-command! -bang PSTest call s:run_payserver_test(<bang>0)
+let test#runners = {'ruby': ['paytest']}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-test {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let test#strategy = {
+  \ 'nearest': 'neoterm',
+  \ 'file':    'neoterm',
+  \ 'suite':   'basic',
+\}
+command! -nargs=* -bar TN TestNearest <args>
+command! -nargs=* -bar TF TestFile <args>
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
