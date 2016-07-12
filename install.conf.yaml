@@ -214,3 +214,9 @@
       path: karibiner/private.xml
       create: true
       relink: true
+
+# ----- dotjs -----
+- link:
+    ~/.js:
+      path: dotjs
+      create: true

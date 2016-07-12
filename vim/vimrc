@@ -1271,7 +1271,7 @@ augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Fugitive {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if get(g:, 'colors_name', 'NONE') == 'hybrid_ayk'
+if get(g:, 'colors_name') == 'hybrid_ayk'
   hi! DiffAdd    guifg=NONE guibg=#1d2821
   hi! DiffChange guifg=NONE guibg=#1d1f34
   exec "hi! DiffDelete guifg=".GetHiKey('Normal', 'guibg')." guibg=#381f21"
