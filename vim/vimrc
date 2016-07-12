@@ -84,8 +84,7 @@ Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 "   autocmd!
 "   autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
 " augroup END
-Plug 'othree/yajs.vim', { 'for': 'javascript' }
-Plug 'gavocanov/vim-js-indent', { 'for': 'javascript' }
+Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 
 if has('nvim')
@@ -212,7 +211,7 @@ if has('nvim')
   set termguicolors
 endif
 syntax enable
-set lazyredraw  " lifesaver
+" set lazyredraw  " lifesaver
 
 set background=dark
 try
@@ -831,8 +830,9 @@ if s:plug_loaded('deoplete.nvim')
 
   imap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "<Tab>"
   imap <silent><expr> <S-Tab> pumvisible() ? "\<C-p>" : "<S-Tab>"
-endif
 
+  let g:deoplete#file#enable_buffer_path = 1
+endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " neosnippet {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

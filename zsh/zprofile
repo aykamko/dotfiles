@@ -76,8 +76,9 @@ if [[ -d $HOME/.rbenv ]]; then
   path=($RBENV_SHIMS $path)
 fi
 
-if [[ -d $HOME/.nvm ]]; then
-  export NVM_DIR=$HOME/.nvm
+if [[ -d $HOME/.nodenv ]]; then
+  export NODENV_SHIMS=$HOME/.nodenv/shims
+  path=($NODENV_SHIMS $path)
 fi
 
 if [[ -d $DOTFILES/bin ]]; then

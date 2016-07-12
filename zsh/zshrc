@@ -241,21 +241,8 @@ if (( $+commands[rbenv] )); then
   rbenv() { unset -f rbenv && eval "$(rbenv init - | tail -n +2)" && rbenv "$@"; }
 fi
 
-# nvm
-# TODO(aleks, 03/15/16): the following line is too slow because of brew, but it's also more
-# general. should fix later
-# if [[ (( $+commands[brew] )) && -s $(brew --prefix nvm)/nvm.sh ]]; then
-if (( $+commands[brew] )) && [[ -s /usr/local/opt/nvm/nvm.sh ]]; then
-  _node_shim() {
-    unset -f node
-    unset -f npm
-    unset -f nvm
-    unset -f _node_shim
-    source $(brew --prefix nvm)/nvm.sh
-  }
-  node() { _node_shim && node "$@"; }
-  npm() { _node_shim && npm "$@"; }
-  nvm() { _node_shim && nvm "$@"; }
+if (( $+commands[nodenv] )); then
+  nodenv() { unset -f nodenv && eval "$(nodenv init - | tail -n +2)" && nodenv "$@"; }
 fi
 
 # git
