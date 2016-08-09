@@ -1,3 +1,5 @@
+[url "git@github.com:"]
+    insteadOf = https://github.com/
 [color]
     ui = always
 [color "branch"]
@@ -30,27 +32,40 @@
 
     syncignore = "!git rm --cached `git ls-files -i --exclude-from=.gitignore`"
 
-    #via http://stackoverflow.com/questions/5188320/how-can-i-get-a-list-of-git-branches-ordered-by-most-recent-commit
-    recent-branches = !git for-each-ref --count=15 --sort=-committerdate refs/heads/ --format='%(refname:short)'
-
     # branch
     b = branch -v
 
     # commit
+    wip = commit -am "WIP"
     c = commit
     cm = commit -m
-    ca = commit -am
+    cma = commit -am
     ci = commit
     amend = commit --amend
     ammend = commit --amend
-    oops = commit --amend --no-edit
     empty = commit --allow-empty -m
+    oops = "!oops(){ \
+        if [[ $(git status --porcelain | wc -l | tr -d '[[:space:]]') == 0 ]]; then \
+            echo 'No changes! Aborting.'; \
+            return; \
+        fi; \
+        git commit --amend --no-edit --reset-author; }; \
+        oops"
+    lol = "!lol(){ \
+        if [[ $(git status --porcelain | wc -l | tr -d '[[:space:]]') == 0 ]]; then \
+            echo 'No changes! Aborting.'; \
+            return; \
+        fi; \
+        git add -u && git commit --amend --no-edit --reset-author; }; \
+        lol"
 
     # checkout
     co = checkout
+    fco = !fzf-git-checkout
     nb = checkout -b
     ours = checkout --ours
     theirs = checkout --theirs
+    nf = "!nf(){ git checkout master && git pull --rebase && git checkout -b $@; }; nf" # new feature
 
     # cherry-pick
     cp = cherry-pick
@@ -62,9 +77,9 @@
 
     # log
     l = log --graph --date=short
-    ls = log --graph --date=short -n 10
-    l1 = log --format=fuller -n 1
-    ls1 = log --format=fuller -n 1
+    ls = log --date=short -n 10
+    l1 = log -n 1 --format=fuller
+    ls1 = log -n 1 --format=fuller
     changes = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\" --name-status
     short = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\"
     simple = log --pretty=format:\" * %s\"
@@ -75,22 +90,16 @@
 
     # pull
     pl = pull
-    clobber = "!BRANCH=`git rev-parse --abbrev-ref HEAD`; \
-        git fetch ${1:-origin} $BRANCH; \
-        git checkout FETCH_HEAD || exit; \
-        git branch -D $BRANCH; \
-        git checkout -b $BRANCH; \
-        git branch --set-upstream-to=${1:-origin}/$BRANCH $BRANCH"
 
     # push
     ps = push
-    sync = "!sync(){ git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`; }; sync"
+    sync = "!git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
+    fsync = "!git push -fu ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
     track = branch --track
     upstream = branch --track
-    shove = push -f
+    shove = push -f # use with caution
 
     # rebase
-    rb = rebase
     rbC = rebase --continue
     rbS = rebase --skip
     rbA = rebase --abort
@@ -99,7 +108,7 @@
     r = remote -v
 
     # reset
-    cleanall = "!(cd $(git rev-parse --show-toplevel) && git clean -xdf)"
+    cleanuntracked = "!(cd $(git rev-parse --show-toplevel) && git ls-files --other --exclude-standard | xargs rm -rf %)"
     unstage = reset HEAD
     uncommit = reset --soft HEAD^
     filelog = log -u
@@ -124,6 +133,40 @@
     arc-clean = "!for b in $(git branch --color=never | egrep -e '^\\s+arcpatch'); do \
         git branch -D \"${b}\"; \
         done"
+
+    # rebase onto a fresh master
+    freshen = "!BRANCH=`git rev-parse --abbrev-ref HEAD`; \
+        git checkout master && \
+        git pull --rebase ${1:-origin} master && \
+        git checkout $BRANCH && \
+        git rebase master"
+
+    # replace branch with upstream (CAUTION)
+    clobber = "!BRANCH=$(git rev-parse --abbrev-ref HEAD); \
+        git fetch ${1:-origin} $BRANCH; \
+        git checkout FETCH_HEAD || exit; \
+        git branch -D $BRANCH; \
+        git checkout -b $BRANCH; \
+        git branch --set-upstream-to=${1:-origin}/$BRANCH $BRANCH"
+
+    # hub
+    pr = "!hubpr() { \
+        if ! git rev-parse '@{u}' >/dev/null 2>&1; then \
+          git push -u ${1:-origin} $(git rev-parse --abbrev-ref HEAD); \
+        fi; \
+        [[ $? -eq 0 ]] && hub -c core.commentchar='%' pull-request; }; \
+        hubpr"
+
+    ctags = "!.git/hooks/ctags"
+
+    # nice: http://stackoverflow.com/a/5201642
+    splat = "!splat() { \
+        git reset --soft \"${1}^\" && \
+        git commit --edit -m\"$(git log --format=%B --reverse HEAD..HEAD@{1})\"; }; \
+        splat"
+
+    deprecate = "!git branch -m depr_$(git rev-parse --abbrev-ref HEAD)"
+
 [format]
     pretty = format:%C(blue)%ad%Creset %C(yellow)%h%C(green)%d%Creset %C(blue)%s %C(magenta) [%an]%Creset
 [mergetool]
@@ -144,11 +187,11 @@
     # the usual default is to push all branches
     default = upstream
 [core]
+    # http://stackoverflow.com/questions/18257622/why-is-git-core-preloadindex-default-value-false
+    preloadindex = true
     autocrlf = false
     excludesfile = ~/.gitignore_global
-    editor = "type nvim-bridge >/dev/null 2>&1 && \
-        nvim-bridge-send \"builtin:gitcommit:$@\" || \
-        vim"
+    editor = git-commit-editor
 [advice]
     statusHints = false
 [diff]
@@ -162,10 +205,8 @@
     # Remember my merges
     # http://gitfu.wordpress.com/2008/04/20/git-rerere-rereremember-what-you-did-last-time/
     enabled = true
+[init]
+    templatedir = ~/.git_template
 [include]
     path = .gitconfig.user
     path = .gitconfig.os
-[filter "lfs"]
-	clean = git-lfs clean %f
-	smudge = git-lfs smudge %f
-	required = true

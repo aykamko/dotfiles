@@ -1,7 +1,23 @@
-if (!window.dotjsLoaded) {
+if (window.location.href.match(/https:\/\/mail.google.com\/mail\/u\/\d\/#inbox/) && !window.dotjsLoaded) {
   window.dotjsLoaded = true;
 
   const inboxWhitelist = ['aleks@stripe.com'];
+
+  function nthParent(node, n) {
+    let parent = node;
+    while (n-- > 0) parent = parent.parentNode;
+    return parent;
+  }
+
+  function nthFirstChild(node, n) {
+    let child = node;
+    while (n-- > 0) child = child.firstChild;
+    return child;
+  }
+
+  const sidebarQuery = () => nthParent(document.querySelector('[aria-label="Navigate to"]'), 3);
+  const navbarQuery = () => nthFirstChild(document.querySelector('[role="banner"]'), 2);
+  const viewContainerQuery = () => nthParent(document.querySelector('[role="main"]'), 8);
 
   function embedCustomCSS() {
     const link = document.createElement('style');
@@ -71,33 +87,45 @@ if (!window.dotjsLoaded) {
     $inboxNode.classList.add('right-inbox');
   }
 
-  window.setTimeout(querySidebar, 100);
-  function querySidebar() {
-    if (document.title.startsWith('Inbox')) {
-      if (!inboxWhitelist.some(e => document.title.includes(e))) return;
-
-      $sidebar = document.querySelector('div.nH.oy8Mbf.nn.aeN');
-      $viewContainer = document.querySelector('div.nH > div > div:nth-child(2) > div.no > div:nth-child(2)');
-      sidebarWidth = $sidebar.style.width.slice(0, -2);
-
-      embedCustomCSS();
-      toggleSidebar();
-      fillWidthAndSwap();
-
-      const $navbar = document.querySelector('div.gb_ue.gb_tf');
-      const toggleButton = document.createElement('button');
-      toggleButton.appendChild(document.createTextNode('Toggle Sidebar'));
-      for (let cls of ['T-I', 'J-J5-Ji', 'ash', 'T-I-ax7', 'L3']) {
-        toggleButton.classList.add(cls);
-      }
-      toggleButton.onclick = toggleSidebar;
-      const toggleButtonContainer = document.createElement('div');
-      toggleButtonContainer.classList.add('toggle-sidebar-button-container');
-      toggleButtonContainer.appendChild(toggleButton);
-
-      $navbar.insertBefore(toggleButtonContainer, $navbar.firstChild);
-    } else {
-      window.setTimeout(querySidebar, 100);
+  function createToggleButton() {
+    const toggleButton = document.createElement('button');
+    toggleButton.appendChild(document.createTextNode('Toggle Sidebar'));
+    for (let cls of ['T-I', 'J-J5-Ji', 'ash', 'T-I-ax7', 'L3']) {
+      toggleButton.classList.add(cls);
     }
+    toggleButton.onclick = toggleSidebar;
+    const toggleButtonContainer = document.createElement('div');
+    toggleButtonContainer.classList.add('toggle-sidebar-button-container');
+    toggleButtonContainer.appendChild(toggleButton);
+
+    return toggleButtonContainer;
+  }
+
+  function applyDotjs() {
+    $sidebar = sidebarQuery();
+    $viewContainer = viewContainerQuery();
+    sidebarWidth = $sidebar.style.width.slice(0, -2);
+
+    embedCustomCSS();
+    toggleSidebar();
+    fillWidthAndSwap();
+
+    const $navbar = navbarQuery();
+    $navbar.insertBefore(createToggleButton(), $navbar.firstChild);
+  }
+
+  let observer;
+  observer = new MutationObserver(mutations => {
+    applyDotjs();
+    observer.disconnect();
+  });
+
+  const $loading = document.getElementById('loading');
+  const loadingText = $loading.getElementsByClassName('msg')[0].innerText;
+
+  if (inboxWhitelist.some(e => loadingText.includes(e))) {
+    observer.observe($loading, {
+      attributes: true,
+    });
   }
 }

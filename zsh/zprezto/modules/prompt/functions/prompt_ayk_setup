@@ -124,8 +124,8 @@ function prompt_ayk_setup {
   zstyle ':vcs_info:*' check-for-changes true
   zstyle ':vcs_info:*' stagedstr "%F{green}●%f"
   zstyle ':vcs_info:*' unstagedstr "%F{yellow}●%f"
-  zstyle ':vcs_info:*' formats "%F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2})%f%m"
-  zstyle ':vcs_info:*' actionformats "%F{$_c2}(%f%F{$_c4}%b%f%c%u|%F{cyan}%a%f%F{$_c2})%f%m"
+  zstyle ':vcs_info:*' formats "%F{$_c2}(%f%F{$_c4}%b%f%c%u%F{$_c2})%f"
+  zstyle ':vcs_info:*' actionformats "%F{$_c2}(%f%F{$_c4}%b%f%c%u|%F{cyan}%a%f%F{$_c2})%f"
   zstyle ':vcs_info:svn:*' branchformat "%b|%F{cyan}%r%f"
   zstyle ':vcs_info:git*+set-message:*' hooks git_ahead_behind git_fmt_diff
 
