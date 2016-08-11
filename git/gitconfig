@@ -167,6 +167,15 @@
 
     deprecate = "!git branch -m depr_$(git rev-parse --abbrev-ref HEAD)"
 
+    prune-merged = "!prune_merged() { \
+        git remote update; \
+        git remote prune ${1:-origin}; \
+        for b in $(git branch --color=never --merged ${1:-origin}); do \
+            [[ $b =~ 'master' ]] || [[ $b =~ '\\*' ]] && continue; \
+            git branch -D $b; \
+        done; }; \
+        prune_merged"
+
 [format]
     pretty = format:%C(blue)%ad%Creset %C(yellow)%h%C(green)%d%Creset %C(blue)%s %C(magenta) [%an]%Creset
 [mergetool]
