@@ -4,6 +4,8 @@
 .ycm_extra_conf.pyc
 node_modules/
 .ctags
+.direnv
+.envrc
 
 # Created by http://www.gitignore.io
 
