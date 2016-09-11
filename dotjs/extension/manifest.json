@@ -1,0 +1,19 @@
+{
+   "content_scripts": [ {
+      "all_frames": true,
+      "js": [ "jquery.js", "dotjs.js" ],
+      "matches": [ "http://*/*", "https://*/*" ],
+      "run_at": "document_start"
+   } ],
+   "description": "~/.js",
+   "icons": {
+      "128": "icon128.png",
+      "48": "icon48.png"
+   },
+   "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQChk0kfw5CipzGtYzbIWBbC+hzYTY3k2aV+9GGpK+aWGos0kLlg8r4WbjwUbqZyhCQFkmxYDGHaXAl9bXr6P29uhugDaego96KCQNti+2P1/La+S++K+E/bGqdGdOKm+lHcOr0+24IhWD6EJhf3N3UUnhtsfAnSOJULJWZJ5wcZcQIDAQAB",
+   "manifest_version": 2,
+   "name": "dotjs",
+   "permissions": [ "tabs" ],
+   "update_url": "http://clients2.google.com/service/update2/crx",
+   "version": "2.0.1"
+}

@@ -176,6 +176,11 @@
         done; }; \
         prune_merged"
 
+    fetch-pr = "!fetch_pr() { \
+        git fetch origin \"pull/${1}/head:PR-${1}\" && \
+        git checkout \"PR-${1}\"; }; \
+        fetch_pr"
+
 [format]
     pretty = format:%C(blue)%ad%Creset %C(yellow)%h%C(green)%d%Creset %C(blue)%s %C(magenta) [%an]%Creset
 [mergetool]

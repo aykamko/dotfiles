@@ -1,7 +1,70 @@
-if (window.location.href.match(/https:\/\/mail.google.com\/mail\/u\/\d\/#inbox/) && !window.dotjsLoaded) {
+if (window.location.href.match(/https:\/\/mail.google.com\/mail\/u\/\d\//) && !window.dotjsLoaded) {
+
   window.dotjsLoaded = true;
 
-  const inboxWhitelist = ['aleks@stripe.com'];
+  // Modified from: https://codepen.io/pprice/pen/splkc/
+  (function($) {
+    $.fn.drags = function(opt) {
+
+      opt = $.extend({handle: "",cursor: "ew-resize", min: 10}, opt);
+
+      if (opt.handle === "") {
+        var $el = this;
+      } else {
+        var $el = this.find(opt.handle);
+      }
+
+      var priorCursor = $('body').css('cursor');
+
+      $(document).on("mouseup", function() {
+        $('body').css('cursor', priorCursor);
+        $('.draggable').removeClass('draggable').parents().off('mousemove');
+      });
+
+      return $el.css('cursor', opt.cursor).on("mousedown", function(e) {
+
+        priorCursor = $('body').css('cursor');
+        $('body').css('cursor', opt.cursor);
+
+        if (opt.handle === "") {
+          var $drag = $(this).addClass('draggable');
+        } else {
+          var $drag = $(this).addClass('active-handle').parent().addClass('draggable');
+        }
+
+        var z_idx = $drag.css('z-index');
+        var drg_h = $drag.outerHeight();
+        var drg_w = $drag.outerWidth();
+        var pos_y = $drag.offset().top + drg_h - e.pageY;
+        var pos_x = $drag.offset().left + drg_w - e.pageX;
+
+        $drag.css('z-index', 1000).parents().on("mousemove", function(e) {
+
+          var prev = $('.draggable').prev();
+          var next = $('.draggable').next();
+
+          // Assume 50/50 split between prev and next then adjust to
+          // the next X for prev
+
+          var total = prev.outerWidth() + next.outerWidth();
+
+          var leftPercentage = (((e.pageX - prev.offset().left) + (pos_x - drg_w / 2)) / total);
+          var rightPercentage = 1 - leftPercentage;
+
+          if (leftPercentage * 100 < opt.min || rightPercentage * 100 < opt.min) {
+            return;
+          }
+
+          prev.css('flex', leftPercentage.toString());
+          next.css('flex', rightPercentage.toString());
+        });
+
+        e.preventDefault(); // disable selection
+      });
+    }
+  })(jQuery);
+
+  const inboxWhitelist = ['aykamko@gmail.com'];
 
   function nthParent(node, n) {
     let parent = node;
@@ -27,14 +90,40 @@ if (window.location.href.match(/https:\/\/mail.google.com\/mail\/u\/\d\/#inbox/)
       display: none !important;
     }
 
+    .yg { /* Attachments icon */
+      width: 0px !important;
+    }
+
     .yf.xY { /* attachment/calendar icon */
       width: 0px !important;
+    }
+
+    .flex-box {
+      display: flex;
+      margin: 0;
+    }
+
+    .flex-box .flex-col {
+      flex: 0.5;
     }
 
     .spacer {
       float: left;
       min-height: 1px;
-      width: 10px !important;
+      width: 15px !important;
+    }
+
+    .handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .handle:hover::after {
+      color: #333;
+      content: "• • • • •";
+      display: block;
+      text-align: center;
     }
 
     .left-inbox {
@@ -75,16 +164,27 @@ if (window.location.href.match(/https:\/\/mail.google.com\/mail\/u\/\d\/#inbox/)
     const $middleNode = $inboxContainer.childNodes[1];
     const $filteredNode = $inboxContainer.childNodes[2];
 
-    $inboxContainer.insertBefore($middleNode, $inboxNode);
-    $inboxContainer.insertBefore($filteredNode, $middleNode);
+    // $inboxContainer.insertBefore($middleNode, $inboxNode);
+    // $inboxContainer.insertBefore($filteredNode, $middleNode);
+    //
+    // const $spacer = document.createElement('div');
+    // $spacer.classList.add('spacer');
+    // $inboxContainer.insertBefore($spacer, $filteredNode);
 
-    const $spacer = document.createElement('div');
-    $spacer.classList.add('spacer');
-    $inboxContainer.insertBefore($spacer, $filteredNode);
-
-    $filteredNode.classList.add('left-inbox');
+    $inboxContainer.classList.add('flex-box');
+    $inboxContainer.classList.add('inbox-container');
+    $inboxNode.classList.add('flex-col');
     $middleNode.classList.add('spacer');
-    $inboxNode.classList.add('right-inbox');
+    $middleNode.classList.add('handle');
+    $filteredNode.classList.add('flex-col');
+
+    $middleNode.style.height = `${$inboxContainer.clientHeight}px`
+    const observer = new MutationObserver(mutations => {
+      $middleNode.style.height = `${$inboxContainer.clientHeight}px`
+    });
+    observer.observe($inboxContainer, {
+      attributes: true,
+    });
   }
 
   function createToggleButton() {
@@ -112,6 +212,8 @@ if (window.location.href.match(/https:\/\/mail.google.com\/mail\/u\/\d\/#inbox/)
 
     const $navbar = navbarQuery();
     $navbar.insertBefore(createToggleButton(), $navbar.firstChild);
+
+    $('.handle').drags();
   }
 
   let observer;
@@ -121,11 +223,14 @@ if (window.location.href.match(/https:\/\/mail.google.com\/mail\/u\/\d\/#inbox/)
   });
 
   const $loading = document.getElementById('loading');
-  const loadingText = $loading.getElementsByClassName('msg')[0].innerText;
 
-  if (inboxWhitelist.some(e => loadingText.includes(e))) {
-    observer.observe($loading, {
-      attributes: true,
-    });
+  if ($loading) {
+    const loadingText = $loading.getElementsByClassName('msg')[0].innerText;
+
+    if (inboxWhitelist.some(e => loadingText.includes(e))) {
+      observer.observe($loading, {
+        attributes: true,
+      });
+    }
   }
 }

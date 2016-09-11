@@ -1,4 +1,4 @@
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " {{{ vim-plug
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if has('vim-starting')
@@ -76,6 +76,12 @@ Plug 'jez/vim-github-hub',           { 'for': 'markdown.ghpull' }
 
 augroup slim_filetype
   autocmd!
+  autocmd BufNewFile,BufReadPost *.stanza set filetype=stanza
+augroup END
+Plug 'jcmartin/stanza.vim',          { 'for': 'stanza' }
+
+augroup slim_filetype
+  autocmd!
   autocmd BufNewFile,BufReadPost *.slim set filetype=slim
 augroup END
 Plug 'slim-template/vim-slim',       { 'for': 'slim' }
@@ -130,6 +136,14 @@ let maplocalleader = ' '
 
 let s:E = '✖'
 let s:W = '▲'
+
+" workaround for pyenv
+let g:python_version = matchstr(system("python --version | cut -f2 -d' '"), '^[0-9]')
+if g:python_version =~ 3
+    let g:python2_host_prog = "/usr/local/bin/python2"
+else
+    let g:python3_host_prog = "/usr/local/bin/python3"
+endif
 
 " skip checks
 let g:python_host_skip_check = 1

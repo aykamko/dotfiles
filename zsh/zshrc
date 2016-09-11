@@ -156,6 +156,9 @@ alias detach='tmux detach'
 alias tmuxconf="vi ~/.tmux.conf"
 alias tconf='tmuxconf'
 alias tname='tmux rename-session'
+tswap() {
+  tmux swap-window -t $1
+}
 if [[ -z $TMUX ]]; then
   tmux() { [[ -z "$@" ]] && command tmux new -A -s main || command tmux "$@" }
 fi
@@ -245,6 +248,10 @@ if (( $+commands[nodenv] )); then
   nodenv() { unset -f nodenv && eval "$(nodenv init - | tail -n +2)" && nodenv "$@"; }
 fi
 
+if (( $+commands[pyenv] )); then
+  pyenv() { unset -f pyenv && eval "$(pyenv init - | tail -n +2)" && pyenv "$@"; }
+fi
+
 # git
 # (( $+commands[hub] )) && alias git=hub TODO: fix hub branch completion
 alias g='git'
@@ -284,6 +291,8 @@ last() {
 if (( $+commands[fpp] )); then
   alias lp='last | fpp'
 fi
+
+alias vssh='vagrant up && vagrant ssh'
 
 ###############################################################################
 # Builtin overrides
@@ -344,12 +353,16 @@ if (( $+commands[direnv] )); then
 fi
 
 #############################################################################
-# Stripe
+# Capstone
 ###############################################################################
-pay() {
-  /Users/aleks/stripe/pay-server/scripts/bin/$1 ${@:2}
+dss-ec2() {
+  ssh -Y -i ~/.ssh/capstone_dss2_rsa ${2:-ec2-user}@${1}
 }
-compctl -f -W /Users/aleks/stripe/pay-server/scripts/bin/ pay
+dss-tunnel() {
+  [[ $# -lt 3 ]] && echo 'Usage: [IP] [local port] [remote port]' && return
+  ssh -i ~/.ssh/capstone_dss2_rsa -NL localhost:${2}:localhost:${3} ${4:-ec2-user}@${1}
+}
+alias dss=dss-ec2
 
 ###############################################################################
 # zsh scripts
@@ -363,6 +376,10 @@ fi
 unsetopt CORRECT         # disable autocorrect suggestions for commands
 unsetopt AUTO_NAME_DIRS  # don't resolve environment variables in prompt
 setopt NO_NOMATCH        # pass bad match to command
+
+# disable ctrl-d to logout
+setopt IGNORE_EOF
+bindkey -r '^D'
 
 if [[ -o INTERACTIVE && ! -o LOGIN ]]; then
   _startup_time_prompt '\x1b[35m'  # purple
