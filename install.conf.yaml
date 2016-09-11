@@ -209,11 +209,12 @@
       relink: true
 
 # ----- karibiner -----
-- link:
-    ~/Library/Application Support/Karabiner:
-      path: karibiner/private.xml
-      create: true
-      relink: true
+- platform-link:
+    darwin:
+      ~/Library/Application Support/Karabiner:
+        path: karibiner/private.xml
+        create: true
+        relink: true
 
 # ----- dotjs -----
 - link:
