@@ -169,7 +169,7 @@
 
 - shell++:
   - description: Build tmux 2.2 from source
-    condition: '! hash tmux 2>/dev/null || ! tmux -V | grep -q 2.2'
+    condition: "! hash tmux 2>/dev/null || ! tmux -V | awk '{exit $2 < 2.2}'"
   - prompt: Download and build tmux v2.2? (May require additional packages)
     default: true
   - stdall: true
