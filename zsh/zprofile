@@ -85,3 +85,8 @@ if [[ -d $DOTFILES/bin ]]; then
   path+=($DOTFILES/bin)
   [[ -d $DOTFILES/bin/$UNAME ]] && path+=($DOTFILES/bin/$UNAME)
 fi
+
+###############################################################################
+# Mosh
+###############################################################################
+export MOSH_PID="$(ps ux | grep '[m]osh-server' 2>/dev/null | awk '{print $2}')"

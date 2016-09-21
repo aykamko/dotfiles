@@ -106,7 +106,12 @@
                 default: True
               - stdall: True
                 command: |
-                  sudo yum -y install libtool autoconf automake cmake gcc gcc-c++ make pkgconfig unzip xclip
+                  sudo yum -y install \
+                      libtool autoconf automake \
+                      cmake gcc gcc-c++ \
+                      make pkgconfig unzip \
+                      xclip python34 python34-devel \
+                      python34-pip
                   git clone https://github.com/neovim/neovim ~/neovim
                   pushd ~/neovim
                   make
@@ -114,7 +119,7 @@
                   popd
 
               - prompt: Delete Neovim folder at ~/neovim?
-                default: False
+                default: True
               - command: rm -rf ~/neovim
 
             1:
@@ -137,7 +142,10 @@
 
             sudo pip install neovim
             if hash pip3 2>/dev/null; then
-                sudo pip3 install neovim
+                sudo pip3 install neovim neovim-remote
+            fi
+            if hash pip-3.4 2>/dev/null; then
+                sudo pip-3.4 install neovim neovim-remote
             fi
 
 - shell++:

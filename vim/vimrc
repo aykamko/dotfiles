@@ -73,6 +73,7 @@ Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
 Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 Plug 'jez/vim-github-hub',           { 'for': 'markdown.ghpull' }
+Plug 'derekwyatt/vim-scala',         { 'for': 'scala' }
 
 augroup slim_filetype
   autocmd!
@@ -128,6 +129,10 @@ if !empty(gitroot)
   exec 'cd '.gitroot
 end
 
+function! s:strip_trailing(str) abort
+  return substitute(a:str, '^\s*\(.\{-}\)\s*$', '\1', '')
+endfunction
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " General Settings {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -138,11 +143,11 @@ let s:E = '✖'
 let s:W = '▲'
 
 " workaround for pyenv
-let g:python_version = matchstr(system("python --version | cut -f2 -d' '"), '^[0-9]')
+let g:python_version = matchstr(system("python --version 2>&1 | cut -f2 -d' '"), '^[0-9]')
 if g:python_version =~ 3
-    let g:python2_host_prog = "/usr/local/bin/python2"
+  let g:python3_host_prog = s:strip_trailing(system('which python3'))
 else
-    let g:python3_host_prog = "/usr/local/bin/python3"
+  let g:python2_host_prog = s:strip_trailing(system('which python2'))
 endif
 
 " skip checks
@@ -221,7 +226,7 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Colorscheme {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if has('nvim')
+if has('nvim') && empty($SSH_CLIENT) " mosh doesn't support 24-bit color
   set termguicolors
 endif
 syntax enable
@@ -1265,6 +1270,7 @@ endfunction
 
 augroup vimrc_filetype
   autocmd!
+  autocmd BufNewFile,BufReadPost *.ssc set filetype=scala
   autocmd BufNewFile,BufReadPost *.md set filetype=markdown
   autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
   autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 ts=2 sts=2 et

@@ -176,8 +176,8 @@ f() {
         echo $bookmark_path >> ~/.f_cache
       else
         for d ({1..$max_depth}); do
-          find -L $bookmark_path -type d -not -path '*/\.*' \
-            -mindepth $d -maxdepth $d >> ~/.f_cache
+          find -L $bookmark_path -mindepth $d -maxdepth $d \
+            -type d -not -path '*/\.*' >> ~/.f_cache
         done
       fi
     done
@@ -198,10 +198,10 @@ ff() {
 
   command rm -f ~/.ff_cache; touch ~/.ff_cache
   {
-    find -L $HOME -type f -maxdepth 1 >> ~/.ff_cache
+    find -L $HOME  -maxdepth 1 -type f >> ~/.ff_cache
     for d ({1..8}); do
-      find -L $BOOKMARKS -type f -not -path '*/\.*' \
-        -mindepth $d -maxdepth $d >> ~/.ff_cache
+      find -L $BOOKMARKS -mindepth $d -maxdepth $d \
+        -type f -not -path '*/\.*' >> ~/.ff_cache
     done
     kill -HUP "$(cat ~/.ff_cache_tail.pid)" &>/dev/null || :
   } &!

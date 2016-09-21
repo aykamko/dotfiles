@@ -108,6 +108,12 @@ function prompt_ayk_setup {
 
   # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
   [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
+  alt_emoji="🐷 "
+  if [[ -n $MOSH_PID ]]; then
+    prompt_emoji="❯"
+    alt_emoji="✱"
+  fi
+
   PROMPT_DELIM=$prompt_emoji
 
   # If terminal not in tmux, prepend message
@@ -116,7 +122,7 @@ function prompt_ayk_setup {
   # Set editor-info parameters.
   zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
   zstyle ':prezto:module:editor:info:keymap:primary' format "$prompt_emoji"
-  zstyle ':prezto:module:editor:info:keymap:alternate' format "🐷 %F{$_attn}"
+  zstyle ':prezto:module:editor:info:keymap:alternate' format "$alt_emoji%F{$_attn}"
   zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
 
   # Set vcs_info parameters.
