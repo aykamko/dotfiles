@@ -109,9 +109,9 @@ function prompt_ayk_setup {
   # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
   [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
   alt_emoji="🐷 "
-  if [[ -n $MOSH_PID ]]; then
+  if [[ -n $SSH_CONNECTION ]]; then
     prompt_emoji="❯"
-    alt_emoji="✱"
+    alt_emoji="%F{$_c3}✱%f"
   fi
 
   PROMPT_DELIM=$prompt_emoji
