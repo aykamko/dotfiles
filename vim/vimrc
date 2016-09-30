@@ -1,3 +1,8 @@
+" TODO: unmap these
+"<Space>ihn
+"<Space>is
+"<Space>ih
+"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " {{{ vim-plug
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -63,7 +68,7 @@ Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
 Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
-Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
+" Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
 Plug 'hynek/vim-python-pep8-indent', { 'for': 'python' }
 Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
@@ -986,7 +991,7 @@ xmap gs <plug>(GrepperOperator)
 " vim-easymotion {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " enable easymotion with one leaderkey press
-map <leader> <Plug>(easymotion-prefix)
+nmap <leader> <Plug>(easymotion-prefix)
 
 " blue and green ayyy lmao
 exec 'hi! EasyMotionTarget ctermfg=39 guifg='.RGBtoHex(26, 155, 252)

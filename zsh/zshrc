@@ -202,11 +202,6 @@ rpdb() {
   socat readline tcp:${2:-0.0.0.0}:${1:-4444}
 }
 
-if [[ -f /usr/local/bin/virtualenvwrapper.sh ]]; then
-  workon() { unset -f workon && source /usr/local/bin/virtualenvwrapper.sh && workon "$@"; }
-  [[ -n ${VIRTUAL_ENV} ]] && workon ${VIRTUAL_ENV:t} # autostart virtualenv
-fi
-
 ctags() {
   unset -f ctags && \
     brew list ctags >/dev/null 2>&1 && \
@@ -356,11 +351,14 @@ fi
 # Capstone
 ###############################################################################
 dss-ec2() {
-  ssh -Y -i ~/.ssh/capstone_dss2_rsa ${2:-ec2-user}@${1}
+  sudo mosh --forward-agent --ssh='ssh -i /Users/Aleks/.ssh/capstone_dss2_rsa' ${2:-ec2-user}@${1}
+}
+dss-ssh() {
+  ssh -L localhost:5005:localhost:5005 -Y -i ~/.ssh/capstone_dss2_rsa ${2:-ec2-user}@${1}
 }
 dss-tunnel() {
   [[ $# -lt 3 ]] && echo 'Usage: [IP] [local port] [remote port]' && return
-  ssh -i ~/.ssh/capstone_dss2_rsa -NL localhost:${2}:localhost:${3} ${4:-ec2-user}@${1}
+  ssh -i ~/.ssh/capstone_dss2_rsa -NL ${2}:0.0.0.0:${3} ${4:-ec2-user}@${1}
 }
 alias dss=dss-ec2
 

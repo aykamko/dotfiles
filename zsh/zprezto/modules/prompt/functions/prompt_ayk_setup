@@ -15,6 +15,28 @@ _really_hide='234'
 _hide='240'
 _attn='14'
 
+if [[ -n $TMUX ]]; then
+  typeset -gA TMUX_ENV
+  for envvar in $(tmux showenv); do
+    IFS='=' read var val <<< ${envvar#-*}
+    TMUX_ENV[$var]="$val"
+  done
+
+  function tmux_setenv() {
+    if [[ $VIRTUAL_ENV != $TMUX_ENV[$1] ]]; then
+      TMUX_ENV[$1]="$$2"
+      tmux setenv $1 $2
+    fi
+  }
+  function tmux_unsetenv() {
+    TMUX_ENV[$1]=""
+    tmux setenv -r $1
+  }
+else
+  function tmux_setenv() {}
+  function tmux_unsetenv() {}
+fi
+
 # get the commit difference counts between local and remote.
 function vi+git_ahead_behind {
   local prompt_info ahead_and_behind ahead behind
@@ -54,8 +76,10 @@ export VIRTUAL_ENV_DISABLE_PROMPT=1
 function virtualenv_info {
   if [[ -n $VIRTUAL_ENV ]]; then
     _venv="%F{$_c2}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
+    tmux_setenv VIRTUAL_ENV $VIRTUAL_ENV
   else
     unset _venv
+    tmux_unsetenv VIRTUAL_ENV
   fi
 }
 
@@ -66,8 +90,10 @@ function docker_mounted {
     [[ $DOCKER_MACHINE_NAME = "default" ]] && \
       unset machine_name || machine_name=$DOCKER_MACHINE_NAME
     _docker="%F{$_c2}[%f🐳 %F{white}${machine_name}%f%F{$_c2}]%f"
+    tmux_setenv DOCKER_MACHINE_NAME $DOCKER_MACHINE_NAME
   else
     unset _docker
+    tmux_unsetenv DOCKER_MACHINE_NAME
   fi
 }
 
