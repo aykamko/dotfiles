@@ -8,6 +8,10 @@ export WORKON_HOME=$HOME/.pyvirtualenvs # Virtualenv
 export TEXMFHOME=texmf # Latex
 export KEYTIMEOUT=1 # Reduce command line vim delay
 
+if [[ -z $SSH_AGENT_PID ]]; then
+  eval $(ssh-agent -s)
+fi
+
 ###############################################################################
 # Browser
 ###############################################################################
@@ -62,7 +66,7 @@ if [[ $UNAME == darwin ]]; then
   path=(/usr/local/sbin $path)
 fi
 
-if (( $+commands[go] )); then
+if [[ -n $GOPATH ]]; then
   path+=(/usr/local/opt/go/libexec/bin)
 fi
 
@@ -85,8 +89,3 @@ if [[ -d $DOTFILES/bin ]]; then
   path+=($DOTFILES/bin)
   [[ -d $DOTFILES/bin/$UNAME ]] && path+=($DOTFILES/bin/$UNAME)
 fi
-
-###############################################################################
-# Mosh
-###############################################################################
-export MOSH_PID="$(ps ux | grep '[m]osh-server' 2>/dev/null | awk '{print $2}')"

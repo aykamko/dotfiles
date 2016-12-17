@@ -15,13 +15,14 @@ _really_hide='234'
 _hide='240'
 _attn='14'
 
+typeset -gA TMUX_ENV
 if [[ -n $TMUX ]]; then
-  typeset -gA TMUX_ENV
-  for envvar in $(tmux showenv); do
-    IFS='=' read var val <<< ${envvar#-*}
-    TMUX_ENV[$var]="$val"
-  done
-
+  function async_tmux_initenv() {
+    for envvar in $(tmux showenv); do
+      IFS='=' read var val <<< ${envvar#-*}
+      TMUX_ENV[$var]="$val"
+    done
+  }
   function tmux_setenv() {
     if [[ $VIRTUAL_ENV != $TMUX_ENV[$1] ]]; then
       TMUX_ENV[$1]="$$2"
@@ -32,6 +33,8 @@ if [[ -n $TMUX ]]; then
     TMUX_ENV[$1]=""
     tmux setenv -r $1
   }
+
+  async_tmux_initenv &!
 else
   function tmux_setenv() {}
   function tmux_unsetenv() {}

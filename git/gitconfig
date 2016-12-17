@@ -63,8 +63,8 @@
     co = checkout
     fco = !fzf-git-checkout
     nb = checkout -b
-    ours = checkout --ours
-    theirs = checkout --theirs
+    top = checkout --ours
+    bottom = checkout --theirs
     nf = "!nf(){ git checkout master && git pull --rebase && git checkout -b $@; }; nf" # new feature
 
     # cherry-pick

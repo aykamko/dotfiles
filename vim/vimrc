@@ -43,7 +43,7 @@ Plug 'itchyny/lightline.vim'
 " Plug 'jeetsukumaran/vim-buffergator'
 Plug 'junegunn/vim-easy-align'
 Plug 'kana/vim-textobj-user'
-Plug 'mhinz/vim-grepper'
+" Plug 'mhinz/vim-grepper'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tomtom/tcomment_vim'
@@ -150,9 +150,17 @@ let s:W = '▲'
 " workaround for pyenv
 let g:python_version = matchstr(system("python --version 2>&1 | cut -f2 -d' '"), '^[0-9]')
 if g:python_version =~ 3
-  let g:python2_host_prog = s:strip_trailing(system('which python2'))
+  if executable('/usr/local/bin/python2')
+    let g:python2_host_prog = '/usr/local/bin/python2'
+  else
+    let g:python2_host_prog = '/usr/bin/python2'
+  endif
 else
-  let g:python3_host_prog = s:strip_trailing(system('which python3'))
+  if executable('/usr/local/bin/python3')
+    let g:python3_host_prog = '/usr/local/bin/python3'
+  else
+    let g:python3_host_prog = '/usr/bin/python3'
+  endif
 endif
 
 " skip checks
@@ -554,13 +562,19 @@ nnoremap <silent> <C-s> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"nam
 command! Prettify %!python -m json.tool
 
 " source: http://stackoverflow.com/a/6271254
-function! s:get_visual_selection()
-  let [lnum1, col1] = getpos("'<")[1:2]
-  let [lnum2, col2] = getpos("'>")[1:2]
+function! s:get_marker_selection(start_marker, end_marker)
+  let [lnum1, col1] = getpos(a:start_marker)[1:2]
+  let [lnum2, col2] = getpos(a:end_marker)[1:2]
   let lines = getline(lnum1, lnum2)
   let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
   let lines[0] = lines[0][col1 - 1:]
   return join(lines, '\n')
+endfunction
+function! s:get_visual_selection()
+  return s:get_marker_selection("'<", "'>")
+endfunction
+function! s:get_operator_selection()
+  return s:get_marker_selection("'[", "']")
 endfunction
 
 " search/replace visual selection
@@ -856,6 +870,12 @@ if s:plug_loaded('deoplete.nvim')
   imap <silent><expr> <S-Tab> pumvisible() ? "\<C-p>" : "<S-Tab>"
 
   let g:deoplete#file#enable_buffer_path = 1
+
+  function! ToggleDeopleteF()
+    let b:deoplete_disable_auto_complete=!get(b:, 'deoplete_disable_auto_complete', 0)
+    echo 'Deoplete: '.!b:deoplete_disable_auto_complete
+  endfunction
+  command! -nargs=0 ToggleDeoplete call ToggleDeopleteF()
 endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " neosnippet {{{
@@ -890,6 +910,10 @@ if s:plug_loaded('neomake')
         \ }
 
   if executable('pylama')
+    let g:neomake_python_pylama_maker = {
+        \ 'args': ['--format', 'pycodestyle', '-o', $HOME.'/.config/pylama'],
+        \ 'errorformat': '%f:%l:%c: %t%m',
+        \ }
     let g:neomake_python_enabled_makers = ['pylama']
   endif
   let g:neomake_tex_enabled_makers = []
@@ -903,16 +927,25 @@ if s:plug_loaded('neomake')
   endfunction
   nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
 
-  command! -nargs=0 DisableNeomake let b:neomake_enabled=0
+  function! ToggleNeomakeF()
+    let b:neomake_enabled=!get(b:, 'neomake_enabled', 1)
+    echo 'Neomake: '.b:neomake_enabled
+  endfunction
+  command! -nargs=0 ToggleNeomake call ToggleNeomakeF()
 
   function! NeomakeLightlineCallback(callback_dict)
     if !a:callback_dict['has_next'] | call lightline#update() | endif
   endfunction
 
+  " disable default neomake augroup
+  function! s:disable_neomake_augroup()
+    silent! autocmd! neomake
+  endfunction
+  autocmd VimEnter * call <SID>disable_neomake_augroup()
   augroup postwrite_neomake
     autocmd!
-    autocmd BufWinEnter,BufWritePost *
-          \ if !get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1) |
+    autocmd BufWritePost *
+          \ if (!get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1)) |
           \ call neomake#Make(1, [], function("NeomakeLightlineCallback")) |
           \ endif
   augroup END
@@ -956,6 +989,20 @@ if s:plug_loaded('fzf.vim')
   endfunction
 
   nnoremap <silent> <leader>t :Tags<CR>
+  nnoremap <silent> <leader>bf :Buffers<CR>
+
+  cnoreabbrev ag Ag
+
+  function! s:selection_grep(mode)
+    if a:mode ==# 'char'
+      silent exec 'Ag '.s:get_operator_selection()
+    elseif index(['v', 'V'], a:mode) >= 0
+      silent exec 'Ag '.s:get_visual_selection()
+    endif
+  endfunction
+
+  nnoremap <silent> gs :set operatorfunc=<SID>selection_grep<CR>g@
+  vnoremap <silent> gs :<C-u>call <SID>selection_grep(visualmode())<CR>
 
   function! s:gitfiles_fzf()
     call s:fzf({
@@ -967,25 +1014,6 @@ if s:plug_loaded('fzf.vim')
 
   let g:fzf_nvim_statusline = 0
 end
-
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" vim-grepper {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:grepper = {
-      \ 'tools': ['ag', 'git', 'grep'],
-      \ 'open': 1,
-      \ 'jump': 0,
-      \ }
-
-let g:grepper.ag =
-      \ { 'grepprg': 'ag --vimgrep $* `git rev-parse --show-toplevel`' }
-
-command! -nargs=* Ag Grepper -noprompt -tool ag -query <args>
-cnoreabbrev ag Ag
-
-nmap gs <plug>(GrepperOperator)
-xmap gs <plug>(GrepperOperator)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easymotion {{{
@@ -1275,7 +1303,7 @@ endfunction
 
 augroup vimrc_filetype
   autocmd!
-  autocmd BufNewFile,BufReadPost *.ssc set filetype=scala
+  autocmd BufNewFile,BufReadPost *.ssc,*.scala set filetype=scala
   autocmd BufNewFile,BufReadPost *.md set filetype=markdown
   autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
   autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 ts=2 sts=2 et
