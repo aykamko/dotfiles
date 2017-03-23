@@ -6,6 +6,7 @@ node_modules/
 .ctags
 .direnv
 .envrc
+__pycache__
 
 # Created by http://www.gitignore.io
 

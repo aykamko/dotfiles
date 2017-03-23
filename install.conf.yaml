@@ -182,7 +182,7 @@
     default: true
   - stdall: true
     platforms:
-      darwin: echo #TODO
+      darwin: echo 'TODO'
       linux: sudo apt-get install -y automake pkg-config libevent-dev ncurses-dev
   - stdall: true
     command: |
@@ -228,4 +228,10 @@
 - link:
     ~/.js:
       path: dotjs
+      create: true
+
+# ----- dotjs -----
+- link:
+    ~/.condarc:
+      path: conda/condarc
       create: true

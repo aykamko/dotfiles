@@ -8,8 +8,19 @@ export WORKON_HOME=$HOME/.pyvirtualenvs # Virtualenv
 export TEXMFHOME=texmf # Latex
 export KEYTIMEOUT=1 # Reduce command line vim delay
 
-if [[ -z $SSH_AGENT_PID ]]; then
-  eval $(ssh-agent -s)
+if [[ -z $TMUX ]]; then
+  if [[ -f $HOME/.ssh/agent/pid ]]; then
+    export SSH_AGENT_PID=$(cat $HOME/.ssh/agent/pid)
+  fi
+  if [[ -n $SSH_AGENT_PID && -n $(ps -p $SSH_AGENT_PID | tail -n +2) ]]; then
+    export SSH_AUTH_SOCK=$(cat $HOME/.ssh/agent/authsockpath)
+  else
+    eval $(ssh-agent -s)
+    mkdir -p $HOME/.ssh/agent
+    echo -n $SSH_AGENT_PID >! $HOME/.ssh/agent/pid
+    echo -n $SSH_AUTH_SOCK >! $HOME/.ssh/agent/authsockpath
+    ssh-add -A -K
+  fi
 fi
 
 ###############################################################################
@@ -88,4 +99,12 @@ fi
 if [[ -d $DOTFILES/bin ]]; then
   path+=($DOTFILES/bin)
   [[ -d $DOTFILES/bin/$UNAME ]] && path+=($DOTFILES/bin/$UNAME)
+fi
+
+if [[ -d $HOME/.fzf/bin ]]; then
+  path+=($HOME/.fzf/bin)
+fi
+
+if [[ -d $HOME/lib/anaconda3 ]]; then
+  path+=($HOME/lib/anaconda3/bin)
 fi

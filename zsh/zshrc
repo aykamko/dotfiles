@@ -26,9 +26,10 @@ unset BEEP
 bindkey -M vicmd '\e' beep
 
 # load shell bookmarks
-if [[ -f $HOME/.shell_bookmarks ]]; then
-  source $HOME/.shell_bookmarks
+if [[ -f $HOME/.config/shell_bookmarks.zsh ]]; then
+  source $HOME/.config/shell_bookmarks.zsh
 fi
+alias bookmarks="vim $HOME/.config/shell_bookmarks.zsh"
 
 ###############################################################################
 # Neovim Pane Switching
@@ -149,6 +150,7 @@ alias zlocal='vi ~/.zshrc.local'
 # git
 alias gitconfig='vi ~/.gitconfig'
 alias gitignore_global='vi ~/.gitignore_global'
+alias gs='git status'
 
 # tmux
 alias t='tmux'
@@ -196,8 +198,8 @@ csvless() {
 alias jl=julia
 
 # python
-alias ipy3=ipython
-alias ipy=ipython2
+alias ipy3=ipython3
+alias ipy=ipython
 alias py=python
 alias py3=python3
 venv() {
@@ -216,6 +218,12 @@ ctags() {
 # re-activate any active VIRTUAL_ENV on shell start up
 if [[ -n $VIRTUAL_ENV ]]; then
   source ${VIRTUAL_ENV}/bin/activate
+fi
+
+# re-activate any active anaconda env on shell start up
+if [[ -n $CONDA_DEFAULT_ENV ]]; then
+  echo "Sourcing conda env: $CONDA_DEFAULT_ENV"
+  source activate $CONDA_DEFAULT_ENV
 fi
 
 # if (( $+commands[pylama] )); then
@@ -267,13 +275,17 @@ gr() {
 }
 alias '$'=gr
 
-if (( $+commands[tag] )); then
-  tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
-  alias ag=tag
+# if (( $+commands[tag] )); then
+#   tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
+#   alias ag=tag
+# fi
+if (( $+commands[peco] )); then
+  tag() { nvim $(rg -n $1 | peco | awk -F\: '{print "+"$2,$1}') }
+  # alias ag=tag
 fi
 
 # other
-alias temp="cd $HOME/temp"
+alias tmp="cd $HOME/tmp"
 alias texclean='rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null'
 
 # NOTE: overrides unix `last` command, but that's not too useful anyway
@@ -380,6 +392,8 @@ setopt NO_NOMATCH        # pass bad match to command
 # disable ctrl-d to logout
 setopt IGNORE_EOF
 bindkey -r '^D'
+bindkey '^A' beginning-of-line
+bindkey '^E' end-of-line
 
 # don't warn when overwriting existing file
 setopt clobber

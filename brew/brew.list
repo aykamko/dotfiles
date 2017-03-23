@@ -1,4 +1,3 @@
-apple-gcc42
 autoconf
 autoenv
 automake
@@ -27,7 +26,6 @@ gdbm
 gettext
 ghc
 giflossy
-gifsicle
 gist
 git
 git-lfs
@@ -38,7 +36,6 @@ gnupg2
 go
 gpg-agent
 graphviz
-grep
 gsl
 hadoop
 heroku
@@ -51,8 +48,7 @@ imagemagick
 jbig2dec
 jpeg
 lame
-latex-mk
-less
+homebrew/tex/latex-mk
 libass
 libassuan
 libdnet
@@ -61,7 +57,6 @@ libffi
 libgcrypt
 libgit2
 libgpg-error
-libiomp
 libksba
 libmpc
 libogg
@@ -79,7 +74,6 @@ libxslt
 libyaml
 lua
 lz4
-make
 makedepend
 maven
 mercurial
@@ -88,7 +82,7 @@ mobile-shell
 mongodb
 msgpack
 mysql
-neovim
+neovim/neovim/neovim
 nmap
 node
 node-build
@@ -127,7 +121,7 @@ snappy
 socat
 sqlite
 swig
-tag-ag
+aykamko/tag-ag/tag-ag
 the_silver_searcher
 tmate
 tmux
@@ -136,13 +130,8 @@ tree
 unifdef
 unison
 unoconv
-unrar
-valgrind
 vim
 wget
 x264
-xtermcontrol
 xvid
-xz
-zlib
 zsh

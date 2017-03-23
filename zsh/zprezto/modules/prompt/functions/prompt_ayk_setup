@@ -11,9 +11,26 @@ _c2='blue'
 _c3='magenta'
 _c4='red'
 _c5='yellow'
+_c6='green'
 _really_hide='234'
 _hide='240'
 _attn='14'
+
+typeset -gA EMOJI_ALTS
+EMOJI_ALTS=(
+  "🐼" "❯"
+  "🐷" "%F{$_c3}✱%f"
+  "🐳" "%F{$_c1}d:%f"
+  "🐍" "%F{$_c6}v:%f"
+  "🐉" "%F{$_c6}c:%f"
+)
+function maybe_emoji() {
+  if [[ -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
+    echo $1
+  else
+    echo $EMOJI_ALTS[$1]
+  fi
+}
 
 typeset -gA TMUX_ENV
 if [[ -n $TMUX ]]; then
@@ -24,7 +41,7 @@ if [[ -n $TMUX ]]; then
     done
   }
   function tmux_setenv() {
-    if [[ $VIRTUAL_ENV != $TMUX_ENV[$1] ]]; then
+    if [[ $1 != $TMUX_ENV[$1] ]]; then
       TMUX_ENV[$1]="$$2"
       tmux setenv $1 $2
     fi
@@ -78,11 +95,21 @@ function xterm_title {
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 function virtualenv_info {
   if [[ -n $VIRTUAL_ENV ]]; then
-    _venv="%F{$_c2}[%f🐍 %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
+    _venv="%F{$_c2}[%f$(maybe_emoji 🐍)%F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
     tmux_setenv VIRTUAL_ENV $VIRTUAL_ENV
   else
     unset _venv
     tmux_unsetenv VIRTUAL_ENV
+  fi
+}
+
+function conda_info {
+  if [[ -n $CONDA_DEFAULT_ENV ]]; then
+    _cenv="%F{$_c2}[%f$(maybe_emoji 🐉)%F{white}${CONDA_DEFAULT_ENV:t}%f%F{$_c2}]%f"
+    tmux_setenv CONDA_DEFAULT_ENV $CONDA_DEFAULT_ENV
+  else
+    unset _cenv
+    tmux_unsetenv CONDA_DEFAULT_ENV
   fi
 }
 
@@ -92,7 +119,7 @@ function docker_mounted {
     local machine_name
     [[ $DOCKER_MACHINE_NAME = "default" ]] && \
       unset machine_name || machine_name=$DOCKER_MACHINE_NAME
-    _docker="%F{$_c2}[%f🐳 %F{white}${machine_name}%f%F{$_c2}]%f"
+    _docker="%F{$_c2}[%f$(maybe_emoji 🐳)%F{white}${machine_name}%f%F{$_c2}]%f"
     tmux_setenv DOCKER_MACHINE_NAME $DOCKER_MACHINE_NAME
   else
     unset _docker
@@ -103,10 +130,11 @@ function docker_mounted {
 function async_prompt {
   xterm_title
   virtualenv_info
+  conda_info
   docker_mounted
   vcs_info
 
-  local info="${_docker}${_venv}${vcs_info_msg_0_}"
+  local info="${_docker}${_cenv}${_venv}${vcs_info_msg_0_}"
   [[ -n "$info" ]] && info=" $info"
   echo -n $info >! $HOME/._async_prompt
 
@@ -135,23 +163,13 @@ function prompt_ayk_setup {
   #
   add-zsh-hook precmd prompt_ayk_precmd
 
-  # If terminal is interactive non-login (AKA neovim's libvterm), change prompt emoji
-  [[ -o INTERACTIVE && ! -o LOGIN ]] && prompt_emoji="👾 " || prompt_emoji="🐼 "
-  alt_emoji="🐷 "
-  if [[ -n $SSH_CONNECTION ]]; then
-    prompt_emoji="❯"
-    alt_emoji="%F{$_c3}✱%f"
-  fi
-
-  PROMPT_DELIM=$prompt_emoji
-
   # If terminal not in tmux, prepend message
   # [[ -z $TMUX ]] && prompt_tmux="%F{$_c3}[--tmux]%f " || prompt_tmux=""
 
   # Set editor-info parameters.
   zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
-  zstyle ':prezto:module:editor:info:keymap:primary' format "$prompt_emoji"
-  zstyle ':prezto:module:editor:info:keymap:alternate' format "$alt_emoji%F{$_attn}"
+  zstyle ':prezto:module:editor:info:keymap:primary' format "$(maybe_emoji 🐼) "
+  zstyle ':prezto:module:editor:info:keymap:alternate' format "$(maybe_emoji 🐷) %F{$_attn}"
   zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
 
   # Set vcs_info parameters.
