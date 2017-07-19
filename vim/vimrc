@@ -997,6 +997,15 @@ if s:plug_loaded('fzf.vim')
   " TODO: makes easymotion slow because of <leader>b binding
   "nnoremap <silent> <leader>bf :Buffers<CR>
 
+  function! s:range_enabled_fzf_vim_ag(qargs, bang)
+      let query = a:qargs
+      if len(query) == 0
+          let query = s:get_visual_selection()
+      endif
+      call fzf#vim#ag(query, a:bang)
+  endfunction
+
+  command! -range -bang -nargs=* Ag call s:range_enabled_fzf_vim_ag(<q-args>, <bang>0)
   cnoreabbrev ag Ag
 
   function! s:selection_grep(mode)
