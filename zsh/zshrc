@@ -275,14 +275,14 @@ gr() {
 }
 alias '$'=gr
 
-# if (( $+commands[tag] )); then
-#   tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
-#   alias ag=tag
-# fi
-if (( $+commands[peco] )); then
-  tag() { nvim $(rg -n $1 | peco | awk -F\: '{print "+"$2,$1}') }
-  # alias ag=tag
+if (( $+commands[tag] )); then
+  tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
+  alias ag=tag
 fi
+# if (( $+commands[peco] )); then
+#   tag() { nvim $(rg -n $1 | peco | awk -F\: '{print "+"$2,$1}') }
+#   # alias ag=tag
+# fi
 
 # other
 alias tmp="cd $HOME/tmp"
@@ -365,6 +365,8 @@ if [[ -f ~/.fzf.zsh ]]; then
   export FZF_COMPLETION_TRIGGER='jk'
   export FZF_DEFAULT_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g "" $(git rev-parse --show-toplevel 2>/dev/null)'
   export FZF_CTRL_T_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g ""'
+  #export FZF_DEFAULT_COMMAND='command rg --files --no-ignore --hidden --follow --glob "!.git/*" $(git rev-parse --show-toplevel 2>/dev/null)'
+  #export FZF_CTRL_T_COMMAND='command rg --files --no-ignore --hidden --follow --glob "!.git/*"'
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget
 fi

@@ -30,13 +30,10 @@ let g:plug_dir = '~/.vim/bundle/'
 
 call plug#begin(g:plug_dir)
 
-" Plug 'benekastah/neomake'
-Plug 'ivalkeen/neomake', {'branch': 'place-all-signs'}
+Plug 'neomake/neomake'
 Plug 'christoomey/vim-tmux-navigator'
-" Plug 'drn/zoomwin-vim'
-Plug 'haya14busa/incsearch.vim'
+" Plug 'haya14busa/incsearch.vim'
 Plug 'itchyny/lightline.vim'
-" Plug 'jeetsukumaran/vim-buffergator'
 Plug 'junegunn/vim-easy-align'
 Plug 'kana/vim-textobj-user'
 " Plug 'mhinz/vim-grepper'
@@ -96,10 +93,9 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 
 if has('nvim')
-  " Plug 'Shougo/deoplete.nvim'
-  Plug '~/proj/deoplete.nvim'
+  Plug 'Shougo/deoplete.nvim'
   Plug '~/proj/deoplete-foreign-buffer.nvim'
-  Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
+  " Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
   Plug 'Shougo/neosnippet.vim'
 endif
 
@@ -359,6 +355,7 @@ nnoremap <silent> Y yg_
 nnoremap <silent> yY ^yg_
 nnoremap <silent> dD ^D
 nnoremap <silent> cC ^C
+nnoremap <silent> K i<Enter><Esc>^
 
 " because I suck
 cnoreabbrev W w
@@ -683,6 +680,10 @@ if has('nvim')
 
   function! s:localdterm(...) abort
     let localdir = expand('%:p:h')
+    if localdir =~ "^term://"
+      let termpid = matchlist(localdir, 'term://.//\(\d\+\):')[1]
+      let localdir = system("lsof -p ".termpid." | grep cwd | awk '{print $NF}' | xargs echo -n")
+    endif
     let dirsplit_cmd = join(extend(['DirectionalSplit', 'NONE'], a:000))
     exec dirsplit_cmd." | lcd ".localdir." | term"
   endfunction
@@ -975,9 +976,9 @@ if s:plug_loaded('fzf')
     let from_dir = a:0 ? a:1 : '.'
     let gitroot = s:gitroot(from_dir)
     if empty(gitroot)
-      exec 'FZF --header="Searching from: '.from_dir.'" '.from_dir
+      FZF
     else
-      exec 'FZF -d '.gitroot.' --with-nth=2 --header="Git Repo: '.gitroot.'" '.gitroot
+      exec 'FZF -d '.gitroot.' --with-nth=2 '.gitroot
     endif
   endfunction
   command! -nargs=? -bar GitFZF call s:git_fzf(<f-args>)
@@ -993,7 +994,8 @@ if s:plug_loaded('fzf.vim')
   endfunction
 
   nnoremap <silent> <leader>t :Tags<CR>
-  nnoremap <silent> <leader>bf :Buffers<CR>
+  " TODO: makes easymotion slow because of <leader>b binding
+  "nnoremap <silent> <leader>bf :Buffers<CR>
 
   cnoreabbrev ag Ag
 
@@ -1188,18 +1190,20 @@ endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " incsearch.vim {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set hlsearch
-let g:incsearch#auto_nohlsearch = 1
-map n  <Plug>(incsearch-nohl-n)
-map N  <Plug>(incsearch-nohl-N)
-map *  <Plug>(incsearch-nohl-*)
-map #  <Plug>(incsearch-nohl-#)
-map /  <Plug>(incsearch-forward)
-map ?  <Plug>(incsearch-backward)
-map g/ <Plug>(incsearch-stay)
+if s:plug_loaded('incsearch.vim')
+  set hlsearch
+  let g:incsearch#auto_nohlsearch = 1
+  map n  <Plug>(incsearch-nohl-n)
+  map N  <Plug>(incsearch-nohl-N)
+  map *  <Plug>(incsearch-nohl-*)
+  map #  <Plug>(incsearch-nohl-#)
+  map /  <Plug>(incsearch-forward)
+  map ?  <Plug>(incsearch-backward)
+  map g/ <Plug>(incsearch-stay)
 
-" stay on *
-map <silent> g* :let @/='\<'.expand('<cword>').'\>'<CR>
+  " stay on *
+  map <silent> g* :let @/='\<'.expand('<cword>').'\>'<CR>
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Goyo {{{

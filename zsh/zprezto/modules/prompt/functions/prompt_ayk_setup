@@ -95,7 +95,7 @@ function xterm_title {
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 function virtualenv_info {
   if [[ -n $VIRTUAL_ENV ]]; then
-    _venv="%F{$_c2}[%f$(maybe_emoji 🐍)%F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
+    _venv="%F{$_c2}[%f$(maybe_emoji 🐍) %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
     tmux_setenv VIRTUAL_ENV $VIRTUAL_ENV
   else
     unset _venv
@@ -105,7 +105,7 @@ function virtualenv_info {
 
 function conda_info {
   if [[ -n $CONDA_DEFAULT_ENV ]]; then
-    _cenv="%F{$_c2}[%f$(maybe_emoji 🐉)%F{white}${CONDA_DEFAULT_ENV:t}%f%F{$_c2}]%f"
+    _cenv="%F{$_c2}[%f$(maybe_emoji 🐉) %F{white}${CONDA_DEFAULT_ENV:t}%f%F{$_c2}]%f"
     tmux_setenv CONDA_DEFAULT_ENV $CONDA_DEFAULT_ENV
   else
     unset _cenv
@@ -119,7 +119,7 @@ function docker_mounted {
     local machine_name
     [[ $DOCKER_MACHINE_NAME = "default" ]] && \
       unset machine_name || machine_name=$DOCKER_MACHINE_NAME
-    _docker="%F{$_c2}[%f$(maybe_emoji 🐳)%F{white}${machine_name}%f%F{$_c2}]%f"
+    _docker="%F{$_c2}[%f$(maybe_emoji 🐳) %F{white}${machine_name}%f%F{$_c2}]%f"
     tmux_setenv DOCKER_MACHINE_NAME $DOCKER_MACHINE_NAME
   else
     unset _docker

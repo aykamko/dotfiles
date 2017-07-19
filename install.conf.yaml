@@ -40,6 +40,13 @@
     darwin:
       ~/.zshrc.os: zsh/zshrc.os.darwin
 
+- shell:
+  - description: zsh completions
+    command: |
+      mkdir -p ~/.zsh/completion
+      # docker-compose
+      curl -L https://raw.githubusercontent.com/docker/compose/master/contrib/completion/zsh/_docker-compose > ~/.zsh/completion/_docker-compose
+
 - link:
     ~/.zshenv:
         path: zsh/zshenv

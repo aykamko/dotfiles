@@ -34,6 +34,27 @@ fd() {
   fi
 }
 
+(( $+functions[fei] )) || fei() {
+  local root fzfcmd filter out file key
+  root=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ $? -eq 0 ]]; then
+    filter="--delimiter='$root/' --with-nth=2 --header='Searching from: $root/'"
+  else
+    root=$PWD
+  fi
+  fzfcmd="fzf-tmux $filter --query='$1' --select-1 --exit-0 --expect=ctrl-d,f1"
+  out=$(ag --nocolor --hidden --ignore-dir=.git -U -g '' $root | eval $fzfcmd)
+  key=$(head -1 <<< "$out")
+  file=$(tail -1 <<< "$out")
+  if [[ -n "$file" ]]; then
+    if [[ "$key" = 'ctrl-d' || "$key" = 'f1' ]]; then
+      cd $(dirname "$file")
+    else
+      ${EDITOR:-vim} "$file"
+    fi
+  fi
+}
+
 # From: https://github.com/junegunn/fzf/wiki/Examples
 # fstash - easier way to deal with stashes
 # type fstash to get a list of your stashes

@@ -72,6 +72,14 @@ fi
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
+if [[ -d ~/.zsh/completion ]]; then
+  fpath=(~/.zsh/completion $fpath)
+fi
+
+if [[ -d $HOME/bin ]]; then
+  path=($HOME/bin $path)
+fi
+
 if [[ $UNAME == darwin ]]; then
   # used by Homebrew
   path=(/usr/local/sbin $path)

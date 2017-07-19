@@ -77,7 +77,7 @@
 
     # log
     l = log --graph --date=short
-    ls = log --date=short -n 10
+    ls = "!ls(){ git log --date=short -n ${1:-10} ${@:2}; }; ls"
     l1 = log -n 1 --format=fuller
     ls1 = log -n 1 --format=fuller
     changes = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\" --name-status
@@ -93,8 +93,8 @@
 
     # push
     ps = push
-    sync = "!git push -u ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
-    fsync = "!git push -fu ${1:-origin} `git rev-parse --abbrev-ref HEAD`"
+    sync = "!git push -u ${1:-origin} HEAD"
+    fsync = "!git push -fu ${1:-origin} HEAD"
     track = branch --track
     upstream = branch --track
     shove = push -f # use with caution
@@ -181,17 +181,24 @@
         git checkout \"PR-${1}\"; }; \
         fetch_pr"
 
+    hub = "!hub() { \
+        if [[ $1 != 'http*' ]] && [[ $1 != 'git@*' ]]; then \
+            git clone git@github.com:${1}.git; \
+        else \
+            git clone $1; \
+        fi; }; \
+        hub"
+
 [format]
     pretty = format:%C(blue)%ad%Creset %C(yellow)%h%C(green)%d%Creset %C(blue)%s %C(magenta) [%an]%Creset
 [mergetool]
-    prompt = false
+	prompt = false
 [mergetool "mvimdiff"]
     cmd="vim -c 'Gdiff' $MERGED"     # use fugitive.vim for 3-way merge
     keepbackup=false
 [merge]
     summary = true
     verbosity = 1
-    tool = mvimdiff
 [apply]
     whitespace = nowarn
 [pull]
@@ -224,3 +231,9 @@
 [include]
     path = .gitconfig.user
     path = .gitconfig.os
+[difftool "nbdime"]
+	cmd = git-nbdifftool diff \"$LOCAL\" \"$REMOTE\"
+[difftool]
+	prompt = false
+[mergetool "nbdime"]
+	cmd = git-nbmergetool merge \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"
