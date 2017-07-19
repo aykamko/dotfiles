@@ -13,37 +13,28 @@ fd() {
   [[ -n $dir ]] && cd $dir
 }
 
-(( $+functions[fe] )) || fe() {
+fe() {
   local root fzfcmd filter out file key
   root=$(git rev-parse --show-toplevel 2>/dev/null)
   if [[ $? -eq 0 ]]; then
-    filter="--delimiter='$root/' --with-nth=2 --header='Searching from: $root/'"
+    filter="--header='Searching from: $root/'"
   else
     root=$PWD
   fi
-  fzfcmd="fzf-tmux $filter --query='$1' --select-1 --exit-0 --expect=ctrl-d,f1"
-  out=$(ag --nocolor --hidden --ignore-dir=.git -g '' $root | eval $fzfcmd)
-  key=$(head -1 <<< "$out")
-  file=$(tail -1 <<< "$out")
-  if [[ -n "$file" ]]; then
-    if [[ "$key" = 'ctrl-d' || "$key" = 'f1' ]]; then
-      cd $(dirname "$file")
-    else
-      ${EDITOR:-vim} "$file"
-    fi
-  fi
-}
+  fzfcmd="fzf-tmux --ansi $filter --query='$1' --select-1 --exit-0 --expect=ctrl-d,f1"
+  ylw=$(tput setaf 3)
+  clr=$(tput sgr0)
+  rootlen=$(( ${#root} + 2 ))
+  out=$({
+      # regular files
+      chdir $root && ag --nocolor --hidden --ignore-dir=.git -g '' .;
 
-(( $+functions[fei] )) || fei() {
-  local root fzfcmd filter out file key
-  root=$(git rev-parse --show-toplevel 2>/dev/null)
-  if [[ $? -eq 0 ]]; then
-    filter="--delimiter='$root/' --with-nth=2 --header='Searching from: $root/'"
-  else
-    root=$PWD
-  fi
-  fzfcmd="fzf-tmux $filter --query='$1' --select-1 --exit-0 --expect=ctrl-d,f1"
-  out=$(ag --nocolor --hidden --ignore-dir=.git -U -g '' $root | eval $fzfcmd)
+      # gitignored files
+      git check-ignore $root/**/*(D) 2>/dev/null | while read line; do
+        echo -e "$ylw$line[$rootlen,-1]$clr";
+      done;
+
+    } | eval $fzfcmd)
   key=$(head -1 <<< "$out")
   file=$(tail -1 <<< "$out")
   if [[ -n "$file" ]]; then
@@ -112,6 +103,7 @@ fport() {
     echo "No PID for :$1 found."
   fi
 }
+alias flsof=fport
 
 # From: https://github.com/junegunn/fzf/wiki/Examples
 # v - open files in ~/.viminfo
