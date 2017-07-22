@@ -363,10 +363,20 @@ alias cat=_cat_ls
 if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
-  export FZF_DEFAULT_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g "" $(git rev-parse --show-toplevel 2>/dev/null)'
+
+  # looks very complicated, but this just lists all files and colors gitignored
+  # files in yellow
+  export _FZF_DEFAULT_COMMAND=(
+    'root=$(git rev-parse --show-toplevel 2>/dev/null || echo '.') && '
+    'rootlen=$(( ${#root} + 2 )) && '
+    '{ chdir $root && command ag --nocolor --hidden --ignore-dir=.git -g "" .; '
+    '  git check-ignore $root/**/*(D) 2>/dev/null | while read line; do'
+    '    echo -e "\033[33m$line[$rootlen,-1]\033[0m";'
+    '  done; }'
+  )
+  export FZF_DEFAULT_COMMAND="${_FZF_DEFAULT_COMMAND[*]}"
+
   export FZF_CTRL_T_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g ""'
-  #export FZF_DEFAULT_COMMAND='command rg --files --no-ignore --hidden --follow --glob "!.git/*" $(git rev-parse --show-toplevel 2>/dev/null)'
-  #export FZF_CTRL_T_COMMAND='command rg --files --no-ignore --hidden --follow --glob "!.git/*"'
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget
 fi

@@ -36,7 +36,7 @@ fe() {
 
     } | eval $fzfcmd)
   key=$(head -1 <<< "$out")
-  file=$(tail -1 <<< "$out")
+  file="$root/$(tail -1 <<< "$out")"
   if [[ -n "$file" ]]; then
     if [[ "$key" = 'ctrl-d' || "$key" = 'f1' ]]; then
       cd $(dirname "$file")
@@ -158,7 +158,8 @@ fgit() {
   if [[ -n $1 ]]; then
     pipecmd="(git diff --name-only $1; git ls-files --other --exclude-standard)"
   else
-    pipecmd="(git diff --name-only $(git merge-base HEAD master); git ls-files --other --exclude-standard)"
+    # pipecmd="(git diff --name-only $(git merge-base HEAD master); git ls-files --other --exclude-standard)"
+    pipecmd="(git diff --name-only $(git merge-base HEAD dev); git ls-files --other --exclude-standard)"
   fi
 
   out=$(eval $pipecmd | \

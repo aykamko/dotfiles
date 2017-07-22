@@ -1,0 +1,4 @@
+#!/bin/bash
+flake8-2space-reindent ${@:$#} | flake8 ${*%${!#}} - | while read line; do
+    echo "${@:$#}${line:5:${#line}-1}"
+done

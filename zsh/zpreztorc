@@ -14,7 +14,7 @@ zstyle ':prezto:load' pmodule \
   'directory' \
   'spectrum' \
   'utility' \
-  'completion_insecure' \
+  'completion' \
   'syntax-highlighting' \
   'history-substring-search' \
   'prompt'

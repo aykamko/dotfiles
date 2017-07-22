@@ -63,7 +63,7 @@ Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 " Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
-Plug 'hynek/vim-python-pep8-indent', { 'for': 'python' }
+Plug 'aykamko/vim-python-pep8-indent', { 'for': 'python' }
 Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
 Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
@@ -93,8 +93,8 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 
 if has('nvim')
-  Plug 'Shougo/deoplete.nvim'
-  Plug '~/proj/deoplete-foreign-buffer.nvim'
+  Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+  " Plug '~/proj/deoplete-foreign-buffer.nvim'
   " Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
   Plug 'Shougo/neosnippet.vim'
 endif
@@ -119,10 +119,10 @@ end
 call plug#end()
 filetype plugin indent on " required
 
-function! s:plug_loaded(plug_name) abort
+function! PlugLoaded(plug_name) abort
   return !empty(get(g:plugs, a:plug_name))
 endfunction
-command! -nargs=1 PlugLoaded echo s:plug_loaded(<f-args>)
+command! -nargs=1 PlugLoaded echo PlugLoaded(<f-args>)
 
 if !empty(gitroot)
   exec 'cd '.gitroot
@@ -319,7 +319,7 @@ augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Indentation {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set shiftwidth=4
+set shiftwidth=8
 set tabstop=4
 set softtabstop=4
 set expandtab
@@ -862,7 +862,7 @@ nnoremap <leader>a :A<CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " deoplete {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if s:plug_loaded('deoplete.nvim')
+if PlugLoaded('deoplete.nvim')
   let g:deoplete#enable_at_startup = 1
 
   imap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "<Tab>"
@@ -879,7 +879,7 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " neosnippet {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if s:plug_loaded('neosnippet.vim')
+if PlugLoaded('neosnippet.vim')
   let g:neosnippet#snippets_directory = $HOME.'/.vim/snippets'
   let g:neosnippet#disable_runtime_snippets = {
         \ '_': 1,
@@ -893,7 +893,7 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Neomake {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if s:plug_loaded('neomake')
+if PlugLoaded('neomake')
   let g:neomake_verbose = 0 " useful for debug
 
   exec "highlight! NeomakeError ctermfg=red guifg=".GetHiKey('Error', 'guifg')
@@ -908,19 +908,35 @@ if s:plug_loaded('neomake')
         \ 'texthl': 'NeomakeWarning',
         \ }
 
-  if executable('pylama')
-    function! NeomakePylamaPostprocess(entry)
-      if a:entry.text =~ 'pycodestyle'
-        let a:entry.type = 'W'  " pycodestyle shouldn't give 'errors'
-      endif
-    endfunction
-    let g:neomake_python_pylama_maker = {
-        \ 'args': ['--format', 'pycodestyle', '-o', $HOME.'/.config/pylama'],
-        \ 'errorformat': '%f:%l:%c: %t%m',
-        \ 'postprocess': function('NeomakePylamaPostprocess'),
-        \ }
-    let g:neomake_python_enabled_makers = ['pylama']
+  if executable('flake8-2sp')
+    let g:neomake_python_2spflake8_maker = {
+          \ 'args': ['--format=default', '--max-line-length=100'],
+          \ 'errorformat':
+              \ '%E%f:%l: could not compile,%-Z%p^,' .
+              \ '%A%f:%l:%c: %t%n %m,' .
+              \ '%A%f:%l: %t%n %m,' .
+              \ '%-G%.%#',
+          \ 'postprocess': function('neomake#makers#ft#python#Flake8EntryProcess'),
+          \ 'exe': 'flake8-2sp',
+          \ }
+    let g:neomake_python_enabled_makers = ['2spflake8']
   endif
+
+  " TODO(aleks, 07/22/17): deprecate in favor of flake8 eventually
+  " if executable('pylama')
+  "   function! NeomakePylamaPostprocess(entry)
+  "     if a:entry.text =~ 'pycodestyle'
+  "       let a:entry.type = 'W'  " pycodestyle shouldn't give 'errors'
+  "     endif
+  "   endfunction
+  "   let g:neomake_python_pylama_maker = {
+  "       \ 'args': ['--format', 'pycodestyle', '-o', $HOME.'/.config/pylama'],
+  "       \ 'errorformat': '%f:%l:%c: %t%m',
+  "       \ 'postprocess': function('NeomakePylamaPostprocess'),
+  "       \ }
+  "   let g:neomake_python_enabled_makers = ['pylama']
+  " endif
+
   let g:neomake_tex_enabled_makers = []
 
   function! ToggleLocationList()
@@ -961,7 +977,7 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if s:plug_loaded('fzf')
+if PlugLoaded('fzf')
   cnoreabbrev fzf FZF
   cnoreabbrev f FZF
 
@@ -978,7 +994,7 @@ if s:plug_loaded('fzf')
     if empty(gitroot)
       FZF
     else
-      exec 'FZF -d '.gitroot.' --with-nth=2 '.gitroot
+      exec 'FZF '.gitroot
     endif
   endfunction
   command! -nargs=? -bar GitFZF call s:git_fzf(<f-args>)
@@ -988,7 +1004,7 @@ if s:plug_loaded('fzf')
   nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
 end
 
-if s:plug_loaded('fzf.vim')
+if PlugLoaded('fzf.vim')
   function! s:fzf(opts)
     call fzf#run(extend(fzf#vim#wrap(a:opts), fzf#vim#layout()))
   endfunction
@@ -1062,7 +1078,7 @@ augroup TextobjUserSetup
 augroup END
 
 function! TextobjUserSetup()
-  if s:plug_loaded('vim-textobj-user')
+  if PlugLoaded('vim-textobj-user')
     " textobj for current line
     " Copied from: https://github.com/kana/vim-textobj-user
     call textobj#user#plugin('line', {
@@ -1199,7 +1215,7 @@ endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " incsearch.vim {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if s:plug_loaded('incsearch.vim')
+if PlugLoaded('incsearch.vim')
   set hlsearch
   let g:incsearch#auto_nohlsearch = 1
   map n  <Plug>(incsearch-nohl-n)
@@ -1402,4 +1418,8 @@ command! -nargs=* -bar TF TestFile <args>
 let g:vimtex_view_general_viewer = '/Applications/Skim.app/Contents/SharedSupport/displayline'
 let g:vimtex_view_general_options = '-r @line @pdf @tex'
 let g:vimtex_view_general_options_latexmk = '-r 1'
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" vimtex {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:pep8_setlocal_indent = 0
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
