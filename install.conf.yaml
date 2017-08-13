@@ -66,8 +66,8 @@
     ~/.zprezto/modules/prompt/functions/prompt_ayk_setup:
         path: zsh/zprezto/modules/prompt/functions/prompt_ayk_setup
         relink: true
-    ~/.zprezto/modules/completion_insecure:
-        path: zsh/zprezto/modules/completion_insecure
+    ~/.zprezto/modules/fast-syntax-highlighting:
+        path: zsh/zprezto/modules/fast-syntax-highlighting
         relink: true
 
 

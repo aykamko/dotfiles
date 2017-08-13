@@ -15,7 +15,7 @@ zstyle ':prezto:load' pmodule \
   'spectrum' \
   'utility' \
   'completion' \
-  'syntax-highlighting' \
+  'fast-syntax-highlighting' \
   'history-substring-search' \
   'prompt'
   # 'completion' \

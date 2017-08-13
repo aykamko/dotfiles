@@ -8,3 +8,6 @@
 [submodule "vim-profiler"]
 	path = vim-profiler
 	url = https://github.com/bchretien/vim-profiler
+[submodule "fast-syntax-highlighting"]
+	path = fast-syntax-highlighting
+	url = https://github.com/zdharma/fast-syntax-highlighting

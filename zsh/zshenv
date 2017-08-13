@@ -13,14 +13,14 @@ if [[ -o INTERACTIVE ]]; then
   #######################################
   #######################################
 
-  ZSH_PROFILE_STARTUP=1
+  ZSH_PROFILE_STARTUP=0
 
   #######################################
   #######################################
 
   if (( $ZSH_PROFILE_STARTUP )); then
     setopt promptsubst
-    ZSH_PROFILER_LOG="$HOME/temp/zsh_startlog/${"$(date +%s)":6}_$$"
+    ZSH_PROFILER_LOG="$HOME/tmp/zsh_startlog/${"$(date +%s)":6}_$$"
     mkdir -p ${ZSH_PROFILER_LOG:a:h}
 
     PS4=$'+$EPOCHREALTIME %N:%i> '

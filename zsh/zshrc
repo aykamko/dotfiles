@@ -106,8 +106,8 @@ alias rrm='command rm'
 
 alias unixtime='date +%s'
 
-alias vimrc='vi ~/.vimrc'
-alias vis='vi -u ~/.vim/vimrc_small'
+alias vimrc='vim ~/.vimrc'
+alias vis='vim -u ~/.vim/vimrc_small'
 alias vimrc_small='vis ~/.vim/vimrc_small'
 
 vim-profile() {
@@ -135,28 +135,61 @@ vimreplace() {
   vim -c "bufdo set eventignore-=Syntax | %s/$1/$2/gec | update" ${matches}
 }
 
-# Facebook Path Picker
-alias pp=fpp
-
 # zsh
 alias zshso='source ~/.zshrc'
-alias zshenv='vi ~/.zshenv'
-alias zshrc='vi ~/.zshrc'
-alias zprofile='vi ~/.zprofile'
-alias zpreztorc='vi ~/.zpreztorc'
-alias zlogin='vi ~/.zlogin'
-alias zlocal='vi ~/.zshrc.local'
+alias zshenv='vim ~/.zshenv'
+alias zshrc='vim ~/.zshrc'
+alias zprofile='vim ~/.zprofile'
+alias zpreztorc='vim ~/.zpreztorc'
+alias zlogin='vim ~/.zlogin'
+alias zlocal='vim ~/.zshrc.local'
 
 # git
-alias gitconfig='vi ~/.gitconfig'
-alias gitignore_global='vi ~/.gitignore_global'
+alias gitconfig='vim ~/.gitconfig'
+alias gitignore_global='vim ~/.gitignore_global'
 alias gs='git status'
+rg_git_list() {
+  # lists all files in a git repository, marking ignored files as yellow
+  local root is_git_dir
+  if [[ -n $1 ]]; then
+    root=$1
+    is_git_dir=1
+  else
+    root=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ $? -eq 0 ]]; then
+      is_git_dir=1
+    else
+      is_git_dir=0
+      root=$PWD
+    fi
+  fi
+
+  local rg_args_inverse_git_ignore=()
+  if [[ is_git_dir -eq 1 && -f $root/.gitignore ]]; then
+    cat $root/.gitignore | while read rule; do
+      rg_args_inverse_git_ignore+=("-g $rule")
+    done
+  fi
+
+  local ylw=$(tput setaf 3)
+  local clr=$(tput sgr0)
+  {
+    # regular files
+    chdir $root && rg --files;
+
+    # gitignored files
+    if [[ is_git_dir -eq 1 && -f $root/.gitignore ]]; then
+      chdir $root && rg --no-ignore-vcs $(echo ${rg_args_inverse_git_ignore[@]}) --files | \
+        while read match; do echo -e "$ylw$match$clr"; done;
+    fi;
+  }
+}
 
 # tmux
 alias t='tmux'
 alias tl='tmux ls'
 alias detach='tmux detach'
-alias tmuxconf="vi ~/.tmux.conf"
+alias tmuxconf="vim ~/.tmux.conf"
 alias tconf='tmuxconf'
 alias tname='tmux rename-session'
 tswap() {
@@ -226,15 +259,6 @@ if [[ -n $CONDA_DEFAULT_ENV ]]; then
   source activate $CONDA_DEFAULT_ENV
 fi
 
-# if (( $+commands[pylama] )); then
-#   pylama() { # pylama should use pylama.ini at root of git repo
-#     local gitroot=$(git rev-parse --show-toplevel 2>/dev/null)
-#     [[ $? -ne 0 || $* == *"-o"* || $* == *"--options"* ]] && \
-#       pylama $* || \
-#       pylama --options "${gitroot}/pylama.ini" "$@"
-#   }
-# fi
-
 # modified from http://unix.stackexchange.com/questions/13464
 upsearch() {
   local curdir="$PWD"
@@ -265,7 +289,6 @@ fi
 # fi
 
 # git
-# (( $+commands[hub] )) && alias git=hub TODO: fix hub branch completion
 alias g='git'
 
 # context from root of git directory
@@ -308,8 +331,6 @@ if (( $+commands[fpp] )); then
   alias lp='last | fpp'
 fi
 
-alias vssh='vagrant up && vagrant ssh'
-
 psag() {
   ps aux | ag "[${1[1]}]${1[2,-1]}"
 }
@@ -321,13 +342,15 @@ pskill() {
 ###############################################################################
 # Builtin overrides
 ###############################################################################
-[[ $UNAME == darwin ]] && \
-  alias fancyls="ls -G" || \
+if [[ $UNAME == darwin ]]; then
+  alias fancyls="ls -G"
+else
   alias fancyls="ls --group-directories-first --color=auto"
+fi
 
-# override cd to do ls and vi when necessary
-_better_cd() {
-  set -- ${1//,/.} # replace commas (,) with periods (.) [looking at u Golang]
+# override cd to do ls and vim when necessary
+better_cd() {
+  set -- ${1//,/.} # replace commas , with periods . (looking at u Golang)
   if [[ -f $1 ]]; then
     local fdir=$(dirname $1)
     [[ -d $fdir ]] && builtin cd $fdir && fancyls && vim $(basename $1) ${*:2}
@@ -335,15 +358,11 @@ _better_cd() {
     builtin cd "$@" && fancyls
   fi
 }
-alias cd=_better_cd
+alias cd=better_cd
 
 # tab completion in dotfiles directory
 dotfiles() { cd $DOTFILES/$1; }
 compctl -f -W $DOTFILES/ dotfiles
-
-# override cat
-_cat_ls() { [[ -d $1 ]] && fancyls $1 || command cat "$@"; }
-alias cat=_cat_ls
 
 ###############################################################################
 # Special Settings
@@ -364,19 +383,9 @@ if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
 
-  # looks very complicated, but this just lists all files and colors gitignored
-  # files in yellow
-  export _FZF_DEFAULT_COMMAND=(
-    'root=$(git rev-parse --show-toplevel 2>/dev/null || echo '.') && '
-    'rootlen=$(( ${#root} + 2 )) && '
-    '{ chdir $root && command ag --nocolor --hidden --ignore-dir=.git -g "" .; '
-    '  git check-ignore $root/**/*(D) 2>/dev/null | while read line; do'
-    '    echo -e "\033[33m$line[$rootlen,-1]\033[0m";'
-    '  done; }'
-  )
-  export FZF_DEFAULT_COMMAND="${_FZF_DEFAULT_COMMAND[*]}"
+  export FZF_DEFAULT_COMMAND="$(which rg_git_list); rg_git_list"
+  export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
 
-  export FZF_CTRL_T_COMMAND='command ag --nocolor --hidden --ignore-dir=.git -g ""'
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget
 fi
@@ -384,9 +393,10 @@ fi
 ###############################################################################
 # direnv
 ###############################################################################
-if (( $+commands[direnv] )); then
-  eval "$(direnv hook zsh)"
-fi
+# TODO(aleks, 08/13/17): too slow
+# if (( $+commands[direnv] )); then
+#   eval "$(direnv hook zsh)"
+# fi
 
 ###############################################################################
 # zsh scripts

@@ -14,7 +14,7 @@ fd() {
 }
 
 fe() {
-  local root fzfcmd filter out file key
+  local root filter out file key
   root=$(git rev-parse --show-toplevel 2>/dev/null)
   if [[ $? -eq 0 ]]; then
     is_git_dir=1
@@ -24,27 +24,8 @@ fe() {
     root=$PWD
   fi
 
-  ylw=$(tput setaf 3)
-  clr=$(tput sgr0)
-
-  rg_args_inverse_git_ignore=()
-  if [[ is_git_dir -eq 1 && -f $root/.gitignore ]]; then
-    cat $root/.gitignore | while read rule; do
-      rg_args_inverse_git_ignore+=("-g $rule")
-    done
-  fi
-
-  out=$({
-      # regular files
-      chdir $root && rg --files;
-
-      # gitignored files
-      if [[ is_git_dir -eq 1 && -f $root/.gitignore ]]; then
-        chdir $root && rg --no-ignore-vcs $(echo ${rg_args_inverse_git_ignore[@]}) --files | \
-          while read match; do echo -e "$ylw$match$clr"; done;
-      fi;
-
-    } | fzf-tmux --ansi $filter --query="$1" --select-1 --exit-0 --expect=ctrl-d,f1)
+  out=$(rg_git_list $root | \
+      fzf-tmux --ansi $filter --query="$1" --select-1 --exit-0 --expect=ctrl-d,f1)
 
   # don't do anything if we don't pick a file
   if [[ -z $out ]]; then return; fi
