@@ -199,7 +199,7 @@ alias jl=julia
 
 # python
 alias ipy3=ipython3
-alias ipy=ipython
+alias ipy=ipython2
 alias py=python
 alias py3=python3
 venv() {

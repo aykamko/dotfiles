@@ -1,4 +1,74 @@
-#!/bin/bash
-flake8-2space-reindent ${@:$#} | flake8 ${*%${!#}} - | while read line; do
-    echo "${@:$#}${line:5:${#line}-1}"
-done
+#!/usr/bin/env python
+"""
+Monkeypatch some key methods in flake8 to support 2-indent style.
+"""
+import sys
+import re
+
+from flake8 import processor, style_guide
+from flake8.main import cli
+
+
+OPEN_CALL_RE = re.compile(r'\((?!.*\()[^\)\n]+$')
+CLOSE_CALL_RE = re.compile(r'^[^\(]*\).*')
+LEADING_SPACE_RE = re.compile(r'^[ ]*')
+INDENT_MEMO_BY_FILE = {}  # need to memoize to fix column shifting issues
+
+
+def sp2_read_lines(self):
+    indent_memo = [None]  # 1-indexed line numbers
+    INDENT_MEMO_BY_FILE[self.filename] = indent_memo
+
+    lines = self.sp4_read_lines()
+    line_iter = iter(lines)
+    sp2_lines = []
+    for line in line_iter:
+        leading_space = LEADING_SPACE_RE.search(line).group(0)
+        indent_memo.append(len(leading_space))
+        sp2_lines.append(leading_space + line)
+
+        # this janky code is necessary to support hanging indentation
+        open_m = OPEN_CALL_RE.search(line)
+        if open_m:
+            peek = next(line_iter)
+            indent_memo.append(len(leading_space))
+            sp2_lines.append(leading_space + peek)
+            while not CLOSE_CALL_RE.match(peek):
+                peek = next(line_iter)
+                indent_memo.append(len(leading_space))
+                sp2_lines.append(leading_space + peek)
+
+    return sp2_lines
+
+
+LINE_TOO_LONG_RE = re.compile(r'^line too long \((\d+) > (\d+)')
+
+
+def sp2_handle_error(self, code, filename, line_number, column_number, text,
+                     physical_line=None):
+    indent_memo = INDENT_MEMO_BY_FILE[filename]
+
+    if code == 'E501':  # line too long
+        m = LINE_TOO_LONG_RE.search(text)
+        counted, limit = int(m.group(1)), int(m.group(2))
+        adjusted = counted - indent_memo[line_number]
+        if adjusted <= limit:
+            return 0  # ignore this 'faulty' error
+        text = 'line too long ({} > {} characters)'.format(adjusted, limit)
+    else:
+        column_number -= indent_memo[line_number]  # adjust column offset
+
+    return self.sp4_handle_error(code, filename, line_number, column_number, text, physical_line)
+
+
+# do the actual monkey patching
+sp4_read_lines = processor.FileProcessor.read_lines
+processor.FileProcessor.sp4_read_lines = sp4_read_lines
+processor.FileProcessor.read_lines = sp2_read_lines
+sp4_handle_error = style_guide.StyleGuide.handle_error
+style_guide.StyleGuide.sp4_handle_error = sp4_handle_error
+style_guide.StyleGuide.handle_error = sp2_handle_error
+
+
+if __name__ == '__main__':
+    cli.main(sys.argv[1:])

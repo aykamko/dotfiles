@@ -6,8 +6,8 @@ fd() {
   else
     root=$PWD
   fi
-  fzfcmd="fzf-tmux $filter --query='$1' --select-1 --exit-0"
-  out=$(find -L $root -type d -not -path '*\/\.*' | eval $fzfcmd)
+  out=$(find -L $root -type d -not -path '*\/\.*' | \
+      eval fzf-tmux $filter --query="$1" --select-1 --exit-0)
   key=$(head -1 <<< "$out")
   dir=$(tail -1 <<< "$out")
   [[ -n $dir ]] && cd $dir
@@ -17,32 +17,44 @@ fe() {
   local root fzfcmd filter out file key
   root=$(git rev-parse --show-toplevel 2>/dev/null)
   if [[ $? -eq 0 ]]; then
+    is_git_dir=1
     filter="--header='Searching from: $root/'"
   else
+    is_git_dir=0
     root=$PWD
   fi
-  fzfcmd="fzf-tmux --ansi $filter --query='$1' --select-1 --exit-0 --expect=ctrl-d,f1"
+
   ylw=$(tput setaf 3)
   clr=$(tput sgr0)
-  rootlen=$(( ${#root} + 2 ))
+
+  rg_args_inverse_git_ignore=()
+  if [[ is_git_dir -eq 1 && -f $root/.gitignore ]]; then
+    cat $root/.gitignore | while read rule; do
+      rg_args_inverse_git_ignore+=("-g $rule")
+    done
+  fi
+
   out=$({
       # regular files
-      chdir $root && ag --nocolor --hidden --ignore-dir=.git -g '' .;
+      chdir $root && rg --files;
 
       # gitignored files
-      git check-ignore $root/**/*(D) 2>/dev/null | while read line; do
-        echo -e "$ylw$line[$rootlen,-1]$clr";
-      done;
+      if [[ is_git_dir -eq 1 && -f $root/.gitignore ]]; then
+        chdir $root && rg --no-ignore-vcs $(echo ${rg_args_inverse_git_ignore[@]}) --files | \
+          while read match; do echo -e "$ylw$match$clr"; done;
+      fi;
 
-    } | eval $fzfcmd)
+    } | fzf-tmux --ansi $filter --query="$1" --select-1 --exit-0 --expect=ctrl-d,f1)
+
+  # don't do anything if we don't pick a file
+  if [[ -z $out ]]; then return; fi
+
   key=$(head -1 <<< "$out")
   file="$root/$(tail -1 <<< "$out")"
-  if [[ -n "$file" ]]; then
-    if [[ "$key" = 'ctrl-d' || "$key" = 'f1' ]]; then
-      cd $(dirname "$file")
-    else
-      ${EDITOR:-vim} "$file"
-    fi
+  if [[ "$key" = 'ctrl-d' || "$key" = 'f1' ]]; then
+    cd $(dirname "$file")
+  else
+    ${EDITOR:-vim} "$file"
   fi
 }
 
@@ -158,8 +170,8 @@ fgit() {
   if [[ -n $1 ]]; then
     pipecmd="(git diff --name-only $1; git ls-files --other --exclude-standard)"
   else
-    # pipecmd="(git diff --name-only $(git merge-base HEAD master); git ls-files --other --exclude-standard)"
-    pipecmd="(git diff --name-only $(git merge-base HEAD dev); git ls-files --other --exclude-standard)"
+    base_branch=$(git symbolic-ref refs/remotes/origin/HEAD)
+    pipecmd="(git diff --name-only $(git merge-base HEAD $base_branch); git ls-files --other --exclude-standard)"
   fi
 
   out=$(eval $pipecmd | \

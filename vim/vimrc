@@ -31,6 +31,7 @@ let g:plug_dir = '~/.vim/bundle/'
 call plug#begin(g:plug_dir)
 
 Plug 'neomake/neomake'
+Plug 'sbdchd/neoformat'
 Plug 'christoomey/vim-tmux-navigator'
 " Plug 'haya14busa/incsearch.vim'
 Plug 'itchyny/lightline.vim'
@@ -63,7 +64,7 @@ Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 " Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
-Plug 'aykamko/vim-python-pep8-indent', { 'for': 'python' }
+Plug 'Vimjas/vim-python-pep8-indent',{ 'for': 'python' }
 Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
 Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
@@ -140,6 +141,7 @@ let maplocalleader = ' '
 
 let s:E = '✖'
 let s:W = '▲'
+let s:OK = '✓'
 
 " workaround for pyenv
 " let g:python_version = matchstr(system("python --version 2>&1 | cut -f2 -d' '"), '^[0-9]')
@@ -714,6 +716,8 @@ endif
 command! ProfileStart profile start ~/temp/profile.log | profile func * | profile file *
 command! ProfileDone profile pause | noautocmd qall!
 
+command! PWD echo expand('%:p:h')
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " tComment {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -728,7 +732,7 @@ set laststatus=2   " Always show the statusline
 let g:lightline = {
       \   'colorscheme': 'Tomorrow_Night',
       \   'active': {
-      \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_err', 'syntax_war']],
+      \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_green', 'syntax_err', 'syntax_war']],
       \     'right': [['lineinfo'], ['fugitive'], ['filetype']]
       \   },
       \   'inactive': {
@@ -743,6 +747,7 @@ let g:lightline = {
       \   },
       \   'component_expand' : {
       \     'fugitive': 'FugitiveHead',
+      \     'syntax_green': 'SyntaxGreen',
       \     'syntax_err': 'SyntaxError',
       \     'syntax_war': 'SyntaxWarning',
       \   },
@@ -768,6 +773,11 @@ function! SyntaxWarning()
   let counts = neomake#statusline#LoclistCounts()
   if !has_key(counts, 'W') | return '' | endif
   return printf('%s %d', s:W, counts['W'])
+endfunction
+function! SyntaxGreen()
+  if !exists('*neomake#statusline#LoclistCounts') | return '' | endif
+  if empty(SyntaxError().SyntaxWarning()) | return s:OK | endif
+  return ''
 endfunction
 
 " mode
@@ -908,35 +918,13 @@ if PlugLoaded('neomake')
         \ 'texthl': 'NeomakeWarning',
         \ }
 
-  if executable('flake8-2sp')
-    let g:neomake_python_2spflake8_maker = {
-          \ 'args': ['--format=default', '--max-line-length=100'],
-          \ 'errorformat':
-              \ '%E%f:%l: could not compile,%-Z%p^,' .
-              \ '%A%f:%l:%c: %t%n %m,' .
-              \ '%A%f:%l: %t%n %m,' .
-              \ '%-G%.%#',
-          \ 'postprocess': function('neomake#makers#ft#python#Flake8EntryProcess'),
-          \ 'exe': 'flake8-2sp',
-          \ }
-    let g:neomake_python_enabled_makers = ['2spflake8']
+  if executable('pylint')
+    let g:neomake_python_enabled_makers = ['pylint']
+
+    let s:pylint_rcfile_path = '/Users/aleks/crowdai/inca/pylintrc'
+    let g:neomake_python_pylint_maker = neomake#makers#ft#python#pylint()
+    let g:neomake_python_pylint_maker.args += ['--rcfile='.s:pylint_rcfile_path]
   endif
-
-  " TODO(aleks, 07/22/17): deprecate in favor of flake8 eventually
-  " if executable('pylama')
-  "   function! NeomakePylamaPostprocess(entry)
-  "     if a:entry.text =~ 'pycodestyle'
-  "       let a:entry.type = 'W'  " pycodestyle shouldn't give 'errors'
-  "     endif
-  "   endfunction
-  "   let g:neomake_python_pylama_maker = {
-  "       \ 'args': ['--format', 'pycodestyle', '-o', $HOME.'/.config/pylama'],
-  "       \ 'errorformat': '%f:%l:%c: %t%m',
-  "       \ 'postprocess': function('NeomakePylamaPostprocess'),
-  "       \ }
-  "   let g:neomake_python_enabled_makers = ['pylama']
-  " endif
-
   let g:neomake_tex_enabled_makers = []
 
   function! ToggleLocationList()
@@ -975,6 +963,16 @@ if PlugLoaded('neomake')
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" neoformat {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if executable('yapf')
+  let g:neoformat_python_yapf = neoformat#formatters#python#yapf()
+  let s:yapf_style_path = '/Users/aleks/crowdai/inca/style.yapf'
+  let g:neoformat_python_yapf.args = ['--style='.s:yapf_style_path]
+  let g:neoformat_enabled_python = ['yapf']
+endif
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if PlugLoaded('fzf')
@@ -1000,7 +998,6 @@ if PlugLoaded('fzf')
   command! -nargs=? -bar GitFZF call s:git_fzf(<f-args>)
 
   nnoremap <silent> <leader>j :call <SID>git_fzf()<CR>
-  nnoremap <silent> <leader>o :echo 'Use j instead bruh'<CR>
   nnoremap <silent> <leader>. :call <SID>git_fzf(expand('%:p:h'))<CR>
 end
 
@@ -1339,10 +1336,10 @@ augroup vimrc_filetype
   autocmd BufNewFile,BufReadPost *.ssc,*.scala set filetype=scala
   autocmd BufNewFile,BufReadPost *.md set filetype=markdown
   autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
-  autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 ts=2 sts=2 et
+  autocmd FileType c,cpp,vim,javascript,coffee,html,jinja,python setl sw=2 ts=2 sts=2 et
   autocmd BufNewFile,BufReadPost PULLREQ_EDITMSG set filetype=markdown.ghpull
   autocmd BufNewFile,BufReadPost COMMIT_EDITMSG call s:git_commit_ft()
-  autocmd Filetype tex,markdown,markdown.ghpull,noft,text
+  autocmd Filetype tex,markdown,markdown.ghpull,noft,text,bash,sh
         \ set wrap |
         \ set breakindent |
         \ set linebreak |
@@ -1412,14 +1409,14 @@ let test#strategy = {
 command! -nargs=* -bar TN TestNearest <args>
 command! -nargs=* -bar TF TestFile <args>
 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vimtex {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:vimtex_view_general_viewer = '/Applications/Skim.app/Contents/SharedSupport/displayline'
 let g:vimtex_view_general_options = '-r @line @pdf @tex'
 let g:vimtex_view_general_options_latexmk = '-r 1'
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-python-pep8-indent {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" vimtex {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:pep8_setlocal_indent = 0
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:python_pep8_hanging_indent_width = 4
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
