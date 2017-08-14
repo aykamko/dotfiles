@@ -95,6 +95,7 @@ Plug 'mxw/vim-jsx'
 
 if has('nvim')
   Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+  Plug 'zchee/deoplete-jedi', { 'for': 'python' }
   " Plug '~/proj/deoplete-foreign-buffer.nvim'
   " Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
   Plug 'Shougo/neosnippet.vim'
@@ -238,6 +239,9 @@ endif
 if has('nvim') && empty($SSH_CLIENT) " mosh doesn't support 24-bit color
   set termguicolors
 endif
+" if s:tmux
+"   let TERM='tmux-256color'
+" endif
 syntax enable
 " set lazyredraw  " lifesaver
 

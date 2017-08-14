@@ -13,12 +13,13 @@ if [[ -o INTERACTIVE ]]; then
   #######################################
   #######################################
 
-  ZSH_PROFILE_STARTUP=0
+  ZSH_XTRACE_STARTUP=0
+  ZSH_ZPROF=0
 
   #######################################
   #######################################
 
-  if (( $ZSH_PROFILE_STARTUP )); then
+  if (( $ZSH_XTRACE_STARTUP )); then
     setopt promptsubst
     ZSH_PROFILER_LOG="$HOME/tmp/zsh_startlog/${"$(date +%s)":6}_$$"
     mkdir -p ${ZSH_PROFILER_LOG:a:h}
@@ -26,6 +27,10 @@ if [[ -o INTERACTIVE ]]; then
     PS4=$'+$EPOCHREALTIME %N:%i> '
     exec 3>&2 2>$ZSH_PROFILER_LOG
     setopt xtrace prompt_subst
+  fi
+
+  if (( $ZSH_ZPROF )); then
+    zmodload zsh/zprof
   fi
 
   ZSH_START_TIME=$EPOCHREALTIME
