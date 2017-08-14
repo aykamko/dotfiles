@@ -76,6 +76,10 @@ if [[ -d ~/.zsh/completion ]]; then
   fpath=(~/.zsh/completion $fpath)
 fi
 
+if [[ -d $DOTFILES/zsh/functions ]]; then
+  fpath=($DOTFILES/zsh/functions $fpath)
+fi
+
 if [[ -d $HOME/bin ]]; then
   path=($HOME/bin $path)
 fi

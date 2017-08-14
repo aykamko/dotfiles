@@ -16,13 +16,22 @@ _really_hide='234'
 _hide='240'
 _attn='14'
 
+typeset -gA EMOJI
+EMOJI=(
+  'primary' '🦆'
+  'alt' '🐼'
+  'docker' '🐳'
+  'venv' '🐍'
+  'conda' '🐉'
+)
+
 typeset -gA EMOJI_ALTS
 EMOJI_ALTS=(
-  "🐼" "❯"
-  "🐷" "%F{$_c3}✱%f"
-  "🐳" "%F{$_c1}d:%f"
-  "🐍" "%F{$_c6}v:%f"
-  "🐉" "%F{$_c6}c:%f"
+  "$EMOJI[primary]" "❯"
+  "$EMOJI[alt]" "%F{$_c3}✱%f"
+  "$EMOJI[docker]" "%F{$_c1}d:%f"
+  "$EMOJI[venv]" "%F{$_c6}v:%f"
+  "$EMOJI[conda]" "%F{$_c6}c:%f"
 )
 function maybe_emoji() {
   if [[ -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
@@ -95,7 +104,7 @@ function xterm_title {
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 function virtualenv_info {
   if [[ -n $VIRTUAL_ENV ]]; then
-    _venv="%F{$_c2}[%f$(maybe_emoji 🐍) %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
+    _venv="%F{$_c2}[%f$(maybe_emoji $EMOJI[venv]) %F{white}${VIRTUAL_ENV:t}%f%F{$_c2}]%f"
     tmux_setenv VIRTUAL_ENV $VIRTUAL_ENV
   else
     unset _venv
@@ -105,7 +114,7 @@ function virtualenv_info {
 
 function conda_info {
   if [[ -n $CONDA_DEFAULT_ENV ]]; then
-    _cenv="%F{$_c2}[%f$(maybe_emoji 🐉) %F{white}${CONDA_DEFAULT_ENV:t}%f%F{$_c2}]%f"
+    _cenv="%F{$_c2}[%f$(maybe_emoji $EMOJI[conda]) %F{white}${CONDA_DEFAULT_ENV:t}%f%F{$_c2}]%f"
     tmux_setenv CONDA_DEFAULT_ENV $CONDA_DEFAULT_ENV
   else
     unset _cenv
@@ -119,7 +128,7 @@ function docker_mounted {
     local machine_name
     [[ $DOCKER_MACHINE_NAME = "default" ]] && \
       unset machine_name || machine_name=$DOCKER_MACHINE_NAME
-    _docker="%F{$_c2}[%f$(maybe_emoji 🐳) %F{white}${machine_name}%f%F{$_c2}]%f"
+    _docker="%F{$_c2}[%f$(maybe_emoji $EMOJI[docker]) %F{white}${machine_name}%f%F{$_c2}]%f"
     tmux_setenv DOCKER_MACHINE_NAME $DOCKER_MACHINE_NAME
   else
     unset _docker
@@ -168,8 +177,8 @@ function prompt_ayk_setup {
 
   # Set editor-info parameters.
   zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
-  zstyle ':prezto:module:editor:info:keymap:primary' format "$(maybe_emoji 🐼) "
-  zstyle ':prezto:module:editor:info:keymap:alternate' format "$(maybe_emoji 🐷) %F{$_attn}"
+  zstyle ':prezto:module:editor:info:keymap:primary' format "$(maybe_emoji $EMOJI[primary]) "
+  zstyle ':prezto:module:editor:info:keymap:alternate' format "$(maybe_emoji $EMOJI[alt]) %F{$_attn}"
   zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
 
   # Set vcs_info parameters.
