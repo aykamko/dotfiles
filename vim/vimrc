@@ -212,18 +212,15 @@ else
   set viminfo='50,"50   " '=marks for x files, "=registers for x files
 endif
 
-function! s:term_close_restore_previous_buffer(winnr)
-  let saved_buffer = get(g:saved_window_buffer_refs, a:winnr, '')
-  if !empty(saved_buffer)
-    exec 'unlet g:saved_window_buffer_refs.'.a:winnr
-    exec 'b '.saved_buffer
-  else
-    exec 'q'
-  endif
-endfunction
+if has('nvim')
+  augroup delete_terminal_buffers_on_hide
+    autocmd!
+    autocmd TermOpen * setlocal bufhidden=delete
+  augroup END
+end
 
 " hack to always display sign column
-augroup display_sign_col
+augroup always_display_sign_col
   autocmd!
   autocmd BufEnter * sign define dummy
   autocmd BufEnter * if &buftype !=# 'terminal' |
@@ -232,8 +229,6 @@ augroup display_sign_col
   if has('nvim')
     " no sign column in terminals pls
     autocmd TermOpen * exec 'sign unplace * buffer='.bufnr('')
-    autocmd TermOpen * set bufhidden=delete
-    autocmd TermOpen * cnoremap <buffer><silent> q<CR> :call <SID>term_close_restore_previous_buffer(winnr())<CR>
   endif
 augroup END
 
@@ -332,8 +327,10 @@ augroup line_numbering
   autocmd BufEnter * if &buftype !=# 'terminal' |
                           \ setlocal number | setlocal relativenumber |
                           \ endif
-  autocmd TermOpen * setlocal norelativenumber | setlocal nonumber
   autocmd InsertEnter,InsertLeave * call s:insert_toggle_relnumber()
+  if has('nvim')
+    autocmd TermOpen * setlocal norelativenumber | setlocal nonumber
+  endif
 augroup END
 augroup focus_events_line_numbering
   autocmd!
@@ -431,11 +428,12 @@ nnoremap <silent><expr> <Up> <SID>scroll_half_screen('k')
 vnoremap <silent><expr> <Down> <SID>scroll_half_screen('j')
 vnoremap <silent><expr> <Up> <SID>scroll_half_screen('k')
 
-function! s:term_exit_scroll_up()
-  return "\<C-\>\<C-n>".(winheight('$') / 2).'k'
-endfunction
-
-tnoremap <silent><expr> <C-u> <SID>term_exit_scroll_up()
+if has('nvim')
+  function! s:term_exit_scroll_up()
+    return "\<C-\>\<C-n>".(winheight('$') / 2).'k'
+  endfunction
+  tnoremap <silent><expr> <C-u> <SID>term_exit_scroll_up()
+endif
 
 function! s:blackhole_paste(mode)
   if a:mode ==# 'char'
@@ -542,6 +540,21 @@ function! OpenDirectionalSplit(...) abort
 endfunction
 command! -bar -nargs=* DirectionalSplit call OpenDirectionalSplit(<f-args>)
 
+" if we replace a file-backed buffer with a terminal, then switch back to that file when
+" we quit from the terminal
+if has('nvim')
+  function! s:term_close_restore_previous_buffer(winnr)
+    let saved_buffer = get(g:saved_window_buffer_refs, a:winnr, '')
+    if !empty(saved_buffer)
+      exec 'unlet g:saved_window_buffer_refs.'.a:winnr
+      exec 'b '.saved_buffer
+    else
+      quit
+    endif
+  endfunction
+  autocmd TermOpen * cnoremap <buffer><silent> q<CR> :call <SID>term_close_restore_previous_buffer(winnr())<CR>
+endif
+
 " vimrc and help
 command! -nargs=? Vimrc DirectionalSplit $MYVIMRC <args>
 cnoreabbrev vimrc Vimrc
@@ -631,12 +644,9 @@ function! s:should_strip_whitespace()
               \ &buftype !=# 'terminal'
 endfunction
 command! -bar -nargs=0 StripWhitespace call s:strip_whitespace()
-augroup kill_whitespace
+augroup kill_whitespace_on_write
   autocmd!
-  autocmd BufWritePre *
-        \ if s:should_strip_whitespace() |
-        \ StripWhitespace |
-        \ endif
+  autocmd BufWritePre * if s:should_strip_whitespace() | StripWhitespace | endif
 augroup END
 
 " set buffer to unmodifiable if read-only
@@ -710,7 +720,6 @@ vnoremap <silent> ts :<C-U>exec 'Dtag '.<SID>get_visual_selection()<CR>
 if has('nvim')
   " directional term splits
   command! -nargs=? Dterm DirectionalSplit term://$SHELL <args> | startinsert
-  cnoreabbrev dterm Dterm
   cnoreabbrev dt Dterm
   nnoremap <leader>d :Dterm<CR>
   for key in split('h j k l')
@@ -900,17 +909,21 @@ endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easyalign {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Start interactive EasyAlign in visual mode (e.g. vip<Enter>)
-vmap <Enter> <Plug>(EasyAlign)
+if PlugLoaded('vim-easy-align')
+  " Start interactive EasyAlign in visual mode (e.g. vip<Enter>)
+  vmap <Enter> <Plug>(EasyAlign)
 
-" Start interactive EasyAlign for a motion/text object (e.g. <leader>aip)
-nmap <leader>a <Plug>(EasyAlign)
+  " Start interactive EasyAlign for a motion/text object (e.g. <leader>aip)
+  nmap <leader>a <Plug>(EasyAlign)
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " a.vim {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" toggle between .h and .c with <leader>a
-nnoremap <leader>a :A<CR>
+if PlugLoaded('a.vim')
+  " toggle between .h and .c
+  nnoremap <leader>a :A<CR>
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " deoplete {{{
@@ -968,6 +981,7 @@ if PlugLoaded('neomake')
     let g:neomake_python_pylint_maker = neomake#makers#ft#python#pylint()
     let g:neomake_python_pylint_maker.args += ['--rcfile='.s:pylint_rcfile_path]
   endif
+
   let g:neomake_tex_enabled_makers = []
 
   function! ToggleLocationList()
@@ -993,9 +1007,9 @@ if PlugLoaded('neomake')
   function! s:disable_neomake_augroup()
     silent! autocmd! neomake
   endfunction
-  autocmd VimEnter * call <SID>disable_neomake_augroup()
   augroup postwrite_neomake
     autocmd!
+    autocmd VimEnter * call s:disable_neomake_augroup()
     autocmd BufWritePost *
           \ if (!get(b:, 'goyo_enabled', 0) && get(b:, 'neomake_enabled', 1)) |
           \ call neomake#Make(1, [], function("NeomakeLightlineCallback")) |
@@ -1020,7 +1034,6 @@ endif
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if PlugLoaded('fzf')
   cnoreabbrev fzf FZF
-  cnoreabbrev f FZF
 
   let g:fzf_action = {
         \ 'ctrl-t': 'tab split | drop',
@@ -1050,8 +1063,8 @@ if PlugLoaded('fzf.vim')
   endfunction
 
   nnoremap <silent> <leader>t :Tags<CR>
-  " TODO: makes easymotion slow because of <leader>b binding
-  "nnoremap <silent> <leader>bf :Buffers<CR>
+  " NOTE: overrides EasyMotion f replacement
+  nnoremap <silent> <leader>f :Buffers<CR>
 
   function! s:range_enabled_fzf_vim_ag(qargs, bang)
       let query = a:qargs
@@ -1063,6 +1076,7 @@ if PlugLoaded('fzf.vim')
 
   command! -range -bang -nargs=* Ag call s:range_enabled_fzf_vim_ag(<q-args>, <bang>0)
   cnoreabbrev ag Ag
+  cnoreabbrev gs Ag
 
   function! s:selection_grep(mode)
     if a:mode ==# 'char'
@@ -1403,6 +1417,7 @@ if get(g:, 'colors_name') == 'hybrid_ayk'
   exec "hi! DiffDelete guifg=".GetHiKey('Normal', 'guibg')." guibg=#381f21"
   exec "hi! DiffText   guifg=".GetHiKey('Normal', 'guifg')." guibg=#1d1f60"
 endif
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " git commit through nvr {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1414,6 +1429,7 @@ function! s:nvr_git_commit(commit_msg)
         \ autocmd!
 endfunction
 command! -nargs=1 NvrGitCommit call <SID>nvr_git_commit(<f-args>)
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " bracketed paste {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1437,11 +1453,6 @@ if !has('nvim')
   cmap <f29> <nop>
 end
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" Stripe {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let test#runners = {'ruby': ['paytest']}
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-test {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let test#strategy = {
@@ -1458,6 +1469,7 @@ command! -nargs=* -bar TF TestFile <args>
 let g:vimtex_view_general_viewer = '/Applications/Skim.app/Contents/SharedSupport/displayline'
 let g:vimtex_view_general_options = '-r @line @pdf @tex'
 let g:vimtex_view_general_options_latexmk = '-r 1'
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-python-pep8-indent {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
