@@ -318,7 +318,7 @@ augroup line_numbering
   autocmd!
   " autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained * TODO: fix these
   autocmd InsertEnter,InsertLeave *
-        \ if !get(b:, 'goyo_enabled', 0) && &buftype !=# 'terminal' |
+        \ if !get(b:, 'goyo_enabled', 0) && (&buftype !=# 'terminal') |
         \ set invrelativenumber | endif
 augroup END
 
@@ -409,6 +409,12 @@ nnoremap <silent><expr> <Down> <SID>scroll_half_screen('j')
 nnoremap <silent><expr> <Up> <SID>scroll_half_screen('k')
 vnoremap <silent><expr> <Down> <SID>scroll_half_screen('j')
 vnoremap <silent><expr> <Up> <SID>scroll_half_screen('k')
+
+function! s:term_exit_scroll_up()
+  return "\<C-\>\<C-n>".(winheight('$') / 2).'k'
+endfunction
+
+tnoremap <silent><expr> <C-u> <SID>term_exit_scroll_up()
 
 function! s:blackhole_paste(mode)
   if a:mode ==# 'char'

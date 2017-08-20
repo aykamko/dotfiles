@@ -170,8 +170,9 @@
     prune-merged = "!prune_merged() { \
         git remote update; \
         git remote prune ${1:-origin}; \
-        for b in $(git branch --color=never --merged ${1:-origin} | tr '*' ' '); do \
-            [[ $b =~ 'master' ]] || [[ $b =~ '\\*' ]] && continue; \
+        base_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed \"s@.$(echo '\\052')/@@g\"); \
+        for b in $(git branch --color=never --merged ${1:-origin} | tr '\\052' ' '); do \
+            [[ $b =~ \"$base_branch\" ]] || [[ $b =~ '\\*' ]] && continue; \
             git branch -D $b; \
         done; }; \
         prune_merged"
