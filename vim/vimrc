@@ -1,3 +1,4 @@
+" vim:sw=2:sts=2:ts=2:et:
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " {{{ vim-plug
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -10,6 +11,9 @@ if !has('nvim')
 end
 let s:darwin = has('mac')
 let s:tmux = $TMUX != ''
+function! s:SID()
+  return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_SID$')
+endfunction
 
 augroup vimrc_folding
   autocmd!
@@ -166,7 +170,6 @@ let g:python3_host_skip_check = 1
 
 " Display
 set ruler           " show cursor position
-set nonumber        " hide line numbers
 set nolist          " hide tabs and EOL chars
 set showcmd         " show normal mode commands as they are entered
 set noshowmode      " don't show mode becase powerline already does it
@@ -209,6 +212,16 @@ else
   set viminfo='50,"50   " '=marks for x files, "=registers for x files
 endif
 
+function! s:term_close_restore_previous_buffer(winnr)
+  let saved_buffer = get(g:saved_window_buffer_refs, a:winnr, '')
+  if !empty(saved_buffer)
+    exec 'unlet g:saved_window_buffer_refs.'.a:winnr
+    exec 'b '.saved_buffer
+  else
+    exec 'q'
+  endif
+endfunction
+
 " hack to always display sign column
 augroup display_sign_col
   autocmd!
@@ -220,7 +233,7 @@ augroup display_sign_col
     " no sign column in terminals pls
     autocmd TermOpen * exec 'sign unplace * buffer='.bufnr('')
     autocmd TermOpen * set bufhidden=delete
-    autocmd TermClose * exec 'sign place 9999 line=1 name=dummy buffer='.bufnr('')
+    autocmd TermOpen * cnoremap <buffer><silent> q<CR> :call <SID>term_close_restore_previous_buffer(winnr())<CR>
   endif
 augroup END
 
@@ -239,11 +252,7 @@ endif
 if has('nvim') && empty($SSH_CLIENT) " mosh doesn't support 24-bit color
   set termguicolors
 endif
-" if s:tmux
-"   let TERM='tmux-256color'
-" endif
 syntax enable
-" set lazyredraw  " lifesaver
 
 set background=dark
 try
@@ -313,16 +322,24 @@ hi! def link extraTodo Todo
 " Line Numbering {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
-if &buftype !=# 'terminal'
-  set number
-  set relativenumber
-endif
+function! s:insert_toggle_relnumber()
+  if !get(b:, 'goyo_enabled', 0) && &buftype !=# 'terminal'
+    setlocal invrelativenumber
+  endif
+endfunction
 augroup line_numbering
   autocmd!
-  " autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained * TODO: fix these
-  autocmd InsertEnter,InsertLeave *
-        \ if !get(b:, 'goyo_enabled', 0) && (&buftype !=# 'terminal') |
-        \ set invrelativenumber | endif
+  autocmd BufEnter * if &buftype !=# 'terminal' |
+                          \ setlocal number | setlocal relativenumber |
+                          \ endif
+  autocmd TermOpen * setlocal norelativenumber | setlocal nonumber
+  autocmd InsertEnter,InsertLeave * call s:insert_toggle_relnumber()
+augroup END
+augroup focus_events_line_numbering
+  autocmd!
+  autocmd FocusLost * call s:insert_toggle_relnumber() |
+        \ autocmd FocusGained,FocusLost * call s:insert_toggle_relnumber() |
+        \ autocmd! focus_events_line_numbering
 augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -373,6 +390,7 @@ cnoreabbrev X x
 cnoreabbrev WQ wq
 cnoreabbrev Wq wq
 cnoreabbrev wQ wq
+cnoreabbrev Qa qa
 
 " Easily move to start/end of line
 nnoremap H 0
@@ -459,6 +477,7 @@ augroup blackhole_bindings
 augroup END
 
 " directional split for files or new buffers
+let g:saved_window_buffer_refs = {}
 function! OpenDirectionalSplit(...) abort
   let g:last_direction_split = 0
 
@@ -481,7 +500,7 @@ function! OpenDirectionalSplit(...) abort
     call inputrestore()
     redraw!
     if char == 27 " Esc
-      return
+      return 0
     elseif char == 13  " Enter
       let dirchoice = 'e'
     else
@@ -491,7 +510,7 @@ function! OpenDirectionalSplit(...) abort
 
   if !empty(file)
     let dirmap = {
-          \ 'e': 'drop',
+          \ 'e': 'let g:saved_window_buffer_refs['.winnr().'] = '.bufnr('%').' | drop',
           \ 'h': 'aboveleft vsp | drop',
           \ 'j': 'belowright sp | drop',
           \ 'k': 'aboveleft sp | drop',
@@ -500,7 +519,7 @@ function! OpenDirectionalSplit(...) abort
           \ }
   else
     let dirmap = {
-          \ 'e': 'edit',
+          \ 'e': 'let g:saved_window_buffer_refs['.winnr().'] = '.bufnr('%').' | edit',
           \ 'h': 'aboveleft vnew',
           \ 'j': 'belowright new',
           \ 'k': 'aboveleft new',
@@ -517,7 +536,9 @@ function! OpenDirectionalSplit(...) abort
   else
     let g:last_direction_split = dirchoice
     exec join([action, file])
+    return 1
   endif
+  return 0
 endfunction
 command! -bar -nargs=* DirectionalSplit call OpenDirectionalSplit(<f-args>)
 
@@ -692,6 +713,9 @@ if has('nvim')
   cnoreabbrev dterm Dterm
   cnoreabbrev dt Dterm
   nnoremap <leader>d :Dterm<CR>
+  for key in split('h j k l')
+    exec 'cnoreabbrev dt'.key.' Dterm '.key
+  endfor
 
   function! s:localdterm(...) abort
     let localdir = expand('%:p:h')
@@ -699,20 +723,26 @@ if has('nvim')
       let termpid = matchlist(localdir, 'term://.//\(\d\+\):')[1]
       let localdir = system("lsof -p ".termpid." | grep cwd | awk '{print $NF}' | xargs echo -n")
     endif
-    let dirsplit_cmd = join(extend(['DirectionalSplit', 'NONE'], a:000))
-    exec dirsplit_cmd." | lcd ".localdir." | term"
+    if call('OpenDirectionalSplit', extend(['NONE'], a:000))
+      exec 'lcd '.localdir
+      term
+    endif
   endfunction
 
-  command! -nargs=? LDterm call <sid>localdterm(<f-args>)
+  command! -nargs=? LDterm call s:localdterm(<f-args>)
   cnoreabbrev ldterm LDterm
   cnoreabbrev d. LDterm
   cnoreabbrev d, LDterm
 
   " terminal mappings
-  tnoremap <C-w>h <C-\><C-n><C-w>h
-  tnoremap <C-w>j <C-\><C-n><C-w>j
-  tnoremap <C-w>k <C-\><C-n><C-w>k
-  tnoremap <C-w>l <C-\><C-n><C-w>l
+  tnoremap <silent> <C-w>h <C-\><C-n><C-w>h
+  tnoremap <silent> <C-w>j <C-\><C-n><C-w>j
+  tnoremap <silent> <C-w>k <C-\><C-n><C-w>k
+  tnoremap <silent> <C-w>l <C-\><C-n><C-w>l
+  tnoremap <silent> <C-h> <C-\><C-n>:TmuxNavigateLeft<CR>
+  tnoremap <silent> <C-j> <C-\><C-n>:TmuxNavigateDown<CR>
+  tnoremap <silent> <C-k> <C-\><C-n>:TmuxNavigateUp<CR>
+  tnoremap <silent> <C-l> <C-\><C-n>:TmuxNavigateRight<CR>
 
   augroup term_autocmds
     autocmd!
