@@ -313,7 +313,10 @@ hi! def link extraTodo Todo
 " Line Numbering {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
-if &buftype !=# 'terminal' | set number | set relativenumber | endif
+if &buftype !=# 'terminal'
+  set number
+  set relativenumber
+endif
 augroup line_numbering
   autocmd!
   " autocmd! InsertEnter,InsertLeave,FocusLost,FocusGained * TODO: fix these
