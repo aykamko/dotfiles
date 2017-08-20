@@ -180,7 +180,7 @@ rg_git_list() {
 
     # gitignored files
     if [[ $is_git_dir -eq 1 && -f $root/.gitignore ]]; then
-      chdir $root && rg --no-ignore-vcs $(echo ${rg_args_inverse_git_ignore[@]}) --files | \
+      chdir $root && eval "rg --no-ignore-vcs ${rg_args_inverse_git_ignore[@]} --files" | \
         while read match; do echo -e "$ylw$match$clr"; done;
     fi;
   }
