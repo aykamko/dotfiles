@@ -56,8 +56,9 @@ export LANGUAGE='en_US.UTF-8'
 # Less
 ###############################################################################
 # Set the default Less options.
-# Remove -F (exit if the content fits on one screen) to enable it.
-export LESS='-g -i -M -R -S -w -z-4'
+# Mouse-wheel scrolling has been disabled by -X (disable screen clearing).
+# Remove -X and -F (exit if the content fits on one screen) to enable it.
+export LESS='-g -i -M -R -S -w -z-4 -X -F'
 
 # Set the Less input preprocessor.
 # Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
