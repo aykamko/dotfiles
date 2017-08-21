@@ -5,7 +5,7 @@
 - shell:
   - description: Update submodules in dotfiles repo
     command: |
-      cd ~/dotfiles
+      cd $HOME/dotfiles
       git submodule update --init --recursive
 
 # ----- zsh -----
@@ -68,6 +68,9 @@
         relink: true
     ~/.zprezto/modules/fast-syntax-highlighting:
         path: zsh/zprezto/modules/fast-syntax-highlighting
+        relink: true
+    ~/.zprezto/modules/fast-syntax-highlighting/fast-syntax-highlighting:
+        path: fast-syntax-highlighting
         relink: true
 
 
@@ -242,3 +245,11 @@
     ~/.condarc:
       path: conda/condarc
       create: true
+
+# ----- jupyter -----
+- shell:
+  - description: Hardlink Jupyter custom.js (to support Docker mounting)
+    command: |
+      mkdir -p ~/.jupyter/custom
+      rm -f ~/.jupyter/custom/custom.js
+      ln -f $HOME/dotfiles/jupyter/custom.js $HOME/.jupyter/custom/custom.js
