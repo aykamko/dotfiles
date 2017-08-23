@@ -245,7 +245,7 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Colorscheme {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if has('nvim') && empty($SSH_CLIENT) " mosh doesn't support 24-bit color
+if $TERM_PROGRAM == 'iTerm.app' && has('nvim') && empty($SSH_CLIENT) " mosh doesn't support 24-bit color
   set termguicolors
 endif
 syntax enable
