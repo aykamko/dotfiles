@@ -1,0 +1,11 @@
+#!/bin/bash
+pane_cmd=$1
+pane_pid=$2
+
+pane_args=$(ps -o args $(pgrep -P $pane_pid) | sed 1d)
+
+if [[ $pane_cmd =~ "mosh" ]]; then
+  echo $pane_args | echo "mosh:$(awk '{print $(NF-1)}')"
+elif [[ $pane_cmd =~ "ssh" ]]; then
+  echo $pane_args | awk '{print $NF}'
+fi

@@ -787,11 +787,11 @@ set laststatus=2   " Always show the statusline
 let g:lightline = {
       \   'colorscheme': 'Tomorrow_Night',
       \   'active': {
-      \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_green', 'syntax_err', 'syntax_war']],
+      \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_status', 'syntax_err', 'syntax_war']],
       \     'right': [['lineinfo'], ['githead'], ['filetype']]
       \   },
       \   'inactive': {
-      \     'left': [['fileinfo']],
+      \     'left': [['fileinfo', 'syntax_status']],
       \     'right': [['lineinfo'], ['githead'], ['filetype']]
       \   },
       \   'component_function' : {
@@ -800,9 +800,9 @@ let g:lightline = {
       \     'fileinfo': 'LLFileInfo',
       \     'lineinfo': 'LLLineInfo',
       \     'filetype': 'LLFileType',
+      \     'syntax_status': 'SyntaxStatus',
       \   },
       \   'component_expand' : {
-      \     'syntax_green': 'SyntaxGreen',
       \     'syntax_err': 'SyntaxError',
       \     'syntax_war': 'SyntaxWarning',
       \   },
@@ -872,7 +872,7 @@ function! SyntaxWarning()
   if !has_key(counts, 'W') | return '' | endif
   return printf('%s %d', s:W, counts['W'])
 endfunction
-function! SyntaxGreen()
+function! SyntaxStatus()
   if !get(b:, 'neomake_exists', 0) | return '' | endif
   if get(b:, 'neomake_running', 0) | return s:WAIT | endif
   if empty(SyntaxError().SyntaxWarning()) | return s:OK | endif
@@ -1486,12 +1486,18 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " git commit through nvr {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! ForceBufDeleteCallback(bufnr, callback)
+  exec 'bdelete! '.a:bufnr
+endfunction
 function! s:nvr_git_commit(commit_msg)
   exec 'split '.a:commit_msg |
-        \ autocmd BufDelete,BufHidden,BufUnload <buffer>
-        \ call system('touch '.expand('%:p:h').'/.nvr_finished_commit') |
-        \ bwipeout |
-        \ autocmd!
+        \ augroup git_commit_cleanup
+            autocmd!
+            autocmd BufWinLeave <buffer>
+                  \ call system('touch '.expand('%:p:h').'/.nvr_finished_commit') |
+                  \ call timer_start(1000, function('ForceBufDeleteCallback', [expand('<abuf>')]))
+            " HACK ^
+          augroup END
 endfunction
 command! -nargs=1 NvrGitCommit call <SID>nvr_git_commit(<f-args>)
 
