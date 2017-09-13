@@ -176,7 +176,7 @@ rg_git_list() {
   local clr=$(tput sgr0)
   {
     # regular files
-    chdir $root && rg --files;
+    chdir $root && rg -g '!.git' --hidden --files;
 
     # gitignored files
     if [[ $is_git_dir -eq 1 && -f $root/.gitignore ]]; then

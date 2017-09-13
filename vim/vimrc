@@ -105,6 +105,10 @@ if has('nvim')
   Plug 'Shougo/neosnippet.vim'
 endif
 
+if has('mac')
+  Plug 'junegunn/vim-xmark'
+endif
+
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
 Plug 'junegunn/fzf.vim'
 
