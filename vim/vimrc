@@ -54,6 +54,7 @@ Plug 'wellle/targets.vim'
 Plug 'junegunn/vim-peekaboo'
 Plug 'kassio/neoterm'
 Plug 'janko-m/vim-test'
+Plug '/Users/aleks/proj/vim-touchbar'
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -318,8 +319,13 @@ exec 'highlight! StatusLineNC ctermfg=5 guifg='.g:terminal_color_5
 exec 'highlight! VertSplit ctermfg=5 guifg='.g:terminal_color_5
 
 " add some extra keywords to Todo highlight group
-syn keyword extraTodo HACK INFO BUG NOTE containedin=.*Comment.*
-hi! def link extraTodo Todo
+augroup extra_todo_highlights
+  autocmd!
+  autocmd Syntax * syn match highlightKeywords
+        \ /\v ?<(BEGIN|END|HACK|INFO|BUG|NOTE|NOPUSH)(\([^)]*\))?/
+        \ containedin=.*Comment.*
+augroup END
+highlight! def link highlightKeywords Todo
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Line Numbering {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
