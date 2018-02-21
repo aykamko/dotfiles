@@ -37,11 +37,9 @@ call plug#begin(g:plug_dir)
 Plug 'neomake/neomake'
 Plug 'sbdchd/neoformat'
 Plug 'christoomey/vim-tmux-navigator'
-" Plug 'haya14busa/incsearch.vim'
 Plug 'itchyny/lightline.vim'
 Plug 'junegunn/vim-easy-align'
 Plug 'kana/vim-textobj-user'
-" Plug 'mhinz/vim-grepper'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tomtom/tcomment_vim'
@@ -52,9 +50,11 @@ Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'wellle/targets.vim'
 Plug 'junegunn/vim-peekaboo'
-Plug 'kassio/neoterm'
-Plug 'janko-m/vim-test'
-Plug '/Users/aleks/proj/vim-touchbar'
+Plug 'wakatime/vim-wakatime'
+" Plug 'kassio/neoterm'
+" Plug 'janko-m/vim-test'
+" Plug '/Users/aleks/proj/vim-touchbar'
+" Plug 'sheerun/vim-polyglot', { 'for': ['Jenkinsfile', 'groovy'] }
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -67,9 +67,8 @@ Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
 Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
-" Plug 'a.vim',                        { 'for': ['c', 'cpp'] }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
-Plug 'Vimjas/vim-python-pep8-indent',{ 'for': 'python' }
+Plug 'aykamko/vim-python-pep8-indent',{ 'for': 'python' }
 Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
 Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
@@ -79,11 +78,15 @@ Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 Plug 'jez/vim-github-hub',           { 'for': 'markdown.ghpull' }
 Plug 'derekwyatt/vim-scala',         { 'for': 'scala' }
 
-augroup slim_filetype
+augroup terraform_filetype
   autocmd!
-  autocmd BufNewFile,BufReadPost *.stanza set filetype=stanza
+  autocmd BufNewFile,BufReadPost *.tf set filetype=terraform
+  autocmd BufNewFile,BufReadPost *.hcl set filetype=terraform
+  autocmd BufNewFile,BufReadPost *.tfstate set filetype=json
+  autocmd VimEnter * if PlugLoaded('tcomment_vim')
+        \| call tcomment#DefineType('terraform', '# %s') | endif
 augroup END
-Plug 'jcmartin/stanza.vim',          { 'for': 'stanza' }
+Plug 'hashivim/vim-terraform',       { 'for': ['terraform', 'hcl'] }
 
 augroup slim_filetype
   autocmd!
@@ -157,18 +160,15 @@ let s:OK = '✓'
 " workaround for pyenv
 " let g:python_version = matchstr(system("python --version 2>&1 | cut -f2 -d' '"), '^[0-9]')
 " if g:python_version =~ 3
-if executable('/usr/local/bin/python2')
-  let g:python_host_prog = '/usr/local/bin/python2'
-else
-  let g:python_host_prog = '/usr/bin/python2'
-endif
-" else
-if executable('/usr/local/bin/python3')
-  let g:python3_host_prog = '/usr/local/bin/python3'
-else
-  let g:python3_host_prog = '/usr/bin/python3'
-endif
-" endif
+function! s:pick_first_executable(...)
+  for path in a:000
+    if executable(path)
+      return path
+    endif
+  endfor
+endfunction
+let g:python_host_prog = s:pick_first_executable('/usr/local/bin/python2', '/usr/bin/python2')
+let g:python3_host_prog = s:pick_first_executable('/usr/local/bin/python3', '/usr/bin/python3')
 
 " skip checks
 let g:python_host_skip_check = 1
@@ -322,7 +322,7 @@ exec 'highlight! VertSplit ctermfg=5 guifg='.g:terminal_color_5
 augroup extra_todo_highlights
   autocmd!
   autocmd Syntax * syn match highlightKeywords
-        \ /\v ?<(BEGIN|END|HACK|INFO|BUG|NOTE|NOPUSH)(\([^)]*\))?/
+        \ /\v ?<(BEGIN|END|HACK|XXX|INFO|BUG|NOTE|TODO|NOPUSH)(\([^)]*\))?/
         \ containedin=.*Comment.*
 augroup END
 highlight! def link highlightKeywords Todo
@@ -596,9 +596,9 @@ nnoremap z<Space> za
 
 " switching tabs
 for i in range(0, 9)
-  exec 'nnoremap t'.i.' '.i.'gt'
-  exec 'nnoremap <A-'.i.'> '.i.'gt'
-  exec 'vnoremap <A-'.i.'> '.i.'gt'
+  exec 'nnoremap <silent> t'.i.' '.i.'gt'
+  exec 'nnoremap <silent> <A-'.i.'> '.i.'gt'
+  exec 'vnoremap <silent> <A-'.i.'> '.i.'gt'
 endfor
 
 " command-line history
@@ -794,175 +794,177 @@ vmap <leader>c :TComment<CR>
 " Lightline {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set laststatus=2   " Always show the statusline
-let g:lightline = {
-      \   'colorscheme': 'Tomorrow_Night',
-      \   'active': {
-      \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_status', 'syntax_err', 'syntax_war']],
-      \     'right': [['lineinfo'], ['githead'], ['filetype']]
-      \   },
-      \   'inactive': {
-      \     'left': [['fileinfo', 'syntax_status']],
-      \     'right': [['lineinfo'], ['githead'], ['filetype']]
-      \   },
-      \   'component_function' : {
-      \     'githead': 'GitHead',
-      \     'mode': 'LLMode',
-      \     'fileinfo': 'LLFileInfo',
-      \     'lineinfo': 'LLLineInfo',
-      \     'filetype': 'LLFileType',
-      \     'syntax_status': 'SyntaxStatus',
-      \   },
-      \   'component_expand' : {
-      \     'syntax_err': 'SyntaxError',
-      \     'syntax_war': 'SyntaxWarning',
-      \   },
-      \   'component_type': {
-      \     'syntax_err': 'error',
-      \     'syntax_war': 'warning',
-      \   },
-      \ }
+if PlugLoaded('lightline.vim')
+  let g:lightline = {
+        \   'colorscheme': 'Tomorrow_Night',
+        \   'active': {
+        \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_status', 'syntax_err', 'syntax_war']],
+        \     'right': [['lineinfo'], ['githead'], ['filetype']]
+        \   },
+        \   'inactive': {
+        \     'left': [['fileinfo', 'syntax_status']],
+        \     'right': [['lineinfo'], ['githead'], ['filetype']]
+        \   },
+        \   'component_function' : {
+        \     'githead': 'GitHead',
+        \     'mode': 'LLMode',
+        \     'fileinfo': 'LLFileInfo',
+        \     'lineinfo': 'LLLineInfo',
+        \     'filetype': 'LLFileType',
+        \     'syntax_status': 'SyntaxStatus',
+        \   },
+        \   'component_expand' : {
+        \     'syntax_err': 'SyntaxError',
+        \     'syntax_war': 'SyntaxWarning',
+        \   },
+        \   'component_type': {
+        \     'syntax_err': 'error',
+        \     'syntax_war': 'warning',
+        \   },
+        \ }
 
-function! GitHead()
-  let bufnr = bufnr('%')
-  let git_head_ref = getbufvar(bufnr, 'git_head_ref')
-  if empty(git_head_ref)
-    let filedir = expand('#'.bufnr.':p:h')
-    let head_branch = s:strip_trailing(system('git -C '.filedir.' rev-parse --abbrev-ref HEAD 2>/dev/null'))
-    if empty(head_branch)
-      let git_head_ref = 'no_git'
-    else
-      let git_head_ref = substitute(head_branch, '^aleks/', '', '')
-    endif
-    call setbufvar(bufnr, 'git_head_ref', git_head_ref)
-  elseif git_head_ref == 'no_git'
-    return ''
-  endif
-  return git_head_ref
-endfunction
-augroup reset_git_head
-  autocmd!
-  autocmd FocusGained * let b:git_head_ref = ''
-augroup END
-
-function! LLMode()
-  let mode = get({
-        \ 'nerdtree': 'nerdtree',
-        \ 'fzf': 'FZF',
-        \ 'peekaboo': 'peekaboo',
-        \ }, &ft)
-  if empty(mode)
-    let mode = lightline#mode()
-  endif
-  return mode
-endfunction
-function! LLFileInfo()
-  if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
-  let segments = [LLReadonly(), LLTrucatedFilePath(), LLModified()]
-  return substitute(join(segments, ' '), '^\s*\(.\{-}\)\s*$', '\1', '')
-endfunction
-function! LLLineInfo()
-  if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
-  let [_, l, c, _] = getpos('.')
-  return l.':'.c
-endfunction
-function! LLFileType()
-  if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
-  return &ft
-endfunction
-
-function! SyntaxError()
-  if !get(b:, 'neomake_exists', 0) | return '' | endif
-  let counts = neomake#statusline#LoclistCounts()
-  if !has_key(counts, 'E') | return '' | endif
-  return printf('%s %d', s:E, counts['E'])
-endfunction
-function! SyntaxWarning()
-  if !get(b:, 'neomake_exists', 0) | return '' | endif
-  let counts = neomake#statusline#LoclistCounts()
-  if !has_key(counts, 'W') | return '' | endif
-  return printf('%s %d', s:W, counts['W'])
-endfunction
-function! SyntaxStatus()
-  if !get(b:, 'neomake_exists', 0) | return '' | endif
-  if get(b:, 'neomake_running', 0) | return s:WAIT | endif
-  if empty(SyntaxError().SyntaxWarning()) | return s:OK | endif
-  return ''
-endfunction
-
-" filename and fileinfo
-let g:pathname_depth = 3
-function! LLModified()
-  return index(['help', 'nerdtree', 'peekaboo'], &ft) > -1 ? '' :
-        \ &modified ? '+' : ''
-endfunction
-function! LLReadonly()
-  return index(['help', 'nerdtree', 'peekaboo'], &ft) < 0 && &readonly ? '🔒' : ''
-endfunction
-function! LLTrucatedFilePath()
-  if index(['qf', 'nerdtree', 'peekaboo'], &ft) > -1 | return '' | endif
-  if &buftype ==# 'terminal' | return '' | endif
-  let bufnr = bufnr('%')
-  let buf_trunc_path = getbufvar(bufnr, 'trunc_path')
-  if empty(buf_trunc_path)
-    let filepath = expand('%:p')
-    if filepath =~ '^fugitive'
-      let fugitive_match = matchlist(filepath, '\.git//\([^/]\+\)/\(.*\)')
-      let githash = fugitive_match[1][:8]
-      call setbufvar(bufnr, 'git_head_ref', githash)
-      let trunc_prefix = githash.':'
-      let filepath = fugitive_match[2]
-    else
-      let trunc_prefix = ''
-      let gitroot = s:gitroot(expand('%:h:p'))
-      if !empty(gitroot)
-        let split_filepath = split(expand('%:p'), gitroot)
-        if empty(split_filepath)
-          let gitroot = ''
-          let filepath = ''
-        else
-          let filepath = split(expand('%:p'), gitroot)[0]
-          let trunc_prefix = '$/'
-        endif
+  function! GitHead()
+    let bufnr = bufnr('%')
+    let git_head_ref = getbufvar(bufnr, 'git_head_ref')
+    if empty(git_head_ref)
+      let filedir = expand('#'.bufnr.':p:h')
+      let head_branch = s:strip_trailing(system('git -C '.filedir.' rev-parse --abbrev-ref HEAD 2>/dev/null'))
+      if empty(head_branch)
+        let git_head_ref = 'no_git'
       else
-        let filepath = expand('%:p:~')
+        let git_head_ref = substitute(head_branch, '^aleks/', '', '')
       endif
+      call setbufvar(bufnr, 'git_head_ref', git_head_ref)
+    elseif git_head_ref == 'no_git'
+      return ''
     endif
+    return git_head_ref
+  endfunction
+  augroup reset_git_head
+    autocmd!
+    autocmd FocusGained * let b:git_head_ref = ''
+  augroup END
 
-    echo filepath
-    let buf_trunc_path = '[No Name]'
-    if !empty(filepath)
-      let path_parts = split(filepath, '/')
-      let depth = -get(g:, 'pathname_depth', 3)
-      let depth = depth < -len(path_parts) ? -len(path_parts) : depth
-      let buf_trunc_path =
-                  \ join(map(copy(path_parts[:depth-1]), "v:val[0].'/'"), '').
-                  \ join(path_parts[depth:], '/')
-      let buf_trunc_path = trunc_prefix.buf_trunc_path
+  function! LLMode()
+    let mode = get({
+          \ 'nerdtree': 'nerdtree',
+          \ 'fzf': 'FZF',
+          \ 'peekaboo': 'peekaboo',
+          \ }, &ft)
+    if empty(mode)
+      let mode = lightline#mode()
     endif
+    return mode
+  endfunction
+  function! LLFileInfo()
+    if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
+    let segments = [LLReadonly(), LLTrucatedFilePath(), LLModified()]
+    return substitute(join(segments, ' '), '^\s*\(.\{-}\)\s*$', '\1', '')
+  endfunction
+  function! LLLineInfo()
+    if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
+    let [_, l, c, _] = getpos('.')
+    return l.':'.c
+  endfunction
+  function! LLFileType()
+    if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
+    return &ft
+  endfunction
 
-    call setbufvar(bufnr, 'trunc_path', buf_trunc_path)
-  endif
-  return buf_trunc_path
-endfunction
-autocmd BufNewFile * unlet! b:trunc_path
+  function! SyntaxError()
+    if !get(b:, 'neomake_exists', 0) | return '' | endif
+    let counts = neomake#statusline#LoclistCounts()
+    if !has_key(counts, 'E') | return '' | endif
+    return printf('%s %d', s:E, counts['E'])
+  endfunction
+  function! SyntaxWarning()
+    if !get(b:, 'neomake_exists', 0) | return '' | endif
+    let counts = neomake#statusline#LoclistCounts()
+    if !has_key(counts, 'W') | return '' | endif
+    return printf('%s %d', s:W, counts['W'])
+  endfunction
+  function! SyntaxStatus()
+    if !get(b:, 'neomake_exists', 0) | return '' | endif
+    if get(b:, 'neomake_running', 0) | return s:WAIT | endif
+    if empty(SyntaxError().SyntaxWarning()) | return s:OK | endif
+    return ''
+  endfunction
 
-function! s:lightline_update_once_varargs(...)
-  call lightline#update_once()
-endfunction
-function! s:lightline_update_once_delayed()
-  if exists('s:lightline_cursormoved_timer')
-    call timer_stop(s:lightline_cursormoved_timer)
-  endif
-  let s:lightline_cursormoved_timer =
-        \ timer_start(100, function('s:lightline_update_once_varargs'))
-endfunction
-augroup lightline_timer_delayed
-  autocmd!
-  autocmd WinEnter,BufWinEnter,FileType,ColorScheme,SessionLoadPost * call lightline#update()
-  autocmd ColorScheme,SessionLoadPost * call lightline#highlight()
-  autocmd CursorMoved,BufUnload * call s:lightline_update_once_delayed()
-  autocmd VimEnter * silent autocmd! lightline
-augroup END
+  " filename and fileinfo
+  let g:pathname_depth = 3
+  function! LLModified()
+    return index(['help', 'nerdtree', 'peekaboo'], &ft) > -1 ? '' :
+          \ &modified ? '+' : ''
+  endfunction
+  function! LLReadonly()
+    return index(['help', 'nerdtree', 'peekaboo'], &ft) < 0 && &readonly ? '🔒' : ''
+  endfunction
+  function! LLTrucatedFilePath()
+    if index(['qf', 'nerdtree', 'peekaboo'], &ft) > -1 | return '' | endif
+    if &buftype ==# 'terminal' | return '' | endif
+    let bufnr = bufnr('%')
+    let buf_trunc_path = getbufvar(bufnr, 'trunc_path')
+    if empty(buf_trunc_path)
+      let filepath = expand('%:p')
+      if filepath =~ '^fugitive'
+        let fugitive_match = matchlist(filepath, '\.git//\([^/]\+\)/\(.*\)')
+        let githash = fugitive_match[1][:8]
+        call setbufvar(bufnr, 'git_head_ref', githash)
+        let trunc_prefix = githash.':'
+        let filepath = fugitive_match[2]
+      else
+        let trunc_prefix = ''
+        let gitroot = s:gitroot(expand('%:h:p'))
+        if !empty(gitroot)
+          let split_filepath = split(expand('%:p'), gitroot)
+          if empty(split_filepath)
+            let gitroot = ''
+            let filepath = ''
+          else
+            let filepath = split(expand('%:p'), gitroot)[0]
+            let trunc_prefix = '$/'
+          endif
+        else
+          let filepath = expand('%:p:~')
+        endif
+      endif
+
+      echo filepath
+      let buf_trunc_path = '[No Name]'
+      if !empty(filepath)
+        let path_parts = split(filepath, '/')
+        let depth = -get(g:, 'pathname_depth', 3)
+        let depth = depth < -len(path_parts) ? -len(path_parts) : depth
+        let buf_trunc_path =
+                    \ join(map(copy(path_parts[:depth-1]), "v:val[0].'/'"), '').
+                    \ join(path_parts[depth:], '/')
+        let buf_trunc_path = trunc_prefix.buf_trunc_path
+      endif
+
+      call setbufvar(bufnr, 'trunc_path', buf_trunc_path)
+    endif
+    return buf_trunc_path
+  endfunction
+  autocmd BufNewFile * unlet! b:trunc_path
+
+  function! s:lightline_update_once_varargs(...)
+    call lightline#update_once()
+  endfunction
+  function! s:lightline_update_once_delayed()
+    if exists('s:lightline_cursormoved_timer')
+      call timer_stop(s:lightline_cursormoved_timer)
+    endif
+    let s:lightline_cursormoved_timer =
+          \ timer_start(100, function('s:lightline_update_once_varargs'))
+  endfunction
+  augroup lightline_timer_delayed
+    autocmd!
+    autocmd WinEnter,BufWinEnter,FileType,ColorScheme,SessionLoadPost * call lightline#update()
+    autocmd ColorScheme,SessionLoadPost * call lightline#highlight()
+    autocmd CursorMoved,BufUnload * call s:lightline_update_once_delayed()
+    autocmd VimEnter * silent autocmd! lightline
+  augroup END
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-easyalign {{{
@@ -1471,7 +1473,7 @@ augroup vimrc_filetype
   autocmd FileType c,cpp,vim,javascript,coffee,html,jinja,python setl sw=2 ts=2 sts=2 et
   autocmd BufNewFile,BufReadPost PULLREQ_EDITMSG set filetype=markdown.ghpull
   autocmd BufNewFile,BufReadPost COMMIT_EDITMSG call s:git_commit_ft()
-  autocmd Filetype tex,markdown,markdown.ghpull,noft,text,bash,sh
+  autocmd Filetype tex,markdown,markdown.ghpull,noft,text
         \ set wrap |
         \ set breakindent |
         \ set linebreak |
@@ -1481,6 +1483,8 @@ augroup vimrc_filetype
         \ let b:tw = 119 |
         \ exec 'nnoremap <silent> gq :set opfunc=<SID>manual_format<CR>g@' |
         \ exec 'vnoremap <silent> gq :<C-U>call <SID>manual_format(visualmode(), 1)<CR>'
+  autocmd FileType terraform,bash,sh
+        \ set textwidth=9999
 augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -1536,13 +1540,15 @@ end
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vim-test {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let test#strategy = {
-  \ 'nearest': 'neoterm',
-  \ 'file':    'neoterm',
-  \ 'suite':   'basic',
-\}
-command! -nargs=* -bar TN TestNearest <args>
-command! -nargs=* -bar TF TestFile <args>
+if PlugLoaded('vim-test') && PlugLoaded('neoterm')
+  let test#strategy = {
+    \ 'nearest': 'neoterm',
+    \ 'file':    'neoterm',
+    \ 'suite':   'basic',
+  \}
+  command! -nargs=* -bar TN TestNearest <args>
+  command! -nargs=* -bar TF TestFile <args>
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " vimtex {{{
@@ -1555,4 +1561,9 @@ let g:vimtex_view_general_options_latexmk = '-r 1'
 " vim-python-pep8-indent {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:python_pep8_hanging_indent_width = 4
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" vim-terraform {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:terraform_align=1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}

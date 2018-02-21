@@ -19,7 +19,6 @@ zstyle ':prezto:load' pmodule \
   'fast-syntax-highlighting' \
   'history-substring-search' \
   'prompt'
-  # 'completion' \
 
 ###############################################################################
 # Prompt

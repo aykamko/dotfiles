@@ -43,7 +43,12 @@
     ci = commit
     amend = commit --amend
     ammend = commit --amend
-    empty = commit --allow-empty -m
+    empty = "!empty() { \
+        if [[ -n \"$1\" ]]; then \
+            git commit --allow-empty -m \"$1\"; \
+        else \
+            git commit --allow-empty; \
+        fi; }; empty"
     oops = "!oops(){ \
         if [[ $(git status --porcelain | wc -l | tr -d '[[:space:]]') == 0 ]]; then \
             echo 'No changes! Aborting.'; \
@@ -157,6 +162,10 @@
         [[ $? -eq 0 ]] && hub -c core.commentchar='%' pull-request; }; \
         hubpr"
 
+    # showpr = "!hub_showpr() { \
+    #       :; \
+    #     }; hub_showpr"
+
     ctags = "!.git/hooks/ctags"
 
     # nice: http://stackoverflow.com/a/5201642
@@ -168,12 +177,18 @@
     deprecate = "!git branch -m depr_$(git rev-parse --abbrev-ref HEAD)"
 
     prune-merged = "!prune_merged() { \
-        git remote update; \
-        git remote prune ${1:-origin}; \
-        base_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed \"s@.$(echo '\\052')/@@g\"); \
-        for b in $(git branch --color=never --merged ${1:-origin} | tr '\\052' ' '); do \
-            [[ $b =~ \"$base_branch\" ]] || [[ $b =~ '\\*' ]] && continue; \
-            git branch -D $b; \
+        REMOTE=${1:-origin}; \
+        git remote update $REMOTE; \
+        PRUNED=$(git remote prune $REMOTE | tee /dev/tty | tail -n +3 | awk '{print $NF}'); \
+        for b in $PRUNED; do \
+            LOCAL_BRANCH=${b#${REMOTE}/}; \
+            if $(git rev-parse --verify $LOCAL_BRANCH >/dev/null 2>&1); then \
+                read -p \"Remove local branch '${LOCAL_BRANCH}'? [y/N] \" yn; \
+                case $yn in \
+                    [Yy]* ) git branch -D $LOCAL_BRANCH ;; \
+                    * ) echo 'skipping' ;; \
+                esac; \
+            fi; \
         done; }; \
         prune_merged"
 

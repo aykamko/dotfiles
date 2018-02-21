@@ -18,11 +18,11 @@ _attn='14'
 
 typeset -gA EMOJI
 EMOJI=(
-  'primary' '🦆'
-  'alt' '🐼'
-  'docker' '🐳'
-  'venv' '🐍'
-  'conda' '🐉'
+  'primary' '🦆 '
+  'alt' '🐼 '
+  'docker' '🐳 '
+  'venv' '🐍 '
+  'conda' '🐉 '
 )
 
 typeset -gA EMOJI_ALTS
@@ -34,7 +34,8 @@ EMOJI_ALTS=(
   "$EMOJI[conda]" "%F{$_c6}c:%f"
 )
 function maybe_emoji() {
-  if [[ -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
+  if [[ 0 == 1 && -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
+  # if [[ -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
     echo $1
   else
     echo $EMOJI_ALTS[$1]
@@ -177,8 +178,8 @@ function prompt_ayk_setup {
 
   # Set editor-info parameters.
   zstyle ':prezto:module:editor:info:completing' format "%B%F{$_c4}...%f%b"
-  zstyle ':prezto:module:editor:info:keymap:primary' format "$(maybe_emoji $EMOJI[primary]) "
-  zstyle ':prezto:module:editor:info:keymap:alternate' format "$(maybe_emoji $EMOJI[alt]) %F{$_attn}"
+  zstyle ':prezto:module:editor:info:keymap:primary' format "$(maybe_emoji $EMOJI[primary])"
+  zstyle ':prezto:module:editor:info:keymap:alternate' format "$(maybe_emoji $EMOJI[alt])%F{$_attn}"
   zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format "%B%F{$_c4}!%f%b"
 
   # Set vcs_info parameters.

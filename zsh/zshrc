@@ -123,8 +123,8 @@ vimreplace() {
 
   local search
   (( $+commands[ag] )) && \
-    search="ag -l --nocolor $1" || \
-    search="grep -rl $1 *"
+    search="command ag -l --nocolor '$1'" || \
+    search="grep -rl '$1' *"
 
   local -a matches
   while read line; do
@@ -233,9 +233,9 @@ alias jl=julia
 
 # python
 alias ipy3=ipython3
-alias ipy=ipython2
-alias py=python
+alias ipy=ipython
 alias py3=python3
+alias py=python
 venv() {
   source $1/bin/activate
 }
@@ -285,9 +285,9 @@ if (( $+commands[nodenv] )); then
   nodenv() { unset -f nodenv && eval "$(nodenv init - | tail -n +2)" && nodenv "$@"; }
 fi
 
-# if (( $+commands[pyenv] )); then
-#   pyenv() { unset -f pyenv && eval "$(pyenv init - | tail -n +2)" && pyenv "$@"; }
-# fi
+if (( $+commands[pyenv] )); then
+  pyenv() { unset -f pyenv && eval "$(pyenv init - | tail -n +2)" && pyenv "$@"; }
+fi
 
 # git
 alias g='git'
@@ -300,13 +300,14 @@ gr() {
 alias '$'=gr
 
 if (( $+commands[tag] )); then
-  tag() { command tag "$@"; source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
+  export TAG_SEARCH_PROG=rg
+  tag() { command tag "$@" && source ${TAG_ALIAS_FILE:-/tmp/tag_aliases} 2>/dev/null }
   alias ag=tag
+
+  if [[ $TAG_SEARCH_PROG == 'rg' ]]; then
+    alias agg='rg --files'
+  fi
 fi
-# if (( $+commands[peco] )); then
-#   tag() { nvim $(rg -n $1 | peco | awk -F\: '{print "+"$2,$1}') }
-#   # alias ag=tag
-# fi
 
 # other
 alias tmp="cd $HOME/tmp"
@@ -340,6 +341,10 @@ pskill() {
   ps aux | ag "[${1[1]}]${1[2,-1]}" | awk '{print $2}' | sudo xargs -I% command kill ${2:-} %
 }
 
+if (( $+commands[terraform] )); then
+  alias tf=terraform
+fi
+
 ###############################################################################
 # Builtin overrides
 ###############################################################################
@@ -364,6 +369,8 @@ alias cd=better_cd
 # tab completion in dotfiles directory
 dotfiles() { cd $DOTFILES/$1; }
 compctl -f -W $DOTFILES/ dotfiles
+
+# alias ls='COLUMNS=150 ls -G'
 
 ###############################################################################
 # Special Settings
@@ -424,3 +431,9 @@ setopt clobber
 if [[ -o INTERACTIVE && ! -o LOGIN ]]; then
   _startup_time_prompt '\x1b[35m'  # purple
 fi
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/aleks/lib/google-cloud-sdk/path.zsh.inc' ]; then source '/Users/aleks/lib/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/aleks/lib/google-cloud-sdk/completion.zsh.inc' ]; then source '/Users/aleks/lib/google-cloud-sdk/completion.zsh.inc'; fi
