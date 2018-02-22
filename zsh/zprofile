@@ -12,20 +12,6 @@ if [[ ! -f /tmp/.ssh-agent-loaded ]]; then
   ssh-add -K -A
   touch /tmp/.ssh-agent-loaded
 fi
-# if [[ -z $TMUX ]]; then
-#   if [[ -f $HOME/.ssh/agent/pid ]]; then
-#     export SSH_AGENT_PID=$(cat $HOME/.ssh/agent/pid)
-#   fi
-#
-#   if [[ -n $SSH_AGENT_PID ]] && lsof -p $SSH_AGENT_PID >/dev/null 2>&1; then
-#     export SSH_AUTH_SOCK=$(cat $HOME/.ssh/agent/auth-sock-path)
-#   else
-#     eval $(ssh-agent -s)
-#     mkdir -p $HOME/.ssh/agent
-#     echo -n $SSH_AGENT_PID >! $HOME/.ssh/agent/pid
-#     echo -n $SSH_AUTH_SOCK >! $HOME/.ssh/agent/auth-sock-path
-#   fi
-# fi
 
 ###############################################################################
 # Browser
