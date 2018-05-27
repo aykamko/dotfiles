@@ -137,7 +137,7 @@ call plug#end()
 filetype plugin indent on " required
 
 function! PlugLoaded(plug_name) abort
-  return !empty(get(g:plugs, a:plug_name))
+  return !empty(get(g:plugs, a:plug_name)) && isdirectory(g:plugs[a:plug_name]['dir'])
 endfunction
 command! -nargs=1 PlugLoaded echo PlugLoaded(<f-args>)
 
@@ -1212,13 +1212,13 @@ let g:EasyMotionSegments_key = 's'
 " Text Objects {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim-textobj-user.vim
-augroup TextobjUserSetup
-  autocmd!
-  autocmd BufEnter * call TextobjUserSetup()
-augroup END
+if PlugLoaded('vim-textobj-user')
+  augroup TextobjUserSetup
+    autocmd!
+    autocmd BufEnter * call TextobjUserSetup()
+  augroup END
 
-function! TextobjUserSetup()
-  if PlugLoaded('vim-textobj-user')
+  function! TextobjUserSetup()
     " textobj for current line
     " Copied from: https://github.com/kana/vim-textobj-user
     call textobj#user#plugin('line', {
@@ -1348,9 +1348,8 @@ function! TextobjUserSetup()
 
       return ['V', start_pos, end_pos]
     endfunction
-
-  endif
-endfunction
+  endfunction
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " incsearch.vim {{{
