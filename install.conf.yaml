@@ -66,12 +66,6 @@
     ~/.zprezto/modules/prompt/functions/prompt_ayk_setup:
         path: zsh/zprezto/modules/prompt/functions/prompt_ayk_setup
         relink: true
-    ~/.zprezto/modules/fast-syntax-highlighting:
-        path: zsh/zprezto/modules/fast-syntax-highlighting
-        relink: true
-    ~/.zprezto/modules/fast-syntax-highlighting/fast-syntax-highlighting:
-        path: fast-syntax-highlighting
-        relink: true
 
 
 # ----- vim -----
