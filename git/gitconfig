@@ -183,10 +183,10 @@
         for b in $PRUNED; do \
             LOCAL_BRANCH=${b#${REMOTE}/}; \
             if $(git rev-parse --verify $LOCAL_BRANCH >/dev/null 2>&1); then \
-                read -p \"Remove local branch '${LOCAL_BRANCH}'? [y/N] \" yn; \
+                read -p \"Remove local branch '${LOCAL_BRANCH}'? [Y/n] \" yn; \
                 case $yn in \
-                    [Yy]* ) git branch -D $LOCAL_BRANCH ;; \
-                    * ) echo 'skipping' ;; \
+                    [Nn]* ) echo 'skipping' ;; \
+                    * ) git branch -D $LOCAL_BRANCH ;; \
                 esac; \
             fi; \
         done; }; \

@@ -55,6 +55,9 @@ Plug 'wakatime/vim-wakatime'
 " Plug 'janko-m/vim-test'
 " Plug '/Users/aleks/proj/vim-touchbar'
 " Plug 'sheerun/vim-polyglot', { 'for': ['Jenkinsfile', 'groovy'] }
+Plug 'jceb/vim-orgmode'
+      \ | Plug 'tpope/vim-speeddating'
+Plug 'blueyed/vim-diminactive'
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -84,7 +87,7 @@ augroup terraform_filetype
   autocmd BufNewFile,BufReadPost *.hcl set filetype=terraform
   autocmd BufNewFile,BufReadPost *.tfstate set filetype=json
   autocmd VimEnter * if PlugLoaded('tcomment_vim')
-        \| call tcomment#DefineType('terraform', '# %s') | endif
+        \| call tcomment#type#Define('terraform', '# %s') | endif
 augroup END
 Plug 'hashivim/vim-terraform',       { 'for': ['terraform', 'hcl'] }
 
@@ -167,8 +170,14 @@ function! s:pick_first_executable(...)
     endif
   endfor
 endfunction
-let g:python_host_prog = s:pick_first_executable('/usr/local/bin/python2', '/usr/bin/python2')
-let g:python3_host_prog = s:pick_first_executable('/usr/local/bin/python3', '/usr/bin/python3')
+let g:python_host_prog = s:pick_first_executable(
+      \ '/Users/aleks/.pyenv/shims/python',
+      \ '/usr/local/bin/python2',
+      \ '/usr/bin/python2')
+let g:python3_host_prog = s:pick_first_executable(
+      \ '/Users/aleks/.pyenv/shims/python3',
+      \ '/usr/local/bin/python3',
+      \ '/usr/bin/python3')
 
 " skip checks
 let g:python_host_skip_check = 1

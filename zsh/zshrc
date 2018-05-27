@@ -203,21 +203,10 @@ if [[ -z $TMUX ]]; then
   tmux() { [[ -z "$@" ]] && command tmux new -A -s main || command tmux "$@" }
 fi
 
-tkill() {
-  case $1 in
-    (-1)
-      command tmux kill-session;;
-    (-a|--all)
-      command tmux kill-session -a;;
-    (*)
-      command tmux kill-session -a
-      command tmux kill-session;;
-  esac
-}
+alias tkill="killall tmux"
 
 # CSV
 # source: https://chrisjean.com/view-csv-data-from-the-command-line/
-
 csvless() {
   local outputcmd
   if [[ -n $2 ]]; then
@@ -437,3 +426,9 @@ if [ -f '/Users/aleks/lib/google-cloud-sdk/path.zsh.inc' ]; then source '/Users/
 
 # The next line enables shell command completion for gcloud.
 if [ -f '/Users/aleks/lib/google-cloud-sdk/completion.zsh.inc' ]; then source '/Users/aleks/lib/google-cloud-sdk/completion.zsh.inc'; fi
+
+if [[ -f /Users/aleks/lib/torch/install/bin/torch-activate ]]; then
+  . /Users/aleks/lib/torch/install/bin/torch-activate
+fi
+
+alias rgb2hex='printf "#%02x%02x%02x\n"'
