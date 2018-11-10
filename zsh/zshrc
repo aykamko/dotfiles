@@ -281,6 +281,11 @@ fi
 # git
 alias g='git'
 
+# direnv
+if (( $+commands[direnv] )); then
+  eval "$(direnv hook zsh)"
+fi
+
 # context from root of git directory
 gr() {
   local root=$(command git rev-parse --show-toplevel 2> /dev/null)
@@ -294,7 +299,9 @@ if (( $+commands[tag] )); then
   alias ag=tag
 
   if [[ $TAG_SEARCH_PROG == 'rg' ]]; then
-    alias agg='rg --files'
+    agg() {
+      rg --files -g "*$1*"
+    }
   fi
 fi
 
@@ -330,9 +337,8 @@ pskill() {
   ps aux | ag "[${1[1]}]${1[2,-1]}" | awk '{print $2}' | sudo xargs -I% command kill ${2:-} %
 }
 
-if (( $+commands[terraform] )); then
-  alias tf=terraform
-fi
+alias tf=terraform
+alias tg=terragrunt
 
 ###############################################################################
 # Builtin overrides
@@ -432,3 +438,27 @@ if [[ -f /Users/aleks/lib/torch/install/bin/torch-activate ]]; then
 fi
 
 alias rgb2hex='printf "#%02x%02x%02x\n"'
+
+# Kubernetes
+alias k=kubectl
+alias ksys="kubectl -n kube-system"
+kall() {
+  kubectl "$@" --all-namespaces
+}
+
+docker-gc() {
+  docker run \
+    --rm \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /etc:/etc \
+    -e MINIMUM_IMAGES_TO_SAVE=2 \
+    spotify/docker-gc
+}
+
+macos-flushdns() {
+  sudo killall -HUP mDNSResponder && sudo killall mDNSResponderHelper && sudo dscacheutil -flushcache
+}
+
+# if hash crowdai-env 2>/dev/null; then
+#   eval "$(crowdai-env)"
+# fi

@@ -34,7 +34,7 @@ EMOJI_ALTS=(
   "$EMOJI[conda]" "%F{$_c6}c:%f"
 )
 function maybe_emoji() {
-  if [[ 0 == 1 && -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
+  if false && [[ -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
   # if [[ -z $SSH_CONNECTION && -z $NVIM_LISTEN_ADDRESS ]]; then
     echo $1
   else
@@ -163,14 +163,13 @@ function prompt_ayk_precmd {
 function prompt_ayk_setup {
   setopt LOCAL_OPTIONS
   unsetopt XTRACE KSH_ARRAYS
-  prompt_opts=(cr percent subst)
+  prompt_opts=(cr percent sp subst)
 
   # Load required functions.
   autoload -Uz add-zsh-hook
   autoload -Uz vcs_info
 
   # Add hook for calling vcs_info before each command.
-  #
   add-zsh-hook precmd prompt_ayk_precmd
 
   # If terminal not in tmux, prepend message

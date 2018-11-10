@@ -7,6 +7,7 @@ export DOTFILES=$HOME/dotfiles
 export WORKON_HOME=$HOME/.pyvirtualenvs # Virtualenv
 export TEXMFHOME=texmf # Latex
 export KEYTIMEOUT=1 # Reduce command line vim delay
+export PROMPT_EOL_MARK='%' # https://unix.stackexchange.com/questions/167582/why-zsh-ends-a-line-with-a-highlighted-percent-symbol
 
 if [[ ! -f /tmp/.ssh-agent-loaded ]]; then
   ssh-add -K -A

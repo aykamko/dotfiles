@@ -374,6 +374,7 @@ augroup modify_textwidth
   autocmd!
   autocmd FileType sh,bash,zsh set textwidth=79
 augroup END
+let g:is_posix = 1  " always use posix syntax
 
 " vim-indent-guides
 let g:indent_guides_enable_on_vim_startup = 1
@@ -555,7 +556,8 @@ function! OpenDirectionalSplit(...) abort
     echohl Normal
   else
     let g:last_direction_split = dirchoice
-    exec join([action, file])
+    let cmd = join([action, file])
+    exec cmd
     return 1
   endif
   return 0
@@ -1049,6 +1051,15 @@ if PlugLoaded('neomake')
     let s:pylint_rcfile_path = '/Users/aleks/crowdai/inca/pylintrc'
     let g:neomake_python_pylint_maker = neomake#makers#ft#python#pylint()
     let g:neomake_python_pylint_maker.args += ['--rcfile='.s:pylint_rcfile_path]
+  endif
+
+  if executable('eslint')
+    let g:neomake_javascript_enabled_makers = ['eslint']
+
+    let s:eslint_rcfile_path = '/Users/aleks/crowdai/aztec_platform/.eslintrc.js'
+    let g:neomake_javascript_eslint_maker = neomake#makers#ft#javascript#eslint()
+    let g:neomake_javascript_eslint_maker.exe = '/Users/aleks/crowdai/aztec_platform/host_node_modules/node_modules/eslint/bin/eslint.js'
+    let g:neomake_javascript_eslint_maker.args += ['-c', s:eslint_rcfile_path]
   endif
 
   let g:neomake_tex_enabled_makers = []

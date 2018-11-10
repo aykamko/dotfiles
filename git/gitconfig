@@ -33,7 +33,7 @@
     syncignore = "!git rm --cached `git ls-files -i --exclude-from=.gitignore`"
 
     # branch
-    b = branch -v
+    b = branch --sort=-committerdate -v
 
     # commit
     wip = commit -am "WIP"
