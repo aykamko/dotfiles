@@ -162,41 +162,60 @@ alias zlocal='vim ~/.zshrc.local'
 alias gitconfig='vim ~/.gitconfig'
 alias gitignore_global='vim ~/.gitignore_global'
 alias gs='git status'
-rg_git_list() {
-  # lists all files in a git repository, marking ignored files as yellow
+
+# lists all files in a git repository, marking gitignored files as yellow
+ripgrep_git_list() {
   local root is_git_dir
   if [[ -n $1 ]]; then
     root=$1
-    is_git_dir=1
+    is_git_dir="true"
   else
     root=$(git rev-parse --show-toplevel 2>/dev/null)
     if [[ $? -eq 0 ]]; then
-      is_git_dir=1
+      is_git_dir="true"
     else
-      is_git_dir=0
+      is_git_dir="false"
       root=$PWD
     fi
   fi
 
   local rg_args_inverse_git_ignore=()
-  if [[ $is_git_dir -eq 1 && -f $root/.gitignore ]]; then
-    cat $root/.gitignore | while read rule; do
-      rule=${rule%%\#*}
-      [[ -n $rule ]] && rg_args_inverse_git_ignore+=("-g '$rule'")
-    done
+  if [[ $is_git_dir == "true" ]]; then
+    if [[ -f "$root/.gitignore" ]]; then
+      # include everything in gitignore (inverse of the gitignore file)
+      while read rule; do
+        # filter out comments and empty lines
+        rule=${rule%%\#*}
+        if [[ -n $rule ]]; then
+          rg_args_inverse_git_ignore+=("-g" "$rule")
+        fi
+      done < "$root/.gitignore"
+    fi
+    if [[ -f "$root/.ignore" ]]; then
+      # exclude everything in .ignore
+      while read rule; do
+        # filter out comments and empty lines
+        rule=${rule%%\#*}
+        if [[ -n $rule ]]; then
+          rg_args_inverse_git_ignore+=("-g" "!$rule")
+        fi
+      done < "$root/.ignore"
+    fi
   fi
 
-  local ylw=$(tput setaf 3)
-  local clr=$(tput sgr0)
   {
-    # regular files
-    chdir $root && rg -g '!.git' --hidden --files;
+    chdir "$root"
 
-    # gitignored files
-    if [[ $is_git_dir -eq 1 && -f $root/.gitignore ]]; then
-      chdir $root && eval "rg --no-ignore-vcs ${rg_args_inverse_git_ignore[@]} --files" | \
-        while read match; do echo -e "$ylw$match$clr"; done;
-    fi;
+    # regular files (excluding .git folder)
+    rg -g '!.git' --hidden --files
+
+    # gitignored files, output in yellow
+    if [[ -n "$rg_args_inverse_git_ignore" ]]; then
+      rg --no-ignore-vcs "${rg_args_inverse_git_ignore[@]}" --files | \
+        while read match; do
+          echo -e "$_ylw$match$_clr"
+        done
+    fi
   }
 }
 
@@ -405,7 +424,7 @@ if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
 
-  export FZF_DEFAULT_COMMAND="$(which rg_git_list); rg_git_list"
+  export FZF_DEFAULT_COMMAND="$(which ripgrep_git_list); ripgrep_git_list"
   export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
 
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'

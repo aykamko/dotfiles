@@ -24,7 +24,7 @@ fe() {
     root=$PWD
   fi
 
-  out=$(rg_git_list $root | \
+  out=$(ripgrep_git_list $root | \
       fzf-tmux --ansi $filter --query="$1" --select-1 --exit-0 --expect=ctrl-d,f1)
 
   # don't do anything if we don't pick a file
