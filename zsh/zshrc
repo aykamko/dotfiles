@@ -31,6 +31,20 @@ if [[ -f $HOME/.config/shell_bookmarks.zsh ]]; then
 fi
 alias bookmarks="vim $HOME/.config/shell_bookmarks.zsh"
 
+
+###############################################################################
+# Colors
+###############################################################################
+_blk='\x1b[30m'
+_red='\x1b[31m'
+_grn='\x1b[32m'
+_ylw='\x1b[33m'
+_blu='\x1b[34m'
+_prp='\x1b[35m'
+_cyn='\x1b[36m'
+_gry='\x1b[37m'
+alias _clr='tput -Txterm sgr0'
+
 ###############################################################################
 # Neovim Pane Switching
 ###############################################################################
@@ -275,7 +289,12 @@ if (( $+commands[nodenv] )); then
 fi
 
 if (( $+commands[pyenv] )); then
-  pyenv() { unset -f pyenv && eval "$(pyenv init - | tail -n +2)" && pyenv "$@"; }
+  pyenv() {
+    unset -f pyenv && \
+      eval "$(pyenv init - | tail -n +2)" && \
+      eval "$(pyenv virtualenv-init -)" && \
+      pyenv "$@"
+  }
 fi
 
 # git
@@ -440,10 +459,19 @@ fi
 alias rgb2hex='printf "#%02x%02x%02x\n"'
 
 # Kubernetes
-alias k=kubectl
-alias ksys="kubectl -n kube-system"
+k() {
+  echo "${_ylw}$(cat ~/.kube/config | grep --color=never '^current-context:.*')$(_clr)"
+  kubectl "$@"
+}
+alias kctx='kubectl config use-context'
+alias ktail='k logs --tail=100 -f'
+alias ksys="k -n kube-system"
 kall() {
-  kubectl "$@" --all-namespaces
+  k "$@" --all-namespaces
+}
+kube-clear-evicted() {
+  local namespace="--namespace=${1:-default}"
+  kubectl $namespace delete pod $(kubectl $namespace get pods | grep Evicted | awk '{print $1}')
 }
 
 docker-gc() {
@@ -459,6 +487,6 @@ macos-flushdns() {
   sudo killall -HUP mDNSResponder && sudo killall mDNSResponderHelper && sudo dscacheutil -flushcache
 }
 
-# if hash crowdai-env 2>/dev/null; then
-#   eval "$(crowdai-env)"
-# fi
+if hash crowdai-env 2>/dev/null; then
+  eval "$(crowdai-env)"
+fi

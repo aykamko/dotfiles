@@ -205,6 +205,23 @@
         fi; }; \
         hub"
 
+    change-base = "!change_base() { \
+            if [[ $# -ne 2 ]]; then \
+              echo 'Usage: git change-base <new-base> <cherry-pick>' >&2; \
+              exit 1; \
+            fi; \
+            local newbase=\"$1\"; \
+            local cherrypick=\"$2\"; \
+            local curref=$(git rev-parse --abbrev-ref HEAD); \
+            local deprref=\"depr_${curref}\"; \
+            git branch -m \"$deprref\"; \
+            git checkout \"$newbase\"; \
+            git checkout -b \"$curref\"; \
+            git cherry-pick \"$cherrypick\"; \
+        }; \
+        change_base"
+
+
 [format]
     pretty = format:%C(blue)%ad%Creset %C(yellow)%h%C(green)%d%Creset %C(blue)%s %C(magenta) [%an]%Creset
 [mergetool]

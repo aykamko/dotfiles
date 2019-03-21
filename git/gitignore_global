@@ -7,6 +7,7 @@ node_modules/
 .direnv
 .envrc
 __pycache__
+.mypy_cache
 
 # Created by http://www.gitignore.io
 

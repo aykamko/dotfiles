@@ -34,7 +34,8 @@ let g:plug_dir = '~/.vim/bundle/'
 
 call plug#begin(g:plug_dir)
 
-Plug 'neomake/neomake'
+" Plug 'neomake/neomake'
+Plug 'w0rp/ale' | Plug 'maximbaz/lightline-ale'
 Plug 'sbdchd/neoformat'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'itchyny/lightline.vim'
@@ -67,19 +68,19 @@ Plug 'mattn/webapi-vim'
 Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
 Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
-
+Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
 Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
-Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
+" Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
 Plug 'aykamko/vim-python-pep8-indent',{ 'for': 'python' }
 Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
-Plug 'leafgarland/typescript-vim',   { 'for': 'typescript' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
-Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
-Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
+" Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
+" Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
 Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 Plug 'jez/vim-github-hub',           { 'for': 'markdown.ghpull' }
 Plug 'derekwyatt/vim-scala',         { 'for': 'scala' }
+Plug 'tweekmonster/django-plus.vim'
 
 augroup terraform_filetype
   autocmd!
@@ -105,6 +106,9 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 
 if has('nvim')
+  Plug 'mhartington/nvim-typescript', {
+        \ 'for': ['typescript', 'typescript.tsx'],
+        \ 'do': ['./install.sh', ':UpdateRemotePlugins'] }
   Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
   Plug 'zchee/deoplete-jedi', { 'for': 'python' }
   " Plug '~/proj/deoplete-foreign-buffer.nvim'
@@ -113,7 +117,7 @@ if has('nvim')
 endif
 
 if has('mac')
-  Plug 'junegunn/vim-xmark'
+  Plug 'junegunn/vim-xmark', { 'do': 'make' }
 endif
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
@@ -155,8 +159,8 @@ endfunction
 let mapleader = ' '
 let maplocalleader = ' '
 
-let s:E = '✖'
-let s:W = '▲'
+let s:E = '✖ '
+let s:W = '▲ '
 let s:WAIT = '...'
 let s:OK = '✓'
 
@@ -189,6 +193,7 @@ set nolist          " hide tabs and EOL chars
 set showcmd         " show normal mode commands as they are entered
 set noshowmode      " don't show mode becase powerline already does it
 set nowrap          " don't wrap long lines
+set hidden          " don't warn unsaved changes when changing buffers
 
 " Scrolling
 set scrolloff=5     " minimum of three lines above and below cursor
@@ -794,6 +799,16 @@ command! ProfileDone profile pause | noautocmd qall!
 
 command! PWD echo expand('%:p:h')
 
+function! ToggleLocationList()
+  if empty(filter(tabpagebuflist(), 'getbufvar(v:val, "&buftype") is# "quickfix"'))
+    lwindow
+  else
+    lclose
+  endif
+endfunction
+command! -nargs=0 ToggleLocationList call ToggleLocationList()
+nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " tComment {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -809,7 +824,7 @@ if PlugLoaded('lightline.vim')
   let g:lightline = {
         \   'colorscheme': 'Tomorrow_Night',
         \   'active': {
-        \     'left': [['mode', 'paste'], ['fileinfo', 'syntax_status', 'syntax_err', 'syntax_war']],
+        \     'left': [['mode', 'paste'], ['fileinfo', 'linter_checking', 'linter_errors', 'linter_warnings', 'linter_ok']],
         \     'right': [['lineinfo'], ['githead'], ['filetype']]
         \   },
         \   'inactive': {
@@ -822,17 +837,25 @@ if PlugLoaded('lightline.vim')
         \     'fileinfo': 'LLFileInfo',
         \     'lineinfo': 'LLLineInfo',
         \     'filetype': 'LLFileType',
-        \     'syntax_status': 'SyntaxStatus',
         \   },
         \   'component_expand' : {
-        \     'syntax_err': 'SyntaxError',
-        \     'syntax_war': 'SyntaxWarning',
+        \     'linter_checking': 'lightline#ale#checking',
+        \     'linter_warnings': 'lightline#ale#warnings',
+        \     'linter_errors': 'lightline#ale#errors',
+        \     'linter_ok': 'lightline#ale#ok',
         \   },
         \   'component_type': {
-        \     'syntax_err': 'error',
-        \     'syntax_war': 'warning',
+        \     'linter_warnings': 'warning',
+        \     'linter_errors': 'error',
         \   },
         \ }
+
+  if PlugLoaded('ale')
+    let g:lightline#ale#indicator_checking = s:WAIT
+    let g:lightline#ale#indicator_warnings = s:W.' '
+    let g:lightline#ale#indicator_errors = s:E.' '
+    let g:lightline#ale#indicator_ok = s:OK
+  endif
 
   function! GitHead()
     let bufnr = bufnr('%')
@@ -880,25 +903,6 @@ if PlugLoaded('lightline.vim')
   function! LLFileType()
     if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
     return &ft
-  endfunction
-
-  function! SyntaxError()
-    if !get(b:, 'neomake_exists', 0) | return '' | endif
-    let counts = neomake#statusline#LoclistCounts()
-    if !has_key(counts, 'E') | return '' | endif
-    return printf('%s %d', s:E, counts['E'])
-  endfunction
-  function! SyntaxWarning()
-    if !get(b:, 'neomake_exists', 0) | return '' | endif
-    let counts = neomake#statusline#LoclistCounts()
-    if !has_key(counts, 'W') | return '' | endif
-    return printf('%s %d', s:W, counts['W'])
-  endfunction
-  function! SyntaxStatus()
-    if !get(b:, 'neomake_exists', 0) | return '' | endif
-    if get(b:, 'neomake_running', 0) | return s:WAIT | endif
-    if empty(SyntaxError().SyntaxWarning()) | return s:OK | endif
-    return ''
   endfunction
 
   " filename and fileinfo
@@ -1048,9 +1052,9 @@ if PlugLoaded('neomake')
   if executable('pylint')
     let g:neomake_python_enabled_makers = ['pylint']
 
-    let s:pylint_rcfile_path = '/Users/aleks/crowdai/inca/pylintrc'
-    let g:neomake_python_pylint_maker = neomake#makers#ft#python#pylint()
-    let g:neomake_python_pylint_maker.args += ['--rcfile='.s:pylint_rcfile_path]
+    " let s:pylint_rcfile_path = '/Users/aleks/crowdai/inca/pylintrc'
+    " let g:neomake_python_pylint_maker = neomake#makers#ft#python#pylint()
+    " let g:neomake_python_pylint_maker.args += ['--rcfile='.s:pylint_rcfile_path]
   endif
 
   if executable('eslint')
@@ -1062,16 +1066,20 @@ if PlugLoaded('neomake')
     let g:neomake_javascript_eslint_maker.args += ['-c', s:eslint_rcfile_path]
   endif
 
-  let g:neomake_tex_enabled_makers = []
+  if executable('npx')
+    let g:neomake_typescript_enabled_makers = ['tslint']
 
-  function! ToggleLocationList()
-    if empty(filter(tabpagebuflist(), 'getbufvar(v:val, "&buftype") is# "quickfix"'))
-      lwindow
-    else
-      lclose
-    endif
-  endfunction
-  nnoremap <silent> <leader>1 :call ToggleLocationList()<CR>
+    let s:tslint_config_path = '/Users/aleks/wize/wize/v2-frontend/tslint.json'
+    let s:tslint_tsconfig_path = '/Users/aleks/wize/wize/v2-frontend/tsconfig.json'
+    let g:neomake_typescript_tslint_maker = {
+          \ 'errorformat': 'ERROR: %f:%l:%c - %m',
+          \ }
+    let g:neomake_typescript_tslint_maker.exe = 'npx'
+    let g:neomake_typescript_tslint_maker.args = [
+          \ 'tslint', '-c', s:tslint_config_path, '-p', s:tslint_tsconfig_path]
+  endif
+
+  let g:neomake_tex_enabled_makers = []
 
   function! ToggleNeomakeF()
     let b:neomake_enabled=!get(b:, 'neomake_enabled', 1)
@@ -1117,6 +1125,24 @@ if PlugLoaded('neomake')
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" ale {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if PlugLoaded('ale')
+  let g:ale_linters = {
+        \ 'typescript': ['tslint'],
+        \ }
+
+  let g:ale_sign_column_always = 1
+
+  " only lint on file open and file save
+  let g:ale_lint_on_text_changed = 'never'
+
+  " show ale messages in quickfix list, not loclist
+  " let g:ale_set_loclist = 0
+  " let g:ale_set_quickfix = 1
+endif
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " neoformat {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if executable('yapf')
@@ -1124,6 +1150,17 @@ if executable('yapf')
   let s:yapf_style_path = '/Users/aleks/crowdai/inca/style.yapf'
   let g:neoformat_python_yapf.args = ['--style='.s:yapf_style_path]
   let g:neoformat_enabled_python = ['yapf']
+endif
+
+if executable('npx')
+  let g:neoformat_typescript_prettier = neoformat#formatters#typescript#prettier()
+  let g:neoformat_typescript_prettier.exe = 'npx'
+  let g:neoformat_typescript_prettier.args = ['prettier'] + g:neoformat_typescript_prettier.args
+
+  augroup typescript_fmt
+    autocmd!
+    autocmd BufWritePre *.tsx,*.ts if !get(g:, 'disable_prettier', 0) | silent! undojoin | Neoformat | endif
+  augroup END
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
