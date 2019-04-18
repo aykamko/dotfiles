@@ -1128,8 +1128,10 @@ endif
 " ale {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if PlugLoaded('ale')
+  highlight! ALEWarning ctermbg=DarkMagenta
+  highlight! ALEError ctermbg=DarkMagenta
   let g:ale_linters = {
-        \ 'typescript': ['tslint'],
+        \ 'typescript': ['tsserver'],
         \ }
 
   let g:ale_sign_column_always = 1
