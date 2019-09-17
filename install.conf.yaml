@@ -253,3 +253,9 @@
     ~/.config/direnv/direnvrc:
       path: direnv/direnvrc
       create: true
+
+# ----- alacritty -----
+- link:
+    ~/.config/alacritty/alacritty.yml:
+      path: alacritty/alacritty.yml
+      create: true

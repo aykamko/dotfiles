@@ -67,6 +67,7 @@ Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
 " Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
 Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
+Plug 'othree/yajs.vim',              { 'for': ['javascript'] }
 Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 " Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
