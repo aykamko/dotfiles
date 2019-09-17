@@ -247,3 +247,9 @@
       mkdir -p ~/.jupyter/custom
       rm -f ~/.jupyter/custom/custom.js
       ln -f $HOME/dotfiles/jupyter/custom.js $HOME/.jupyter/custom/custom.js
+
+# ----- direnv -----
+- link:
+    ~/.config/direnv/direnvrc:
+      path: direnv/direnvrc
+      create: true

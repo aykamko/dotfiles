@@ -35,14 +35,13 @@ let g:plug_dir = '~/.vim/bundle/'
 call plug#begin(g:plug_dir)
 
 " Plug 'neomake/neomake'
-Plug 'w0rp/ale' | Plug 'maximbaz/lightline-ale'
+" Plug 'w0rp/ale' | Plug 'maximbaz/lightline-ale'
 Plug 'sbdchd/neoformat'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'itchyny/lightline.vim'
 Plug 'junegunn/vim-easy-align'
 Plug 'kana/vim-textobj-user'
 Plug 'nathanaelkane/vim-indent-guides'
-Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
@@ -52,13 +51,12 @@ Plug 'tpope/vim-surround'
 Plug 'wellle/targets.vim'
 Plug 'junegunn/vim-peekaboo'
 Plug 'wakatime/vim-wakatime'
-" Plug 'kassio/neoterm'
-" Plug 'janko-m/vim-test'
 " Plug '/Users/aleks/proj/vim-touchbar'
 " Plug 'sheerun/vim-polyglot', { 'for': ['Jenkinsfile', 'groovy'] }
 Plug 'jceb/vim-orgmode'
       \ | Plug 'tpope/vim-speeddating'
 Plug 'blueyed/vim-diminactive'
+Plug 'neoclide/coc.nvim', { 'branch': 'release' }
 
 Plug 'easymotion/vim-easymotion'
       \ | Plug 'aykamko/vim-easyoperator-line'
@@ -66,7 +64,7 @@ Plug 'easymotion/vim-easymotion'
 Plug 'mattn/webapi-vim'
       \ | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
-Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
+" Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
 Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
 Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
@@ -106,14 +104,15 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 
 if has('nvim')
-  Plug 'mhartington/nvim-typescript', {
-        \ 'for': ['typescript', 'typescript.tsx'],
-        \ 'do': ['./install.sh', ':UpdateRemotePlugins'] }
-  Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
-  Plug 'zchee/deoplete-jedi', { 'for': 'python' }
+  " Plug 'mhartington/nvim-typescript', {
+  "       \ 'for': ['typescript', 'typescript.tsx'],
+  "       \ 'do': ['./install.sh', ':UpdateRemotePlugins'] }
+  " Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+  " Plug 'zchee/deoplete-jedi', { 'for': 'python' }
   " Plug '~/proj/deoplete-foreign-buffer.nvim'
   " Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
   Plug 'Shougo/neosnippet.vim'
+  Plug 'Shougo/defx.nvim', { 'do': ':UpdateRemotePlugins' }
 endif
 
 if has('mac')
@@ -239,11 +238,16 @@ if has('nvim')
   augroup END
 end
 
+let s:buftype_hide_columns = ['terminal', 'defx']
+function! s:should_show_columns_for_buftype() abort
+  return index(s:buftype_hide_columns, &ft) < 0
+endfunction
+
 " hack to always display sign column
 augroup always_display_sign_col
   autocmd!
   autocmd BufEnter * sign define dummy
-  autocmd BufEnter * if &buftype !=# 'terminal' |
+  autocmd BufEnter * if <SID>should_show_columns_for_buftype() |
         \ exec 'sign place 9999 line=1 name=dummy buffer='.bufnr('') |
         \ endif
   if has('nvim')
@@ -345,20 +349,25 @@ highlight! def link highlightKeywords Todo
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " toggle number/relativenumber on insert/normal mode
 function! s:insert_toggle_relnumber()
-  if !get(b:, 'goyo_enabled', 0) && &buftype !=# 'terminal'
+  if !get(b:, 'goyo_enabled', 0) && <SID>should_show_columns_for_buftype()
     setlocal invrelativenumber
   endif
 endfunction
+
 augroup line_numbering
   autocmd!
-  autocmd BufEnter * if &buftype !=# 'terminal' |
+  autocmd BufEnter * if <SID>should_show_columns_for_buftype() |
                           \ setlocal number | setlocal relativenumber |
+                          \ endif
+  autocmd BufLeave * if <SID>should_show_columns_for_buftype() |
+                          \ setlocal number | setlocal norelativenumber |
                           \ endif
   autocmd InsertEnter,InsertLeave * call s:insert_toggle_relnumber()
   if has('nvim')
     autocmd TermOpen * setlocal norelativenumber | setlocal nonumber
   endif
 augroup END
+
 augroup focus_events_line_numbering
   autocmd!
   autocmd FocusLost * call s:insert_toggle_relnumber() |
@@ -489,7 +498,7 @@ function! s:blackhole_delete(mode)
   endif
 endfunction
 function! s:blackhole_bindings()
-  if &ft =~ 'nerdtree' | return | endif
+  if &ft =~ 'defx' | return | endif
   nnoremap <buffer><silent> mp :set operatorfunc=<SID>blackhole_paste<CR>g@
   vnoremap <buffer><silent> mp :<c-u>call <SID>blackhole_paste(visualmode())<CR>
   nnoremap <buffer><silent> md :set operatorfunc=<SID>blackhole_delete<CR>g@
@@ -858,6 +867,7 @@ if PlugLoaded('lightline.vim')
   endif
 
   function! GitHead()
+    if index(['defx', 'fzf'], &ft) > -1 | return '' | endif
     let bufnr = bufnr('%')
     let git_head_ref = getbufvar(bufnr, 'git_head_ref')
     if empty(git_head_ref)
@@ -881,7 +891,7 @@ if PlugLoaded('lightline.vim')
 
   function! LLMode()
     let mode = get({
-          \ 'nerdtree': 'nerdtree',
+          \ 'defx': 'defx',
           \ 'fzf': 'FZF',
           \ 'peekaboo': 'peekaboo',
           \ }, &ft)
@@ -891,31 +901,31 @@ if PlugLoaded('lightline.vim')
     return mode
   endfunction
   function! LLFileInfo()
-    if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
+    if index(['defx', 'fzf'], &ft) > -1 | return '' | endif
     let segments = [LLReadonly(), LLTrucatedFilePath(), LLModified()]
     return substitute(join(segments, ' '), '^\s*\(.\{-}\)\s*$', '\1', '')
   endfunction
   function! LLLineInfo()
-    if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
+    if index(['defx', 'fzf'], &ft) > -1 | return '' | endif
     let [_, l, c, _] = getpos('.')
     return l.':'.c
   endfunction
   function! LLFileType()
-    if index(['nerdtree', 'fzf'], &ft) > -1 | return '' | endif
+    if index(['defx', 'fzf'], &ft) > -1 | return '' | endif
     return &ft
   endfunction
 
   " filename and fileinfo
   let g:pathname_depth = 3
   function! LLModified()
-    return index(['help', 'nerdtree', 'peekaboo'], &ft) > -1 ? '' :
+    return index(['help', 'defx', 'peekaboo'], &ft) > -1 ? '' :
           \ &modified ? '+' : ''
   endfunction
   function! LLReadonly()
-    return index(['help', 'nerdtree', 'peekaboo'], &ft) < 0 && &readonly ? '🔒' : ''
+    return index(['help', 'defx', 'peekaboo'], &ft) < 0 && &readonly ? '🔒' : ''
   endfunction
   function! LLTrucatedFilePath()
-    if index(['qf', 'nerdtree', 'peekaboo'], &ft) > -1 | return '' | endif
+    if index(['qf', 'defx', 'peekaboo'], &ft) > -1 | return '' | endif
     if &buftype ==# 'terminal' | return '' | endif
     let bufnr = bufnr('%')
     let buf_trunc_path = getbufvar(bufnr, 'trunc_path')
@@ -1027,8 +1037,8 @@ if PlugLoaded('neosnippet.vim')
         \ } " disable built-in snippets
 
   " expand snippets with Enter
-  imap <silent><expr> <CR> neosnippet#expandable_or_jumpable() ?
-        \ "\<Plug>(neosnippet_expand_or_jump)" : "\<CR>"
+  " imap <silent><expr> <CR> neosnippet#expandable_or_jumpable() ?
+  "       \ "\<Plug>(neosnippet_expand_or_jump)" : "\<CR>"
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
@@ -1147,12 +1157,12 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " neoformat {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if executable('yapf')
-  let g:neoformat_python_yapf = neoformat#formatters#python#yapf()
-  let s:yapf_style_path = '/Users/aleks/crowdai/inca/style.yapf'
-  let g:neoformat_python_yapf.args = ['--style='.s:yapf_style_path]
-  let g:neoformat_enabled_python = ['yapf']
-endif
+" if executable('yapf')
+"   let g:neoformat_python_yapf = neoformat#formatters#python#yapf()
+"   let s:yapf_style_path = '/Users/aleks/crowdai/inca/style.yapf'
+"   let g:neoformat_python_yapf.args = ['--style='.s:yapf_style_path]
+"   let g:neoformat_enabled_python = ['yapf']
+" endif
 
 if executable('npx')
   let g:neoformat_typescript_prettier = neoformat#formatters#typescript#prettier()
@@ -1459,40 +1469,42 @@ augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " NERDTree {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let NERDTree hijack netrw while still having async load
-let g:NERDTreeHijackNetrw = 1
-function! s:plugasync_nerdtree_checkForBrowse(dir)
-  silent! autocmd! FileExplorer
-  if a:dir != '' && isdirectory(a:dir)
-    if !exists('#NERDTree') | call plug#load('nerdtree') | endif
-    call nerdtree#checkForBrowse(dir)
-  endif
-endfunction
-augroup async_nerdtree
-  autocmd!
-  autocmd VimEnter * call s:plugasync_nerdtree_checkForBrowse(expand("<amatch>"))
-augroup END
+if PlugLoaded('nerdtree')
+  " let NERDTree hijack netrw while still having async load
+  let g:NERDTreeHijackNetrw = 1
+  function! s:plugasync_nerdtree_checkForBrowse(dir)
+    silent! autocmd! FileExplorer
+    if a:dir != '' && isdirectory(a:dir)
+      if !exists('#NERDTree') | call plug#load('nerdtree') | endif
+      call nerdtree#checkForBrowse(dir)
+    endif
+  endfunction
+  augroup async_nerdtree
+    autocmd!
+    autocmd VimEnter * call s:plugasync_nerdtree_checkForBrowse(expand("<amatch>"))
+  augroup END
 
-nnoremap <silent> <leader>k :NERDTreeFind<CR>
-nnoremap <silent> <leader>l :NERDTreeToggle<CR>
+  nnoremap <silent> <leader>k :NERDTreeFind<CR>
+  nnoremap <silent> <leader>l :NERDTreeToggle<CR>
 
-let g:NERDTreeWinSize = 35
-let g:NERDTreeQuitOnOpen = 1
+  let g:NERDTreeWinSize = 35
+  let g:NERDTreeQuitOnOpen = 1
 
-" close Vim if NERDTree is the only window left
-augroup nerdtree_solo_close
-  autocmd!
-  autocmd BufEnter *
-        \ if (winnr("$")==1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) |
-        \ q |
-        \ endif
-augroup END
+  " close Vim if NERDTree is the only window left
+  augroup nerdtree_solo_close
+    autocmd!
+    autocmd BufEnter *
+          \ if (winnr("$")==1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) |
+          \ q |
+          \ endif
+  augroup END
 
-augroup nerdtree_unmap_mx
-  autocmd!
-  autocmd FileType nerdtree
-              \| autocmd BufEnter * for x in ['m', 'd', 'p'] | exec 'unmap <buffer> m'.x | endfor
-augroup END
+  augroup nerdtree_unmap_mx
+    autocmd!
+    autocmd FileType nerdtree
+                \| autocmd BufEnter * for x in ['m', 'd', 'p'] | exec 'unmap <buffer> m'.x | endfor
+  augroup END
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Filetype {{{
@@ -1624,4 +1636,126 @@ let g:python_pep8_hanging_indent_width = 4
 " vim-terraform {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:terraform_align=1
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" defx.nvim {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:defx_directional_split()
+  let file = defx#get_candidate().action__path
+  return printf(":\<C-u>call defx#call_action('quit', []) | DirectionalSplit %s\<CR>", file)
+endfunction
+autocmd FileType defx call s:defx_settings()
+function! s:defx_settings() abort
+  " Define mappings
+  nnoremap <silent><buffer><expr> q
+  \ defx#do_action('quit')
+  nnoremap <silent><buffer><expr> <CR>
+  \ defx#is_directory() ?
+  \ defx#do_action('open_or_close_tree') :
+  \ defx#do_action('multi', ['drop', 'quit'])
+  nnoremap <silent><buffer><expr> s
+  \ defx#is_directory() ?
+  \ defx#do_action('open_or_close_tree') :
+  \ defx#do_action('multi', [['drop', 'vsplit'], 'quit'])
+  nnoremap <silent><buffer><expr> i
+  \ defx#is_directory() ?
+  \ defx#do_action('open_or_close_tree') :
+  \ defx#do_action('multi', [['drop', 'split'], 'quit'])
+  nnoremap <silent><buffer><expr> <C-s>
+  \ defx#is_directory() ?
+  \ defx#do_action('open_or_close_tree') :
+  \ <SID>defx_directional_split()
+  nnoremap <silent><buffer><expr> c
+  \ defx#do_action('copy')
+  nnoremap <silent><buffer><expr> m
+  \ defx#do_action('move')
+  nnoremap <silent><buffer><expr> p
+  \ defx#do_action('paste')
+  nnoremap <silent><buffer><expr> E
+  \ defx#do_action('open', 'vsplit')
+  nnoremap <silent><buffer><expr> P
+  \ defx#do_action('open', 'pedit')
+  nnoremap <silent><buffer><expr> o
+  \ defx#do_action('open_or_close_tree')
+  nnoremap <silent><buffer><expr> a
+  \ defx#do_action('new_file')
+  nnoremap <silent><buffer><expr> C
+  \ defx#do_action('toggle_columns',
+  \                'mark:indent:icon:filename:type:size:time')
+  nnoremap <silent><buffer><expr> S
+  \ defx#do_action('toggle_sort', 'time')
+  nnoremap <silent><buffer><expr> d
+  \ defx#do_action('remove_trash')
+  nnoremap <silent><buffer><expr> r
+  \ defx#do_action('rename')
+  nnoremap <silent><buffer><expr> yy
+  \ defx#do_action('yank_path')
+  nnoremap <silent><buffer><expr> .
+  \ defx#do_action('toggle_ignored_files')
+  nnoremap <silent><buffer><expr> ;
+  \ defx#do_action('repeat')
+  nnoremap <silent><buffer><expr> h
+  \ defx#do_action('cd', ['..'])
+  nnoremap <silent><buffer><expr> ~
+  \ defx#do_action('cd')
+  nnoremap <silent><buffer><expr> <Space>
+  \ defx#do_action('toggle_select') . 'j'
+  nnoremap <silent><buffer><expr> *
+  \ defx#do_action('toggle_select_all')
+  nnoremap <silent><buffer><expr> j
+  \ line('.') == line('$') ? 'gg' : 'j'
+  nnoremap <silent><buffer><expr> k
+  \ line('.') == 1 ? 'G' : 'k'
+  nnoremap <silent><buffer><expr> cd
+  \ defx#do_action('change_vim_cwd')
+  nnoremap <silent><buffer><expr> <C-r>
+  \ defx#do_action('redraw')
+endfunction
+
+command! OpenDefxSplit Defx -search=`expand('%:p')` -split=vertical -winwidth=50 -direction=topleft -columns=mark:indent:icon:filename:type `getcwd()`
+nnoremap <silent> <leader>k :OpenDefxSplit<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" coc.nvim {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Use tab for trigger completion with characters ahead and navigate.
+" Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+" Use <cr> to confirm completion, `<C-g>u` means break undo chain at current position.
+" Coc only does snippet and additional edit on confirm.
+inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm() :
+                                           \"\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+" Use `[c` and `]c` to navigate diagnostics
+nmap <silent> [c <Plug>(coc-diagnostic-prev)
+nmap <silent> ]c <Plug>(coc-diagnostic-next)
+
+" Use K to show documentation in preview window
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+
+function! s:show_documentation()
+  if (index(['vim','help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+" Remap keys for gotos
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" Remap for rename current word
+nmap <leader>rn <Plug>(coc-rename)

@@ -381,20 +381,24 @@ alias tg=terragrunt
 ###############################################################################
 # Builtin overrides
 ###############################################################################
-if [[ $UNAME == darwin ]]; then
-  alias fancyls="ls -G"
-else
-  alias fancyls="ls --group-directories-first --color=auto"
+if (( $+commands[lsd] )); then
+  # https://github.com/Peltoche/lsd
+  alias ls=lsd
 fi
+
+alias l='ls -l'
+alias la='ls -a'
+alias lla='ls -la'
+alias lt='ls --tree'
 
 # override cd to do ls and vim when necessary
 better_cd() {
   set -- ${1//,/.} # replace commas , with periods . (looking at u Golang)
   if [[ -f $1 ]]; then
     local fdir=$(dirname $1)
-    [[ -d $fdir ]] && builtin cd $fdir && fancyls && vim $(basename $1) ${*:2}
+    [[ -d $fdir ]] && builtin cd $fdir && ls && vim $(basename $1) ${*:2}
   else
-    builtin cd "$@" && fancyls
+    builtin cd "$@" && ls
   fi
 }
 alias cd=better_cd
@@ -425,7 +429,12 @@ if [[ -f ~/.fzf.zsh ]]; then
   export FZF_COMPLETION_TRIGGER='jk'
 
   export FZF_DEFAULT_COMMAND="$(which ripgrep_git_list); ripgrep_git_list"
-  export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
+
+  if (( $+commands[fd] )); then
+    export FZF_CTRL_T_COMMAND='command fd --type f'
+  else
+    export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
+  fi
 
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget

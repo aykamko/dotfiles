@@ -72,6 +72,13 @@
     bottom = checkout --theirs
     nf = "!nf(){ git checkout master && git pull --rebase && git checkout -b $@; }; nf" # new feature
 
+    top-all = "!top_all(){ \
+        for f in $(git diff --name-status --diff-filter U | awk '{print $2}'); do \
+          git top \"$f\"; \
+        done; \
+        git add -u; \
+    }; top_all"
+
     # cherry-pick
     cp = cherry-pick
 
@@ -220,6 +227,9 @@
             git cherry-pick \"$cherrypick\"; \
         }; \
         change_base"
+
+    # list all files that have been "git add"-ed
+    list-added = "!list_added() { git status --porcelain | awk 'match($1, \"M\") { print $2 }'; }; list_added"
 
 
 [format]
