@@ -223,6 +223,13 @@ endif
 " Other
 set noerrorbells      " no bells in terminal
 
+" Autoreload if file changes on disk
+set autoread
+augroup autoread
+  autocmd!
+  autocmd CursorHold,WinEnter,FocusGained * checktime
+augroup END
+
 set tags=.git/tags,tags;/       " search up the directory tree for tags
 
 set undolevels=1000   " number of undos stored
@@ -1760,3 +1767,11 @@ nmap <silent> gr <Plug>(coc-references)
 
 " Remap for rename current word
 nmap <leader>rn <Plug>(coc-rename)
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" alacritty {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" HACK: get cursor to show up on matching symbol
+" (bug in alacritty: https://github.com/jwilm/alacritty/issues/2398)
+hi! MatchParen ctermfg=234 ctermbg=60 guifg=#1d1f21 guibg=#5F5F87
+hi! MatchParen term=reverse ctermfg=15 ctermbg=60 guifg=#c3c7c5 guibg=#5F5F87
