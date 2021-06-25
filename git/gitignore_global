@@ -43,3 +43,9 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# pyenv version markers
+.python-version
+
+# lsyncd (https://github.com/axkibe/lsyncd)
+.lsyncd

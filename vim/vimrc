@@ -44,7 +44,7 @@ Plug 'kana/vim-textobj-user'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'tomtom/tcomment_vim'
 Plug 'tpope/vim-abolish'
-Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-fugitive' | Plug 'tpope/vim-rhubarb'
 Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
@@ -64,9 +64,8 @@ Plug 'easymotion/vim-easymotion'
 Plug 'mattn/webapi-vim'
       \ | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
-" Plug 'scrooloose/nerdtree',      { 'on': ['NERDTreeFind', 'NERDTreeToggle'] }
 
-Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx'] }
+Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx', 'typescriptreact'] }
 Plug 'othree/yajs.vim',              { 'for': ['javascript'] }
 Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 " Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
@@ -102,7 +101,7 @@ Plug 'slim-template/vim-slim',       { 'for': 'slim' }
 "   autocmd BufNewFile,BufReadPost *.jsx set filetype=javascript.jsx
 " augroup END
 Plug 'pangloss/vim-javascript'
-Plug 'mxw/vim-jsx'
+Plug 'MaxMEllon/vim-jsx-pretty'
 
 if has('nvim')
   " Plug 'mhartington/nvim-typescript', {
@@ -424,6 +423,9 @@ nnoremap <silent> yY ^yg_
 nnoremap <silent> dD ^D
 nnoremap <silent> cC ^C
 nnoremap <silent> K i<Enter><Esc>^
+
+" Use <C-a> to go to from of command line
+cnoremap <C-a> <C-b>
 
 " because I suck
 cnoreabbrev W w
@@ -1172,16 +1174,16 @@ endif
 "   let g:neoformat_enabled_python = ['yapf']
 " endif
 
-if executable('npx')
-  let g:neoformat_typescript_prettier = neoformat#formatters#typescript#prettier()
-  let g:neoformat_typescript_prettier.exe = 'npx'
-  let g:neoformat_typescript_prettier.args = ['prettier'] + g:neoformat_typescript_prettier.args
-
-  augroup typescript_fmt
-    autocmd!
-    autocmd BufWritePre *.tsx,*.ts if !get(g:, 'disable_prettier', 0) | silent! undojoin | Neoformat | endif
-  augroup END
-endif
+" if executable('npx')
+"   let g:neoformat_typescript_prettier = neoformat#formatters#typescript#prettier()
+"   let g:neoformat_typescript_prettier.exe = 'npx'
+"   let g:neoformat_typescript_prettier.args = ['prettier'] + g:neoformat_typescript_prettier.args
+"
+"   augroup typescript_fmt
+"     autocmd!
+"     autocmd BufWritePre *.tsx,*.ts if !get(g:, 'disable_prettier', 0) | silent! undojoin | Neoformat | endif
+"   augroup END
+" endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " fzf {{{
@@ -1440,39 +1442,39 @@ endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Goyo {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! s:goyo_enter()
-  set noshowmode
-  set noshowcmd
-  let b:goyo_enabled = 1
-  let b:quitting = 0
-  let b:quitting_bang = 0
-  augroup goyo_quitpre
-    autocmd!
-    autocmd QuitPre <buffer> let b:quitting = 1
-  augroup END
-  cabbrev <buffer> q! let b:quitting_bang = 1 <bar> q!
-endfunction
-
-function! s:goyo_leave()
-  set showmode
-  set showcmd
-  let b:goyo_enabled = 0
-  " Quit Vim if this is the only remaining buffer
-  if b:quitting && len(filter(range(1, bufnr('$')), 'buflisted(v:val)')) == 1
-    if b:quitting_bang
-      qa!
-    else
-      qa
-    endif
-  endif
-  autocmd! goyo_quitpre
-endfunction
-
-augroup goyo
-  autocmd!
-  autocmd User GoyoEnter nested call <SID>goyo_enter()
-  autocmd User GoyoLeave nested call <SID>goyo_leave()
-augroup END
+" function! s:goyo_enter()
+"   set noshowmode
+"   set noshowcmd
+"   let b:goyo_enabled = 1
+"   let b:quitting = 0
+"   let b:quitting_bang = 0
+"   augroup goyo_quitpre
+"     autocmd!
+"     autocmd QuitPre <buffer> let b:quitting = 1
+"   augroup END
+"   cabbrev <buffer> q! let b:quitting_bang = 1 <bar> q!
+" endfunction
+"
+" function! s:goyo_leave()
+"   set showmode
+"   set showcmd
+"   let b:goyo_enabled = 0
+"   " Quit Vim if this is the only remaining buffer
+"   if b:quitting && len(filter(range(1, bufnr('$')), 'buflisted(v:val)')) == 1
+"     if b:quitting_bang
+"       qa!
+"     else
+"       qa
+"     endif
+"   endif
+"   autocmd! goyo_quitpre
+" endfunction
+"
+" augroup goyo
+"   autocmd!
+"   autocmd User GoyoEnter nested call <SID>goyo_enter()
+"   autocmd User GoyoLeave nested call <SID>goyo_leave()
+" augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " NERDTree {{{
@@ -1548,7 +1550,7 @@ augroup vimrc_filetype
   autocmd BufNewFile,BufReadPost *.ssc,*.scala set filetype=scala
   autocmd BufNewFile,BufReadPost *.md set filetype=markdown
   autocmd BufNewFile,BufReadPost Vagrantfile set filetype=ruby
-  autocmd FileType c,cpp,vim,javascript,coffee,html,jinja,python setl sw=2 ts=2 sts=2 et
+  autocmd FileType c,cpp,vim,javascript,coffee,html,jinja setl sw=2 ts=2 sts=2 et
   autocmd BufNewFile,BufReadPost PULLREQ_EDITMSG set filetype=markdown.ghpull
   autocmd BufNewFile,BufReadPost COMMIT_EDITMSG call s:git_commit_ft()
   autocmd Filetype tex,markdown,markdown.ghpull,noft,text
@@ -1775,3 +1777,8 @@ nmap <leader>rn <Plug>(coc-rename)
 " (bug in alacritty: https://github.com/jwilm/alacritty/issues/2398)
 hi! MatchParen ctermfg=234 ctermbg=60 guifg=#1d1f21 guibg=#5F5F87
 hi! MatchParen term=reverse ctermfg=15 ctermbg=60 guifg=#c3c7c5 guibg=#5F5F87
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" MaxMEllon/vim-jsx-pretty {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:vim_jsx_pretty_highlight_close_tag = 1

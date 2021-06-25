@@ -89,7 +89,7 @@
 
     # log
     l = log --graph --date=short
-    ls = "!ls(){ git log --date=short -n ${1:-10} ${@:2}; }; ls"
+    ls = "!ls(){ git log --date=short -n ${2:-10} $1; }; ls"
     l1 = log -n 1 --format=fuller
     ls1 = log -n 1 --format=fuller
     changes = log --pretty=format:\"%h %cr %cn %Cgreen%s%Creset\" --name-status
@@ -213,17 +213,19 @@
         hub"
 
     change-base = "!change_base() { \
+            set -e; \
             if [[ $# -ne 2 ]]; then \
-              echo 'Usage: git change-base <new-base> <cherry-pick>' >&2; \
+              echo 'Usage: git change-base <new base> <cherrypick refs>' >&2; \
+              echo 'Example: git change-base master abc123..def456' >&2; \
               exit 1; \
             fi; \
-            local newbase=\"$1\"; \
+            local new_base=\"$1\"; \
             local cherrypick=\"$2\"; \
-            local curref=$(git rev-parse --abbrev-ref HEAD); \
-            local deprref=\"depr_${curref}\"; \
-            git branch -m \"$deprref\"; \
-            git checkout \"$newbase\"; \
-            git checkout -b \"$curref\"; \
+            local curr_ref=$(git rev-parse --abbrev-ref HEAD); \
+            local backup_ref=\"backup_${curr_ref}\"; \
+            git branch -m \"$backup_ref\"; \
+            git checkout \"$new_base\"; \
+            git checkout -b \"$curr_ref\"; \
             git cherry-pick \"$cherrypick\"; \
         }; \
         change_base"
@@ -256,6 +258,9 @@
     autocrlf = false
     excludesfile = ~/.gitignore_global
     editor = git-commit-editor
+    #pager = delta --dark
+[interactive]
+    diffFilter = delta --color-only
 [advice]
     statusHints = false
 [diff]

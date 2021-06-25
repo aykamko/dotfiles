@@ -1,4 +1,4 @@
-fd() {
+gd() {
   local root fzfcmd filter out dir
   root=$(git rev-parse --show-toplevel 2>/dev/null)
   if [[ $? -eq 0 ]]; then
