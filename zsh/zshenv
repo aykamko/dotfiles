@@ -50,3 +50,6 @@ fi
 if [[ -n $VIMRUNTIME ]]; then
   source "${ZDOTDIR:-$HOME}/.zprofile"
 fi
+
+# rust
+. "$HOME/.cargo/env"

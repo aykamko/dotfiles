@@ -50,17 +50,21 @@ Plug 'tpope/vim-sleuth'
 Plug 'tpope/vim-surround'
 Plug 'wellle/targets.vim'
 Plug 'junegunn/vim-peekaboo'
-Plug 'wakatime/vim-wakatime'
 " Plug '/Users/aleks/proj/vim-touchbar'
 " Plug 'sheerun/vim-polyglot', { 'for': ['Jenkinsfile', 'groovy'] }
 Plug 'jceb/vim-orgmode'
       \ | Plug 'tpope/vim-speeddating'
 Plug 'blueyed/vim-diminactive'
 Plug 'neoclide/coc.nvim', { 'branch': 'release' }
+" Plug 'wakatime/vim-wakatime'  " this plugin is way too slow unfortunately
 
-Plug 'easymotion/vim-easymotion'
-      \ | Plug 'aykamko/vim-easyoperator-line'
-      \ | Plug 'aykamko/vim-easymotion-segments'
+if has('nvim')
+ Plug 'phaazon/hop.nvim'
+else
+ Plug 'easymotion/vim-easymotion'
+       \ | Plug 'aykamko/vim-easyoperator-line'
+       \ | Plug 'aykamko/vim-easymotion-segments'
+endif
 Plug 'mattn/webapi-vim'
       \ | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
@@ -983,7 +987,7 @@ if PlugLoaded('lightline.vim')
   autocmd BufNewFile * unlet! b:trunc_path
 
   function! s:lightline_update_once_varargs(...)
-    call lightline#update_once()
+    call lightline#update()
   endfunction
   function! s:lightline_update_once_delayed()
     if exists('s:lightline_cursormoved_timer')
@@ -1277,6 +1281,11 @@ nmap <silent> y<leader>l <Plug>(easyoperator-line-yank)
 
 " vim-easymotion-segments
 let g:EasyMotionSegments_key = 's'
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" hop.nvim {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" TODO: configure this https://github.com/phaazon/hop.nvim
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " Text Objects {{{
@@ -1782,3 +1791,13 @@ hi! MatchParen term=reverse ctermfg=15 ctermbg=60 guifg=#c3c7c5 guibg=#5F5F87
 " MaxMEllon/vim-jsx-pretty {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:vim_jsx_pretty_highlight_close_tag = 1
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
+" markdown extra syntax {{{
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+hi def MarkdownCheckboxStrikethrough cterm=strikethrough ctermfg=242
+
+augroup markdown_extra_syntax
+  autocmd!
+  autocmd FileType markdown match MarkdownCheckboxStrikethrough /\-\s*\[x\].\+/
+augroup END

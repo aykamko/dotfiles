@@ -120,6 +120,8 @@ alias rrm='command rm'
 
 alias unixtime='date +%s'
 
+alias todo='vim ~/todo.md'
+
 alias vimrc='vim ~/.vimrc'
 alias vis='vim -u ~/.vim/vimrc_small'
 alias vimrc_small='vis ~/.vim/vimrc_small'
