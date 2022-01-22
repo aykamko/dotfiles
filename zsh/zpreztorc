@@ -4,6 +4,8 @@
 # Color output (auto set to 'no' on dumb terminals).
 zstyle ':prezto:*:*' color 'yes'
 
+zstyle ':prezto:load' pmodule-dirs "$HOME/dotfiles/zsh/zprezto/modules_contrib"
+
 # Set the Prezto modules to load (browse modules).
 # The order matters.
 zstyle ':prezto:load' pmodule \

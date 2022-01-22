@@ -70,7 +70,7 @@ Plug 'mattn/webapi-vim'
 Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
 
 Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx', 'typescriptreact'] }
-Plug 'othree/yajs.vim',              { 'for': ['javascript'] }
+Plug 'othree/yajs.vim',              { 'for': 'javascript' }
 Plug 'vim-ruby/vim-ruby',            { 'for': 'ruby' }
 " Plug 'Glench/Vim-Jinja2-Syntax',     { 'for': 'jinja' }
 Plug 'fatih/vim-go',                 { 'for': 'go' }
