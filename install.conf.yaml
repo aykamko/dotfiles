@@ -11,19 +11,21 @@
 # ----- zsh -----
 - clean: ['~/.zprezto/modules/prompt/functions']
 
-- shell++:
-  - description: Install zsh
-    condition: '! hash zsh'
-  - stdall: true
-    platforms:
-      linux: sudo apt-get install -y zsh
-      darwin: brew install zsh
-
-- shell++:
-  - description: Set zsh as default shell
-    condition: '! echo $SHELL | grep -q zsh'
-  - stdall: true
-    command: sudo chsh -s $(which zsh) $(whoami)
+# zsh is the default shell starting with macOS Catalina
+#
+# - shell++:
+#   - description: Install zsh
+#     condition: '! hash zsh'
+#   - stdall: true
+#     platforms:
+#       linux: sudo apt-get install -y zsh
+#       darwin: brew install zsh
+# 
+# - shell++:
+#   - description: Set zsh as default shell
+#     condition: '! echo $SHELL | grep -q zsh'
+#   - stdall: true
+#     command: sudo chsh -s $(which zsh) $(whoami)
 
 - shell++:
   - description: Install zprezto
@@ -39,13 +41,6 @@
 - platform-link:
     darwin:
       ~/.zshrc.os: zsh/zshrc.os.darwin
-
-- shell:
-  - description: zsh completions
-    command: |
-      mkdir -p ~/.zsh/completion
-      # docker-compose
-      curl -L https://raw.githubusercontent.com/docker/compose/master/contrib/completion/zsh/_docker-compose > ~/.zsh/completion/_docker-compose
 
 - link:
     ~/.zshenv:
@@ -95,13 +90,6 @@
     default: true
   - stdall: true
     platforms:
-      darwin: |
-        brew tap neovim/neovim
-        brew install --HEAD neovim
-        brew install python python3 fswatch
-        pip install neovim
-        pip3 install neovim neovim-remote
-
       linux:
         - condition: '! hash apt-get 2>/dev/null || test -h $(which apt-get)'
           branch:
@@ -219,34 +207,6 @@
     ~/.pryrc:
       path: pryrc
       relink: true
-
-# ----- karibiner -----
-- platform-link:
-    darwin:
-      ~/Library/Application Support/Karabiner:
-        path: karibiner/private.xml
-        create: true
-        relink: true
-
-# ----- dotjs -----
-- link:
-    ~/.js:
-      path: dotjs
-      create: true
-
-# ----- dotjs -----
-- link:
-    ~/.condarc:
-      path: conda/condarc
-      create: true
-
-# ----- jupyter -----
-- shell:
-  - description: Hardlink Jupyter custom.js (to support Docker mounting)
-    command: |
-      mkdir -p ~/.jupyter/custom
-      rm -f ~/.jupyter/custom/custom.js
-      ln -f $HOME/dotfiles/jupyter/custom.js $HOME/.jupyter/custom/custom.js
 
 # ----- direnv -----
 - link:

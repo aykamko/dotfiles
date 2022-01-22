@@ -13,5 +13,7 @@ PLUGIN_DIR="dotbot-plugins"
 cd "${BASEDIR}"
 git submodule update --init --recursive "${DOTBOT_DIR}"
 
+ln -sf "$BASEDIR/git/gitconfig" "$HOME/.gitconfig"
+
 "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" \
     -d "${BASEDIR}" -c "${CONFIG}" "${@}" --plugin-dir "${BASEDIR}/${PLUGIN_DIR}" "$@"

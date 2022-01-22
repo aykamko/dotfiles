@@ -78,6 +78,7 @@ fi
 if [[ $UNAME == darwin ]]; then
   # used by Homebrew
   path=(/usr/local/sbin $path)
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
 if [[ -n $GOPATH ]]; then
