@@ -48,3 +48,4 @@ cask "vnc-viewer"
 cask "zoom"
 
 mas "XCode", id: 497799835
+mas "Clocker", id: 1056643111
