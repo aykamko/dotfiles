@@ -50,3 +50,4 @@ cask "zoom"
 
 mas "XCode", id: 497799835
 mas "Clocker", id: 1056643111
+mas "Xnip - Screenshot & Annotation", id: 1221250572
