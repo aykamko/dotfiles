@@ -31,7 +31,10 @@ fi
 ###############################################################################
 # Autostart TMUX
 ###############################################################################
-if [[ $TERM_PROGRAM == 'Apple_Terminal' ]]; then return; fi
+
+if [[ $TERM_PROGRAM == 'Apple_Terminal' || $TERM_PROGRAM == 'vscode' ]]; then
+  return
+fi
 
 if [[ -f "$HOME/.no_tmux" ]]; then
   builtin cd $(cat $HOME/.no_tmux)

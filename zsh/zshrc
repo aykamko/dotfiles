@@ -13,17 +13,21 @@ function TRAPUSR1 {
 export TRUSTED_COMPINIT="HAL 9000"
 
 # don't load prezto outside of tmux to speed up load
-[[ -n $TMUX ]] || [[ -f "$HOME/.no_tmux" ]] && \
-  [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+if [[ $TERM_PROGRAM != 'Apple_Terminal' && $TERM_PROGRAM != 'vscode' ]]; then
+  [[ -n $TMUX ]] || [[ -f "$HOME/.no_tmux" ]] && \
+    [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 
-for keymap in 'emacs' 'viins'; do
-  bindkey -M "$keymap" "$key_info[Control]P" history-substring-search-up
-  bindkey -M "$keymap" "$key_info[Control]N" history-substring-search-down
-done
+  for keymap in 'emacs' 'viins'; do
+    bindkey -M "$keymap" "$key_info[Control]P" history-substring-search-up
+    bindkey -M "$keymap" "$key_info[Control]N" history-substring-search-down
+  done
 
-# make Escape in vicmd mode do nothing
-unset BEEP
-bindkey -M vicmd '\e' beep
+  # make Escape in vicmd mode do nothing
+  unset BEEP
+  bindkey -M vicmd '\e' beep
+fi
+
+
 
 # load shell bookmarks
 if [[ -f $HOME/.config/shell_bookmarks.zsh ]]; then
