@@ -1796,8 +1796,10 @@ let g:vim_jsx_pretty_highlight_close_tag = 1
 " markdown extra syntax {{{
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 hi def MarkdownCheckboxStrikethrough cterm=strikethrough ctermfg=242
+hi def MarkdownUnfocus ctermfg=242
 
 augroup markdown_extra_syntax
   autocmd!
-  autocmd FileType markdown match MarkdownCheckboxStrikethrough /\-\s*\[x\].\+/
+  autocmd Syntax markdown syn match MarkdownCheckboxStrikethrough /\(\s*\)\- \[x\]\_.\{-}\(\n\1-\)\@=/
+  autocmd Syntax markdown syn match MarkdownUnfocus /\/\*\* HISTORY \*\*\/\_.*/
 augroup END

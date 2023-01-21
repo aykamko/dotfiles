@@ -81,8 +81,9 @@ if [[ $UNAME == darwin ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+export GOPATH="$HOME/go"
 if [[ -n $GOPATH ]]; then
-  path+=(/usr/local/opt/go/libexec/bin)
+  path+=($GOPATH/bin)
 fi
 
 if [[ -d $HOME/.pyenv ]]; then

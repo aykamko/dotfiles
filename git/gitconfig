@@ -276,6 +276,7 @@
     enabled = true
 [init]
     templatedir = ~/.git_template
+	defaultBranch = main
 [include]
     path = .gitconfig.user
     path = .gitconfig.os
@@ -285,3 +286,7 @@
 	prompt = false
 [mergetool "nbdime"]
 	cmd = git-nbmergetool merge \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"
+[user]
+	name = Mighty Automation
+	email = aykamko@gmail.com
+	name = Aleks
