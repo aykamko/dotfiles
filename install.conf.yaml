@@ -224,3 +224,10 @@
     ~/.config/alacritty/alacritty.yml:
       path: alacritty/alacritty.yml
       create: true
+
+# ----- macos ------
+- shell:
+  - description: Disable Dock icons from bouncing
+    command: |
+      defaults write com.apple.dock no-bouncing -bool True
+      killall Dock

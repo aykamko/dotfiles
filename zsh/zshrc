@@ -524,3 +524,6 @@ macos-flushdns() {
 }
 
 export HOMEBREW_NO_AUTO_UPDATE=1  # disable Homebrew auto update
+
+# Make sure docker doesn't build arm64 images
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
