@@ -165,64 +165,33 @@
 - link:
     ~/.tmux.conf: tmux/tmux.conf
 
-- shell++:
-  - description: Build tmux 2.2 from source
-    condition: "! hash tmux 2>/dev/null || ! tmux -V | awk '{exit $2 < 2.2}'"
-  - prompt: Download and build tmux v2.2? (May require additional packages)
-    default: true
-  - stdall: true
-    platforms:
-      darwin: echo 'TODO'
-      linux: sudo apt-get install -y automake pkg-config libevent-dev ncurses-dev
-  - stdall: true
-    command: |
-      TMUX_GITREF=9a4b45d
-      curl -L "https://api.github.com/repos/tmux/tmux/tarball/$TMUX_GITREF" > /tmp/tmux-2.2.tar.gz
-      cd /tmp
-      tar -zxvf tmux-2.2.tar.gz
-      cd "tmux-tmux-$TMUX_GITREF"
-      sh autogen.sh
-      ./configure
-      make
-      sudo make install
-      cd ..
-      rm -rf tmux-2.2.tar.gz "tmux-tmux-$TMUX_GITREF"
-
-# ----- virtualenv -----
-- clean: ['~/.pyvirtualenvs']
-- link:
-    ~/.pyvirtualenvs/postactivate:
-      path: virtualenv/postactivate
-      relink: true
-      create: true
-    ~/.pyvirtualenvs/postdeactivate:
-      path: virtualenv/postdeactivate
-      relink: true
-      create: true
-
-# ----- pry -----
-- link:
-    ~/.pryrc:
-      path: pryrc
-      relink: true
+#- shell++:
+#  - description: Build tmux 2.2 from source
+#    condition: "! hash tmux 2>/dev/null || ! tmux -V | awk '{exit $2 < 2.2}'"
+#  - prompt: Download and build tmux v2.2? (May require additional packages)
+#    default: true
+#  - stdall: true
+#    platforms:
+#      darwin: echo 'TODO'
+#      linux: sudo apt-get install -y automake pkg-config libevent-dev ncurses-dev
+#  - stdall: true
+#    command: |
+#      TMUX_GITREF=9a4b45d
+#      curl -L "https://api.github.com/repos/tmux/tmux/tarball/$TMUX_GITREF" > /tmp/tmux-2.2.tar.gz
+#      cd /tmp
+#      tar -zxvf tmux-2.2.tar.gz
+#      cd "tmux-tmux-$TMUX_GITREF"
+#      sh autogen.sh
+#      ./configure
+#      make
+#      sudo make install
+#      cd ..
+#      rm -rf tmux-2.2.tar.gz "tmux-tmux-$TMUX_GITREF"
 
 # ----- direnv -----
 - link:
     ~/.config/direnv/direnvrc:
       path: direnv/direnvrc
-      create: true
-
-# ----- alacritty -----
-# doesn't work, need to download manually
-#- shell:
-#  - description: Install SauceCodePro Font
-#    command: |
-#      filename="Sauce Code Pro Nerd Font Complete.ttf"
-#      curl -LO "https://github.com/ryanoasis/nerd-fonts/blob/master/patched-fonts/SourceCodePro/Regular/complete/Sauce%20Code%20Pro%20Nerd%20Font%20Complete.ttf?raw=true" > /tmp/"$filename"
-#      cp /tmp/"$filename" ~/Library/Fonts
-- link:
-    ~/.config/alacritty/alacritty.yml:
-      path: alacritty/alacritty.yml
       create: true
 
 # ----- macos ------

@@ -12,23 +12,6 @@ function TRAPUSR1 {
 # run compinit -S on trusted computers
 export TRUSTED_COMPINIT="HAL 9000"
 
-# don't load prezto outside of tmux to speed up load
-if [[ $TERM_PROGRAM != 'Apple_Terminal' && $TERM_PROGRAM != 'vscode' ]]; then
-  [[ -n $TMUX ]] || [[ -f "$HOME/.no_tmux" ]] && \
-    [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
-
-  for keymap in 'emacs' 'viins'; do
-    bindkey -M "$keymap" "$key_info[Control]P" history-substring-search-up
-    bindkey -M "$keymap" "$key_info[Control]N" history-substring-search-down
-  done
-
-  # make Escape in vicmd mode do nothing
-  unset BEEP
-  bindkey -M vicmd '\e' beep
-fi
-
-
-
 # load shell bookmarks
 if [[ -f $HOME/.config/shell_bookmarks.zsh ]]; then
   source $HOME/.config/shell_bookmarks.zsh
@@ -422,6 +405,22 @@ dotfiles() { cd $DOTFILES/$1; }
 compctl -f -W $DOTFILES/ dotfiles
 
 # alias ls='COLUMNS=150 ls -G'
+
+###############################################################################
+# Figma
+###############################################################################
+export PATH="${HOMEBREW_PREFIX}/opt/openssl/bin:$PATH"
+export PKG_CONFIG_PATH="/opt/homebrew/opt/zlib/lib/pkgconfig:/usr/local/opt/zlib/lib/pkgconfig:$PKG_CONFIG_PATH"
+export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@3/lib/pkgconfig:/usr/local/opt/openssl@3/lib/pkgconfig:$PKG_CONFIG_PATH"
+export RACK_ENV=development
+export PATH="$HOME/.cargo/bin:$PATH"
+export AWS_CONFIG_FILE="$HOME/figma/figma/config/aws/sso_config"
+export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
+
+if (( $+commands[mise] )); then
+  eval "$(mise activate zsh)"
+fi
 
 ###############################################################################
 # Special Settings

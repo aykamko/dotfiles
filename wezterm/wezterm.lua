@@ -27,7 +27,7 @@ config.keys = {
     action = wezterm.action.SplitPane { direction = 'Up' },
   },
   {
-    mods = 'Leader', key = 'l',
+    mods = 'LEADER', key = 'l',
     action = wezterm.action.SplitPane { direction = 'Right' },
   },
   -- Move panes tmux style

@@ -32,18 +32,18 @@ fi
 # Autostart TMUX
 ###############################################################################
 
-if [[ $TERM_PROGRAM == 'Apple_Terminal' || $TERM_PROGRAM == 'vscode' ]]; then
-  return
-fi
-
-if [[ -f "$HOME/.no_tmux" ]]; then
-  builtin cd $(cat $HOME/.no_tmux)
-  command rm -f $HOME/.no_tmux
-elif [[ -z "$TMUX" ]]; then
-  if [[ -f "$HOME/.tmux_new" ]]; then
-    command rm -f $HOME/.tmux_new
-    tmux new
-  else
-    sleep 0.01; tmux new -A -s main
-  fi
-fi
+# if [[ $TERM_PROGRAM == 'Apple_Terminal' || $TERM_PROGRAM == 'vscode' ]]; then
+#   return
+# fi
+#
+# if [[ -f "$HOME/.no_tmux" ]]; then
+#   builtin cd $(cat $HOME/.no_tmux)
+#   command rm -f $HOME/.no_tmux
+# elif [[ -z "$TMUX" ]]; then
+#   if [[ -f "$HOME/.tmux_new" ]]; then
+#     command rm -f $HOME/.tmux_new
+#     tmux new
+#   else
+#     sleep 0.01; tmux new -A -s main
+#   fi
+# fi
