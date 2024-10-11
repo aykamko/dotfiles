@@ -103,8 +103,6 @@ word() {
 
 alias cm='command'
 
-alias rrm='command rm'
-
 alias unixtime='date +%s'
 
 alias todo='vim ~/todo.md'
@@ -522,7 +520,7 @@ macos-flushdns() {
   sudo killall -HUP mDNSResponder && sudo killall mDNSResponderHelper && sudo dscacheutil -flushcache
 }
 
-export HOMEBREW_NO_AUTO_UPDATE=1  # disable Homebrew auto update
+# export HOMEBREW_NO_AUTO_UPDATE=1  # disable Homebrew auto update
 
 # Make sure docker doesn't build arm64 images
 export DOCKER_DEFAULT_PLATFORM=linux/amd64

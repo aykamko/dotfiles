@@ -54,4 +54,6 @@ config.keys = {
   },
 }
 
+config.window_decorations = 'INTEGRATED_BUTTONS|RESIZE|MACOS_FORCE_DISABLE_SHADOW'
+
 return config
