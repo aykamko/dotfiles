@@ -10,7 +10,7 @@ function TRAPUSR1 {
 }
 
 # run compinit -S on trusted computers
-export TRUSTED_COMPINIT="HAL 9000"
+export TRUSTED_COMPINIT="alekskamkosmacbookpro16inchnov2023m3max"
 
 # load shell bookmarks
 if [[ -f $HOME/.config/shell_bookmarks.zsh ]]; then
@@ -88,6 +88,8 @@ fi
 # basics
 alias restart="exec $SHELL"
 alias c=clear
+alias ':q'=exit
+
 clr() {
   clear
   [[ -n $TMUX ]] && tmux clear-history
@@ -302,14 +304,10 @@ if (( $+commands[nodenv] )); then
   nodenv() { unset -f nodenv && eval "$(nodenv init -)" && nodenv "$@"; }
 fi
 
-#if (( $+commands[pyenv] )); then
-#  pyenv() {
-#    unset -f pyenv && \
-#      eval "$(pyenv init - | tail -n +2)" && \
-#      eval "$(pyenv virtualenv-init -)" && \
-#      pyenv "$@"
-#  }
-#fi
+if (( $+commands[pyenv] )); then
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+fi
 
 # git
 alias g='git'
@@ -524,3 +522,4 @@ macos-flushdns() {
 
 # Make sure docker doesn't build arm64 images
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
+eval "$(rbenv init -)"

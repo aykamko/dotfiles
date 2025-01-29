@@ -11,7 +11,7 @@ if wezterm.config_builder then
   config:set_strict_mode(true)
 end
 
-config.leader = { key = 'b', mods = 'CTRL', timeout_milliseconds = 1000 }
+config.leader = { key = 'Space', mods = 'CTRL', timeout_milliseconds = 1000 }
 config.keys = {
   -- Create panes tmux-style
   {
@@ -47,6 +47,22 @@ config.keys = {
     mods = 'CTRL', key = 'l',
     action = act.ActivatePaneDirection 'Right',
   },
+  {
+    mods = 'CTRL', key = 'LeftArrow',
+    action = act.ActivatePaneDirection 'Left',
+  },
+  {
+    mods = 'CTRL', key = 'DownArrow',
+    action = act.ActivatePaneDirection 'Down',
+  },
+  {
+    mods = 'CTRL', key = 'UpArrow',
+    action = act.ActivatePaneDirection 'Up',
+  },
+  {
+    mods = 'CTRL', key = 'RightArrow',
+    action = act.ActivatePaneDirection 'Right',
+  },
   -- Close pane
   {
     mods = 'LEADER', key = 'x',
@@ -55,5 +71,6 @@ config.keys = {
 }
 
 config.window_decorations = 'INTEGRATED_BUTTONS|RESIZE|MACOS_FORCE_DISABLE_SHADOW'
+config.color_scheme = 'Arthur (Gogh)'
 
 return config

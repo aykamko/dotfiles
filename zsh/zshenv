@@ -42,9 +42,10 @@ if [[ -o INTERACTIVE ]]; then
 fi
 
 # Ensure that a non-login, non-interactive shell has a defined environment.
-if [[ "$SHLVL" -eq 1 && ! -o LOGIN && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
-  source "${ZDOTDIR:-$HOME}/.zprofile"
-fi
+# if [[ "$SHLVL" -eq 1 && ! -o LOGIN && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
+#   source "${ZDOTDIR:-$HOME}/.zprofile"
+# fi
+source "${ZDOTDIR:-$HOME}/.zprofile"
 
 # Fix shim paths for neovim libvterm
 if [[ -n $VIMRUNTIME ]]; then

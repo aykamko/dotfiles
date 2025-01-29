@@ -113,3 +113,5 @@ fi
 if [[ -d $HOME/lib/anaconda3 ]]; then
   path+=($HOME/lib/anaconda3/bin)
 fi
+eval "$(rbenv init -)"
+export RACK_ENV=development
