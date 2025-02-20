@@ -418,6 +418,45 @@ if (( $+commands[mise] )); then
   eval "$(mise activate zsh)"
 fi
 
+_k8s() {
+    kube_cmd="$1"
+    shift
+
+    unset AWS_VAULT
+    k8s_env="$1"
+    if [[ $1 = "dev" ]]; then
+      k8s_env=devenv01
+    fi
+    shift
+
+    aws_profile="$k8s_env-$1-admin"
+    if [[ $1 = "admin" ]]; then
+      aws_profile="$k8s_env-admin"
+    fi
+    shift
+
+    k8s_context="eks-$k8s_env-us-west-2-core-$1"
+    shift
+
+    >&2 printf "\n"
+    >&2 echo "k8s_context: $k8s_context"
+    >&2 echo "aws_profile: $aws_profile"
+    >&2 echo "Command: $kube_cmd $*"
+    >&2 printf "\n"
+
+    access aws exec "$aws_profile" -- "$kube_cmd" --context "$k8s_context"  "$@"
+}
+k8s() {
+  _k8s kubectl "$@"
+}
+k9s() {
+  _k8s k9s "$@"
+}
+alias kdev0="k8s dev admin 0"
+alias kdev1="k8s dev admin 1"
+alias kdev2="k8s dev admin 2"
+alias watchh='watch '
+
 ###############################################################################
 # Special Settings
 ###############################################################################
@@ -523,3 +562,6 @@ macos-flushdns() {
 # Make sure docker doesn't build arm64 images
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
 eval "$(rbenv init -)"
+
+# uv (Python)
+source "$HOME/.local/bin/env"

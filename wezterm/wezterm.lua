@@ -68,6 +68,22 @@ config.keys = {
     mods = 'LEADER', key = 'x',
     action = wezterm.action.CloseCurrentPane { confirm = true },
   },
+  -- Zoom pane
+  {
+    mods = 'LEADER', key = 'z',
+    action = wezterm.action.TogglePaneZoomState,
+  },
+  -- Rebind OPT-Left, OPT-Right to move between words
+  {
+    key = 'LeftArrow',
+    mods = 'OPT',
+    action = act.SendKey { key = 'b', mods = 'META' },
+  },
+  {
+    key = 'RightArrow',
+    mods = 'OPT',
+    action = act.SendKey { key = 'f', mods = 'META' },
+  },
 }
 
 config.window_decorations = 'INTEGRATED_BUTTONS|RESIZE|MACOS_FORCE_DISABLE_SHADOW'
