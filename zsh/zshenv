@@ -34,11 +34,6 @@ if [[ -o INTERACTIVE ]]; then
   fi
 
   ZSH_START_TIME=$EPOCHREALTIME
-  _startup_time_prompt() {
-    reset='\x1b[0m'
-    echo "${1}> Started zsh in about ${$(( ($EPOCHREALTIME - $ZSH_START_TIME) * 1000 ))%%\.*} ms.${reset}"
-    unset reset
-  }
 fi
 
 # Ensure that a non-login, non-interactive shell has a defined environment.

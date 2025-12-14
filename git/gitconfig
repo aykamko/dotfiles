@@ -40,8 +40,7 @@
     wip = commit -am "WIP"
     c = commit
     cm = commit -m
-    cma = commit -am
-    ci = commit
+    cmv = commit --no-verify -m
     amend = commit --amend
     ammend = commit --amend
     empty = "!empty() { \
@@ -50,20 +49,9 @@
         else \
             git commit --allow-empty; \
         fi; }; empty"
-    oops = "!oops(){ \
-        if [[ $(git status --porcelain | wc -l | tr -d '[[:space:]]') == 0 ]]; then \
-            echo 'No changes! Aborting.'; \
-            return; \
-        fi; \
-        git commit --amend --no-edit --reset-author; }; \
-        oops"
-    lol = "!lol(){ \
-        if [[ $(git status --porcelain | wc -l | tr -d '[[:space:]]') == 0 ]]; then \
-            echo 'No changes! Aborting.'; \
-            return; \
-        fi; \
-        git add -u && git commit --amend --no-edit --reset-author; }; \
-        lol"
+    oops = commit --amend --no-edit --reset-author
+    oopsie = commit --amend --no-edit --reset-author --no-verify
+    lol = add -u && git commit --amend --no-edit --reset-author
 
     # checkout
     co = checkout
@@ -259,9 +247,13 @@
     autocrlf = false
     excludesfile = ~/.gitignore_global
     editor = git-commit-editor
+    fsmonitor = true
+    untrackedcache = true
     #pager = delta --dark
-[interactive]
-    diffFilter = delta --color-only
+[fetch]
+    writeCommitGraph = true
+# [interactive]
+#     diffFilter = delta --color-only
 [advice]
     statusHints = false
 [diff]
@@ -288,6 +280,5 @@
 [mergetool "nbdime"]
 	cmd = git-nbmergetool merge \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"
 [user]
-	name = Mighty Automation
-	email = aykamko@gmail.com
-	name = Aleks
+	email = akamko@figma.com
+	name = Aleks Kamko

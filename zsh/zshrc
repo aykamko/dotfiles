@@ -368,9 +368,6 @@ pskill() {
   ps aux | ag "[${1[1]}]${1[2,-1]}" | awk '{print $2}' | sudo xargs -I% command kill ${2:-} %
 }
 
-alias tf=terraform
-alias tg=terragrunt
-
 ###############################################################################
 # Builtin overrides
 ###############################################################################
@@ -438,13 +435,15 @@ _k8s() {
     k8s_context="eks-$k8s_env-us-west-2-core-$1"
     shift
 
+    cmd=(access aws exec "$aws_profile" -- "$kube_cmd" --context "$k8s_context" "$@")
+
     >&2 printf "\n"
     >&2 echo "k8s_context: $k8s_context"
     >&2 echo "aws_profile: $aws_profile"
-    >&2 echo "Command: $kube_cmd $*"
+    >&2 echo "Command: ${cmd[*]}"
     >&2 printf "\n"
 
-    access aws exec "$aws_profile" -- "$kube_cmd" --context "$k8s_context"  "$@"
+    "${cmd[@]}"
 }
 k8s() {
   _k8s kubectl "$@"
@@ -456,6 +455,43 @@ alias kdev0="k8s dev admin 0"
 alias kdev1="k8s dev admin 1"
 alias kdev2="k8s dev admin 2"
 alias watchh='watch '
+
+function tf() {
+		# Example usage: tf ml plan
+    unset AWS_VAULT
+
+    if [[ $1 = "prod" || $1 = "production" ]]; then
+        tf_workspace=production
+        aws_vault_profile=prod-admin
+    elif [[ $1 = "staging" ]]; then
+        tf_workspace=staging
+        aws_vault_profile=staging-admin
+    elif [[ $1 = "gov" ]]; then
+	      tf_workspace=gov
+	      aws_vault_profile=gov-admin
+    elif [[ $1 = "ml" ]]; then
+        tf_workspace=ml
+        aws_vault_profile=ml-admin
+    elif [[ $1 = "ml_production" ]]; then
+        tf_workspace=ml_production
+        aws_vault_profile=ml-production-admin
+    else
+        tf_workspace=$1
+        aws_vault_profile=dev-admin
+    fi
+    shift
+
+    echo "\n"
+    echo "AWS_VAULT profile:   $aws_vault_profile"
+    echo "Terraform workspace: $tf_workspace"
+    echo "Command:             TF_WORKSPACE=$tf_workspace access aws exec $aws_vault_profile -- terraform $@"
+    echo "\n"
+
+    TF_WORKSPACE=$tf_workspace access aws exec $aws_vault_profile -- terraform $@
+}
+
+# githooks v2
+# export FIGMA_HK=1
 
 ###############################################################################
 # Special Settings
@@ -476,13 +512,13 @@ if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
 
-  export FZF_DEFAULT_COMMAND="$(which ripgrep_git_list); ripgrep_git_list"
+  #export FZF_DEFAULT_COMMAND="$(which ripgrep_git_list); ripgrep_git_list"
 
-  if (( $+commands[fd] )); then
-    export FZF_CTRL_T_COMMAND='command fd --type f'
-  else
-    export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
-  fi
+  #if (( $+commands[fd] )); then
+  #  export FZF_CTRL_T_COMMAND='command fd --type f'
+  #else
+  #  export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
+  #fi
 
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget
@@ -565,3 +601,13 @@ eval "$(rbenv init -)"
 
 # uv (Python)
 source "$HOME/.local/bin/env"
+alias uvr="uv run --no-project"
+
+
+alias claude="/Users/akamko/.claude/local/claude"
+export PATH="/opt/homebrew/opt/protobuf@29/bin:$PATH"
+
+sinatra-test() {
+  local filepath="$1"
+  RACK_ENV=test bundle exec ruby -Isinatra/test:sinatra/lib/test "$filepath"
+}
