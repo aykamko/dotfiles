@@ -490,8 +490,9 @@ function tf() {
     TF_WORKSPACE=$tf_workspace access aws exec $aws_vault_profile -- terraform $@
 }
 
-# githooks v2
-# export FIGMA_HK=1
+if [[ -f "$HOME/figma/figma/bin/coder-helpers/zshrc" ]]; then
+  source "$HOME/figma/figma/bin/coder-helpers/zshrc"
+fi
 
 ###############################################################################
 # Special Settings

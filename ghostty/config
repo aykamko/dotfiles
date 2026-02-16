@@ -1,0 +1,58 @@
+# Ghostty Configuration
+# Converted from Wezterm config
+
+# Color scheme - Arthur (Gogh)
+background = 1c1c1c
+foreground = ddeedd
+cursor-color = ddeedd
+
+# Standard colors
+palette = 0=#3d352a
+palette = 1=#cd5c5c
+palette = 2=#86af80
+palette = 3=#e8ae5b
+palette = 4=#6495ed
+palette = 5=#deb887
+palette = 6=#b0c4de
+palette = 7=#bbaa99
+
+# Bright colors
+palette = 8=#554444
+palette = 9=#cc5533
+palette = 10=#88aa22
+palette = 11=#ffa75d
+palette = 12=#87ceeb
+palette = 13=#996600
+palette = 14=#b0c4de
+palette = 15=#ddccbb
+
+# Bell
+bell-features = title
+bell-features = dock-icon-bounce
+
+# Keybindings
+
+# Split panes with leader key (Ctrl+Space)
+keybind = ctrl+space>h=new_split:left
+keybind = ctrl+space>j=new_split:down
+keybind = ctrl+space>k=new_split:up
+keybind = ctrl+space>l=new_split:right
+
+# Navigate panes with Ctrl+hjkl
+keybind = ctrl+h=goto_split:left
+keybind = ctrl+j=goto_split:down
+keybind = ctrl+k=goto_split:up
+keybind = ctrl+l=goto_split:right
+
+# Navigate panes with Ctrl+Arrow keys
+keybind = ctrl+left=goto_split:left
+keybind = ctrl+down=goto_split:down
+keybind = ctrl+up=goto_split:up
+keybind = ctrl+right=goto_split:right
+
+# Close pane (leader+x)
+keybind = ctrl+space>x=close_surface
+
+# Zoom pane (leader+z)
+keybind = ctrl+space>z=toggle_split_zoom
+
