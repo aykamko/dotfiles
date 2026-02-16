@@ -10,7 +10,9 @@ export KEYTIMEOUT=1 # Reduce command line vim delay
 export PROMPT_EOL_MARK='%' # https://unix.stackexchange.com/questions/167582/why-zsh-ends-a-line-with-a-highlighted-percent-symbol
 
 if [[ ! -f /tmp/.ssh-agent-loaded ]]; then
-  ssh-add -K -A
+  if [[ $UNAME == darwin ]]; then
+    ssh-add --apple-use-keychain --apple-load-keychain
+  fi
   touch /tmp/.ssh-agent-loaded
 fi
 
@@ -113,5 +115,4 @@ fi
 if [[ -d $HOME/lib/anaconda3 ]]; then
   path+=($HOME/lib/anaconda3/bin)
 fi
-eval "$(rbenv init -)"
 export RACK_ENV=development

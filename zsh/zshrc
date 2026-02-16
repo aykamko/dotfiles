@@ -598,10 +598,8 @@ macos-flushdns() {
 
 # Make sure docker doesn't build arm64 images
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
-eval "$(rbenv init -)"
-
 # uv (Python)
-source "$HOME/.local/bin/env"
+[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 alias uvr="uv run --no-project"
 
 
