@@ -23,6 +23,7 @@ is_darwin() { [ "$(uname)" = "Darwin" ]; }
 is_linux()  { [ "$(uname)" = "Linux" ]; }
 
 confirm() {
+    if [ "${YES:-}" = 1 ]; then return 0; fi
     local prompt="$1" default="${2:-true}"
     if [ "$default" = true ]; then
         read -rp "$prompt [Y/n] " reply
@@ -154,6 +155,7 @@ mklink "$DOTFILES/ghostty/config" ~/.config/ghostty/config
 echo "Setting up claude code..."
 mklink "$DOTFILES/claude/settings.json"        ~/.claude/settings.json
 mklink "$DOTFILES/claude/statusline-command.sh" ~/.claude/statusline-command.sh
+mklink "$DOTFILES/claude/notify.sh"            ~/.claude/notify.sh
 
 # ── macOS ───────────────────────────────────────────────────────────
 

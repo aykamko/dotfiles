@@ -14,7 +14,7 @@ if [ -d "$DOTFILES_DIR" ]; then
     git -C "$DOTFILES_DIR" pull --rebase
 else
     echo "Cloning dotfiles..."
-    git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+    git clone --recurse-submodules "$DOTFILES_REPO" "$DOTFILES_DIR"
 fi
 
 # Use /dev/tty for stdin so interactive prompts work when piped from curl

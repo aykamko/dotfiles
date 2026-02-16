@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "osascript -e \"display notification \\\"Claude is done and waiting for input\\\" with title \\\"Claude Code\\\"\""
+            "command": "$HOME/.claude/notify.sh 'Claude Code' 'Claude is done and waiting for input'"
           }
         ]
       },
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "osascript -e \"display notification \\\"Claude needs permission to continue\\\" with title \\\"Claude Code\\\"\""
+            "command": "$HOME/.claude/notify.sh 'Claude Code' 'Claude needs permission to continue'"
           }
         ]
       }
