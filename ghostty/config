@@ -27,8 +27,7 @@ palette = 14=#b0c4de
 palette = 15=#ddccbb
 
 # Bell
-bell-features = title
-bell-features = dock-icon-bounce
+bell-features = title,attention
 
 # Keybindings
 
@@ -55,4 +54,3 @@ keybind = ctrl+space>x=close_surface
 
 # Zoom pane (leader+z)
 keybind = ctrl+space>z=toggle_split_zoom
-
