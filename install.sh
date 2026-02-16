@@ -145,7 +145,8 @@ fi
 echo "Setting up claude code..."
 mklink "$DOTFILES/claude/settings.json"        ~/.claude/settings.json
 mklink "$DOTFILES/claude/statusline-command.sh" ~/.claude/statusline-command.sh
-mklink "$DOTFILES/claude/notify.sh"            ~/.claude/notify.sh
+mkdir -p ~/.claude/hooks
+mklink "$DOTFILES/claude/notify.sh"            ~/.claude/hooks/notify.sh
 
 # ── macOS ───────────────────────────────────────────────────────────
 

@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/notify.sh 'Claude Code' 'Claude is done and waiting for input'"
+            "command": "$HOME/.claude/hooks/notify.sh 'Claude Code' 'Claude is done and waiting for input'"
           }
         ]
       },
@@ -16,7 +16,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/notify.sh 'Claude Code' 'Claude needs permission to continue'"
+            "command": "$HOME/.claude/hooks/notify.sh 'Claude Code' 'Claude needs permission to continue'"
+          }
+        ]
+      },
+      {
+        "matcher": "elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/notify.sh 'Claude Code' 'Claude has a question for you'"
           }
         ]
       }
