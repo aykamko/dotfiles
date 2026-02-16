@@ -1,6 +1,16 @@
 {
   "model": "opus[1m]",
   "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/notify.sh 'Claude Code' 'Claude is done and waiting for input'"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "idle_prompt",
@@ -26,6 +36,15 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/notify.sh 'Claude Code' 'Claude has a question for you'"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/notify.sh 'Claude Code' 'Claude needs your attention'"
           }
         ]
       }
