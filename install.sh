@@ -150,6 +150,11 @@ mklink "$DOTFILES/direnv/direnvrc" ~/.config/direnv/direnvrc
 echo "Setting up ghostty..."
 mklink "$DOTFILES/ghostty/config" ~/.config/ghostty/config
 
+if ! infocmp xterm-ghostty &>/dev/null; then
+    echo "Installing ghostty terminfo..."
+    tic -x "$DOTFILES/ghostty/xterm-ghostty.terminfo"
+fi
+
 # ── claude code ─────────────────────────────────────────────────────
 
 echo "Setting up claude code..."
