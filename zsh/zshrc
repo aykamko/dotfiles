@@ -495,6 +495,22 @@ if [[ -f "$HOME/figma/figma/bin/coder-helpers/zshrc" ]]; then
 fi
 
 ###############################################################################
+# Vi Mode Cursor
+###############################################################################
+function zle-keymap-select {
+  case $KEYMAP in
+    vicmd)      echo -ne '\e[2 q' ;;  # block cursor in normal mode
+    viins|main) echo -ne '\e[6 q' ;;  # bar cursor in insert mode
+  esac
+}
+zle -N zle-keymap-select
+
+function zle-line-init {
+  echo -ne '\e[6 q'  # bar cursor on each new prompt
+}
+zle -N zle-line-init
+
+###############################################################################
 # Special Settings
 ###############################################################################
 [[ -f "$HOME/.zshrc.os" ]] && source "$HOME/.zshrc.os"         # OS Specific
