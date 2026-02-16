@@ -126,6 +126,14 @@ elif is_linux; then
     mklink "$DOTFILES/git/gitconfig.os.linux" ~/.gitconfig.os
 fi
 
+# ── fzf ─────────────────────────────────────────────────────────────
+
+if [ ! -d "$HOME/.fzf" ]; then
+    echo "Installing fzf..."
+    git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
+    "$HOME/.fzf/install" --all --no-update-rc
+fi
+
 # ── tmux ────────────────────────────────────────────────────────────
 
 echo "Setting up tmux..."
