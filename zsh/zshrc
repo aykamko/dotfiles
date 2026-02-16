@@ -618,8 +618,6 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 [[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 alias uvr="uv run --no-project"
 
-
-alias claude="/Users/akamko/.claude/local/claude"
 export PATH="/opt/homebrew/opt/protobuf@29/bin:$PATH"
 
 sinatra-test() {
