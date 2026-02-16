@@ -1,9 +1,5 @@
 {
-  "model": "opus",
-  "statusLine": {
-    "type": "command",
-    "command": "bash $HOME/.claude/statusline-command.sh"
-  },
+  "model": "opus[1m]",
   "hooks": {
     "Notification": [
       {
@@ -25,5 +21,9 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash $HOME/.claude/statusline-command.sh"
   }
 }
