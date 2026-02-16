@@ -1,7 +1,9 @@
 # vim: set ft=zsh:
 ###############################################################################
-# Prezto
+# Vi Mode
 ###############################################################################
+bindkey -v
+
 # redraw prompt on async prompt callback signal
 function TRAPUSR1 {
   _async_prompt_pid=0
