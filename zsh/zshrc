@@ -634,3 +634,7 @@ if [[ -n $CODER_WORKSPACE_NAME ]]; then
     export TERM=xterm-ghostty
   fi
 fi
+
+if ! hash claude 2>/dev/null && [[ -f "$HOME/.claude/local/claude" ]]; then
+  alias claude="$HOME/.claude/local/claude"
+fi
