@@ -7,11 +7,20 @@
   "hooks": {
     "Notification": [
       {
-        "matcher": "",
+        "matcher": "idle_prompt",
         "hooks": [
           {
             "type": "command",
-            "command": "osascript -e 'display notification \"Claude Code needs your attention\" with title \"Claude Code\"'"
+            "command": "osascript -e \"display notification \\\"Claude is done and waiting for input\\\" with title \\\"Claude Code\\\"\""
+          }
+        ]
+      },
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e \"display notification \\\"Claude needs permission to continue\\\" with title \\\"Claude Code\\\"\""
           }
         ]
       }

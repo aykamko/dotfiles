@@ -16,6 +16,7 @@
 
 _startup_time_prompt() {
   if [[ $SHELL != *"zsh"* ]]; then return; fi
+  if [[ -z "$ZSH_START_TIME" ]]; then return; fi
   local color="$1"
   reset='\x1b[0m'
   shell_start_time=${ZSH_START_TIME:0}

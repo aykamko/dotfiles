@@ -1,19 +1,158 @@
 #!/usr/bin/env bash
-
 set -e
 
-CONFIG="install.conf.yaml"
-DOTBOT_DIR="dotbot"
+DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-DOTBOT_BIN="bin/dotbot"
-BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# ── Helpers ──────────────────────────────────────────────────────────
 
-PLUGIN_DIR="dotbot-plugins"
+clean_dead_symlinks() {
+    for dir in "$@"; do
+        dir="${dir/#\~/$HOME}"
+        [ -d "$dir" ] || continue
+        find "$dir" -maxdepth 1 -type l ! -exec test -e {} \; -print -delete 2>/dev/null || true
+    done
+}
 
-cd "${BASEDIR}"
-git submodule update --init --recursive "${DOTBOT_DIR}"
+mklink() {
+    local target="$1" link="${2/#\~/$HOME}"
+    mkdir -p "$(dirname "$link")"
+    ln -sf "$target" "$link"
+}
 
-ln -sf "$BASEDIR/git/gitconfig" "$HOME/.gitconfig"
+is_darwin() { [ "$(uname)" = "Darwin" ]; }
+is_linux()  { [ "$(uname)" = "Linux" ]; }
 
-"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" \
-    -d "${BASEDIR}" -c "${CONFIG}" "${@}" --plugin-dir "${BASEDIR}/${PLUGIN_DIR}" "$@"
+confirm() {
+    local prompt="$1" default="${2:-true}"
+    if [ "$default" = true ]; then
+        read -rp "$prompt [Y/n] " reply
+        [[ -z "$reply" || "$reply" =~ ^[Yy] ]]
+    else
+        read -rp "$prompt [y/N] " reply
+        [[ "$reply" =~ ^[Yy] ]]
+    fi
+}
+
+# ── Clean dead symlinks in ~ ────────────────────────────────────────
+
+echo "Cleaning dead symlinks..."
+clean_dead_symlinks ~ ~/.*
+
+# ── Update git submodules ───────────────────────────────────────────
+
+echo "Updating git submodules..."
+cd "$DOTFILES"
+git submodule update --init --recursive
+
+# ── zsh ─────────────────────────────────────────────────────────────
+
+echo "Setting up zsh..."
+
+# Install zprezto if not present
+if [ ! -d "${ZDOTDIR:-$HOME}/.zprezto" ]; then
+    echo "Installing zprezto..."
+    git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+    while IFS= read -r rcfile; do
+        ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}"
+    done < <(find "${ZDOTDIR:-$HOME}/.zprezto/runcoms" -not -path '*.md' -type f)
+    cd "${ZDOTDIR:-$HOME}/.zprezto"
+    git submodule update --init --recursive
+fi
+
+# macOS: link /etc/zshenv
+if is_darwin; then
+    sudo rm -f /etc/zshenv
+    sudo ln -s "$DOTFILES/zsh/etc/zshenv.os.darwin" /etc/zshenv
+fi
+
+# Platform-specific zshrc.os
+if is_darwin; then
+    mklink "$DOTFILES/zsh/zshrc.os.darwin" ~/.zshrc.os
+fi
+
+# Symlink zsh dotfiles
+mklink "$DOTFILES/zsh/zshenv"    ~/.zshenv
+mklink "$DOTFILES/zsh/zshrc"     ~/.zshrc
+mklink "$DOTFILES/zsh/zprofile"  ~/.zprofile
+mklink "$DOTFILES/zsh/zpreztorc" ~/.zpreztorc
+mklink "$DOTFILES/zsh/zlogin"    ~/.zlogin
+
+# Clean dead symlinks in zprezto prompt functions
+clean_dead_symlinks ~/.zprezto/modules/prompt/functions
+
+# ── vim ─────────────────────────────────────────────────────────────
+
+echo "Setting up vim..."
+
+clean_dead_symlinks ~/.vim ~/.vim/colors
+
+mklink "$DOTFILES/vim/vimrc"                    ~/.vimrc
+mklink "$DOTFILES/vim/vimrc_small"              ~/.vim/vimrc_small
+mklink "$DOTFILES/vim/vim/snippets"             ~/.vim/snippets
+mklink "$DOTFILES/vim/vim/colors/hybrid_ayk.vim" ~/.vim/colors/hybrid_ayk.vim
+mklink "$DOTFILES/vim/vim/autoload/test"        ~/.vim/autoload/test
+
+# ── Neovim ──────────────────────────────────────────────────────────
+
+if ! hash nvim 2>/dev/null; then
+    if confirm "Install Neovim?"; then
+        if is_darwin; then
+            brew install neovim
+        elif is_linux && hash apt-get 2>/dev/null; then
+            sudo apt-get install -y neovim
+        else
+            echo "Skipping Neovim install: no supported package manager found."
+        fi
+    fi
+fi
+
+echo "Linking neovim config to vim..."
+mkdir -p "${XDG_CONFIG_HOME:=$HOME/.config}"
+mklink ~/.vim       "$XDG_CONFIG_HOME/nvim"
+mklink ~/.vimrc     "$XDG_CONFIG_HOME/nvim/init.vim"
+
+# ── git ─────────────────────────────────────────────────────────────
+
+echo "Setting up git..."
+
+mklink "$DOTFILES/git/gitconfig"        ~/.gitconfig
+mklink "$DOTFILES/git/gitconfig.user"   ~/.gitconfig.user
+mklink "$DOTFILES/git/gitignore_global" ~/.gitignore_global
+mklink "$DOTFILES/git/git_template"     ~/.git_template
+
+if is_darwin; then
+    mklink "$DOTFILES/git/gitconfig.os.darwin" ~/.gitconfig.os
+elif is_linux; then
+    mklink "$DOTFILES/git/gitconfig.os.linux" ~/.gitconfig.os
+fi
+
+# ── tmux ────────────────────────────────────────────────────────────
+
+echo "Setting up tmux..."
+mklink "$DOTFILES/tmux/tmux.conf" ~/.tmux.conf
+
+# ── direnv ──────────────────────────────────────────────────────────
+
+echo "Setting up direnv..."
+mklink "$DOTFILES/direnv/direnvrc" ~/.config/direnv/direnvrc
+
+# ── ghostty ─────────────────────────────────────────────────────────
+
+echo "Setting up ghostty..."
+mklink "$DOTFILES/ghostty/config" ~/.config/ghostty/config
+
+# ── claude code ─────────────────────────────────────────────────────
+
+echo "Setting up claude code..."
+mklink "$DOTFILES/claude/settings.json"        ~/.claude/settings.json
+mklink "$DOTFILES/claude/statusline-command.sh" ~/.claude/statusline-command.sh
+
+# ── macOS ───────────────────────────────────────────────────────────
+
+if is_darwin; then
+    echo "Applying macOS settings..."
+    defaults write com.apple.dock no-bouncing -bool True
+    killall Dock
+fi
+
+echo "Done!"

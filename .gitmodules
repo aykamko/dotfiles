@@ -1,10 +1,6 @@
 [submodule "z"]
 	path = z
 	url = https://github.com/rupa/z
-[submodule "dotbot"]
-	path = dotbot
-	url = https://github.com/anishathalye/dotbot
-	branch = master
 [submodule "vim-profiler"]
 	path = vim-profiler
 	url = https://github.com/bchretien/vim-profiler
