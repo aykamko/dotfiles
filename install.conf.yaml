@@ -194,6 +194,22 @@
       path: direnv/direnvrc
       create: true
 
+# ----- ghostty -----
+- link:
+    ~/.config/ghostty/config:
+      path: ghostty/config
+      relink: true
+      create: true
+
+# ----- claude code -----
+- link:
+    ~/.claude/settings.json:
+      path: claude/settings.json
+      relink: true
+    ~/.claude/statusline-command.sh:
+      path: claude/statusline-command.sh
+      relink: true
+
 # ----- macos ------
 - shell:
   - description: Disable Dock icons from bouncing

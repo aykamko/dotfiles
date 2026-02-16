@@ -5,6 +5,9 @@
 background = 1c1c1c
 foreground = ddeedd
 cursor-color = ddeedd
+#cursor-style = block
+cursor-style-blink = false
+shell-integration-features = no-cursor
 
 # Standard colors
 palette = 0=#3d352a
