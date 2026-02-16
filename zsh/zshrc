@@ -146,7 +146,7 @@ alias zshso='source ~/.zshrc'
 alias zshenv='vim ~/.zshenv'
 alias zshrc='vim ~/.zshrc'
 alias zprofile='vim ~/.zprofile'
-alias zpreztorc='vim ~/.zpreztorc'
+
 alias zlogin='vim ~/.zlogin'
 alias zlocal='vim ~/.zshrc.local'
 

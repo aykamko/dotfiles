@@ -49,17 +49,6 @@ git submodule update --init --recursive
 
 echo "Setting up zsh..."
 
-# Install zprezto if not present
-if [ ! -d "${ZDOTDIR:-$HOME}/.zprezto" ]; then
-    echo "Installing zprezto..."
-    git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-    while IFS= read -r rcfile; do
-        ln -sf "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile##*/}"
-    done < <(find "${ZDOTDIR:-$HOME}/.zprezto/runcoms" -not -path '*.md' -type f)
-    cd "${ZDOTDIR:-$HOME}/.zprezto"
-    git submodule update --init --recursive
-fi
-
 # macOS: link /etc/zshenv
 if is_darwin; then
     sudo rm -f /etc/zshenv
@@ -75,11 +64,7 @@ fi
 mklink "$DOTFILES/zsh/zshenv"    ~/.zshenv
 mklink "$DOTFILES/zsh/zshrc"     ~/.zshrc
 mklink "$DOTFILES/zsh/zprofile"  ~/.zprofile
-mklink "$DOTFILES/zsh/zpreztorc" ~/.zpreztorc
 mklink "$DOTFILES/zsh/zlogin"    ~/.zlogin
-
-# Clean dead symlinks in zprezto prompt functions
-clean_dead_symlinks ~/.zprezto/modules/prompt/functions
 
 # ── vim ─────────────────────────────────────────────────────────────
 
