@@ -630,4 +630,7 @@ sinatra-test() {
 ###############################################################################
 if [[ -n $CODER_WORKSPACE_NAME ]]; then
   export PS1='%F{magenta}devcontainer.$CODER_WORKSPACE_NAME%f%b %F{blue}%~%f$(__dx_git_zsh) %F{green}%#%f '
+  if [[ -f ~/.terminfo/x/xterm-ghostty ]]; then
+    export TERM=xterm-ghostty
+  fi
 fi
