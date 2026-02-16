@@ -610,3 +610,10 @@ sinatra-test() {
   local filepath="$1"
   RACK_ENV=test bundle exec ruby -Isinatra/test:sinatra/lib/test "$filepath"
 }
+
+###############################################################################
+# Figma Remote Editing
+###############################################################################
+if [[ -n $CODER_WORKSPACE_NAME ]]; then
+  export PS1='%F{magenta}devcontainer.$CODER_WORKSPACE_NAME%f%b %F{blue}%~%f$(__dx_git_zsh) %F{green}%#%f '
+fi
