@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# curl -fsSL https://raw.githubusercontent.com/aykamko/dotfiles/refs/heads/master/bootstrap.sh | bash
 set -e
 
 DOTFILES_DIR="$HOME/dotfiles"
