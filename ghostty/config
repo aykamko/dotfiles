@@ -32,6 +32,9 @@ palette = 15=#ddccbb
 # Bell
 bell-features = title,attention
 
+# Disable paste protection warnings
+clipboard-paste-protection = false
+
 # Inactive pane dimming (1.0 = no dim, lower = more dim)
 unfocused-split-opacity = 0.90
 
