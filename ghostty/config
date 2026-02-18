@@ -32,6 +32,9 @@ palette = 15=#ddccbb
 # Bell
 bell-features = title,attention
 
+# Inactive pane dimming (1.0 = no dim, lower = more dim)
+unfocused-split-opacity = 0.90
+
 # Keybindings
 
 # Split panes with leader key (Ctrl+Space)
