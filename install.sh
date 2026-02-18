@@ -72,11 +72,12 @@ echo "Setting up vim..."
 
 clean_dead_symlinks ~/.vim ~/.vim/colors
 
-mklink "$DOTFILES/vim/vimrc"                    ~/.vimrc
-mklink "$DOTFILES/vim/vimrc_small"              ~/.vim/vimrc_small
-mklink "$DOTFILES/vim/vim/snippets"             ~/.vim/snippets
-mklink "$DOTFILES/vim/vim/colors/hybrid_ayk.vim" ~/.vim/colors/hybrid_ayk.vim
-mklink "$DOTFILES/vim/vim/autoload/test"        ~/.vim/autoload/test
+# TODO: simplify vimrc (famous last words lol)
+# mklink "$DOTFILES/vim/vimrc"                    ~/.vimrc
+# mklink "$DOTFILES/vim/vimrc_small"              ~/.vim/vimrc_small
+# mklink "$DOTFILES/vim/vim/snippets"             ~/.vim/snippets
+# mklink "$DOTFILES/vim/vim/colors/hybrid_ayk.vim" ~/.vim/colors/hybrid_ayk.vim
+# mklink "$DOTFILES/vim/vim/autoload/test"        ~/.vim/autoload/test
 
 # ── Neovim ──────────────────────────────────────────────────────────
 
