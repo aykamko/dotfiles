@@ -18,8 +18,11 @@ c4='31'  # red
 c5='33'  # yellow
 c6='32'  # green
 
-# Get shortened path (last 3 components, replace home with ~)
-short_path="${cwd/#$HOME/~}"
+# Replace home directory with ~ using $HOME env var
+home_dir="${HOME}"
+short_path="${cwd/#$home_dir/~}"
+
+# Get shortened path (last 3 components)
 IFS='/' read -ra path_parts <<< "$short_path"
 if [[ ${#path_parts[@]} -gt 3 ]]; then
     short_path=".../${path_parts[-3]}/${path_parts[-2]}/${path_parts[-1]}"
@@ -28,8 +31,13 @@ fi
 # Build prompt components
 prompt_parts=""
 
+# Coder workspace indicator (if env var is set)
+if [[ -n "$CODER_WORKSPACE_NAME" ]]; then
+    prompt_parts="$(printf "\033[${c6}mcoder:%s\033[0m " "$CODER_WORKSPACE_NAME")"
+fi
+
 # Current directory in cyan
-prompt_parts="$(printf "\033[${c1}m%s\033[0m" "$short_path")"
+prompt_parts+="$(printf "\033[${c1}m%s\033[0m" "$short_path")"
 
 # Git info (if in git repo)
 if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
@@ -62,15 +70,11 @@ if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
     prompt_parts+=" $(printf "\033[${c2}m(\033[${c4}m%s\033[0m%s%s\033[${c2}m)\033[0m" "$git_branch" "$git_status" "$ahead_behind")"
 fi
 
-# Vim mode indicator
+# Vim mode indicator (no ❯ character)
 if [[ -n "$vim_mode" ]]; then
     if [[ "$vim_mode" == "NORMAL" ]]; then
         prompt_parts+=" $(printf "\033[${c3}m✱\033[0m")"
-    else
-        prompt_parts+=" ❯"
     fi
-else
-    prompt_parts+=" ❯"
 fi
 
 # Add session name if present
@@ -83,10 +87,17 @@ if [[ -n "$output_style" && "$output_style" != "default" ]]; then
     prompt_parts+=" $(printf "\033[${c6}m%s\033[0m" "$output_style")"
 fi
 
-# Add context remaining percentage if available
+# Add context used progress bar if available
 if [[ -n "$remaining" ]]; then
     remaining_int=$(printf "%.0f" "$remaining")
-    prompt_parts+=" $(printf "\033[${c5}m%s%%\033[0m" "$remaining_int")"
+    used_int=$(( 100 - remaining_int ))
+    bar_width=20
+    filled=$(( used_int * bar_width / 100 ))
+    empty=$(( bar_width - filled ))
+    bar=""
+    for (( i=0; i<filled; i++ )); do bar+="█"; done
+    for (( i=0; i<empty; i++ )); do bar+="░"; done
+    prompt_parts+=" $(printf "\033[${c5}m[%s] %d%%\033[0m" "$bar" "$used_int")"
 fi
 
-echo -e "$prompt_parts"
+printf "%s\n" "$prompt_parts"
