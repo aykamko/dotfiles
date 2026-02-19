@@ -18,15 +18,13 @@ c4='31'  # red
 c5='33'  # yellow
 c6='32'  # green
 
-# Replace home directory with ~ using $HOME env var
-home_dir="${HOME}"
-short_path="${cwd/#$home_dir/~}"
-
-# Get shortened path (last 3 components)
-IFS='/' read -ra path_parts <<< "$short_path"
-if [[ ${#path_parts[@]} -gt 3 ]]; then
-    short_path=".../${path_parts[-3]}/${path_parts[-2]}/${path_parts[-1]}"
+# Replace home directory with ~
+if [[ -n "$HOME" && "$cwd" == "$HOME"* ]]; then
+    short_path="~${cwd:${#HOME}}"
+else
+    short_path="$cwd"
 fi
+
 
 # Build prompt components
 prompt_parts=""
