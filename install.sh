@@ -72,6 +72,7 @@ echo "Setting up vim..."
 
 clean_dead_symlinks ~/.vim ~/.vim/colors
 
+mkdir -p ~/.vim
 # TODO: simplify vimrc (famous last words lol)
 # mklink "$DOTFILES/vim/vimrc"                    ~/.vimrc
 # mklink "$DOTFILES/vim/vimrc_small"              ~/.vim/vimrc_small
