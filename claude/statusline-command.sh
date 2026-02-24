@@ -31,7 +31,11 @@ prompt_parts=""
 
 # Coder workspace indicator (if env var is set)
 if [[ -n "$CODER_WORKSPACE_NAME" ]]; then
-    prompt_parts="$(printf "\033[${c6}mcoder:%s\033[0m " "$CODER_WORKSPACE_NAME")"
+    _coder_emoji=""
+    [[ $CODER_WORKSPACE_COLOR == *green* ]]  && _coder_emoji=" 💚"
+    [[ $CODER_WORKSPACE_COLOR == *blue* ]]   && _coder_emoji=" 💙"
+    [[ $CODER_WORKSPACE_COLOR == *purple* ]] && _coder_emoji=" 💜"
+    prompt_parts="$(printf "\033[${c6}mcoder:%s%s\033[0m " "$CODER_WORKSPACE_NAME" "$_coder_emoji")"
 fi
 
 # Current directory in cyan
