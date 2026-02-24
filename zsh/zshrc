@@ -632,11 +632,12 @@ sinatra-test() {
 ###############################################################################
 if [[ -n $CODER_WORKSPACE_NAME ]]; then
   _coder_emoji=""
-  [[ $CODER_WORKSPACE_NAME == *green* ]]  && _coder_emoji=" 💚"
-  [[ $CODER_WORKSPACE_NAME == *blue* ]]   && _coder_emoji=" 💙"
-  [[ $CODER_WORKSPACE_NAME == *purple* ]] && _coder_emoji=" 💜"
-  export PS1='%F{magenta}devcontainer.$CODER_WORKSPACE_NAME'"${_coder_emoji}"'%f%b %F{blue}%~%f$(__dx_git_zsh) %F{green}%#%f '
-  unset _coder_emoji
+  _coder_color="magenta"
+  [[ $CODER_WORKSPACE_NAME == *green* ]]  && _coder_emoji=" 💚" && _coder_color="green"
+  [[ $CODER_WORKSPACE_NAME == *blue* ]]   && _coder_emoji=" 💙" && _coder_color="blue"
+  [[ $CODER_WORKSPACE_NAME == *purple* ]] && _coder_emoji=" 💜" && _coder_color="magenta"
+  export PS1='%F{'"${_coder_color}"'}devcontainer.$CODER_WORKSPACE_NAME'"${_coder_emoji}"'%f%b %F{blue}%~%f$(__dx_git_zsh) %F{green}%#%f '
+  unset _coder_emoji _coder_color
   if [[ -f ~/.terminfo/x/xterm-ghostty ]]; then
     export TERM=xterm-ghostty
   fi
