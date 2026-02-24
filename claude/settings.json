@@ -1,5 +1,6 @@
 {
   "model": "claude-opus-4-6[1m]",
+  "viMode": true,
   "hooks": {
     "Notification": [
       {

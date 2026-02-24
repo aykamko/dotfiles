@@ -71,7 +71,7 @@ fi
 # Vim mode indicator (no ❯ character)
 if [[ -n "$vim_mode" ]]; then
     if [[ "$vim_mode" == "NORMAL" ]]; then
-        prompt_parts+=" $(printf "\033[${c3}m✱\033[0m")"
+        prompt_parts+=" $(printf "\033[${c3}m-- NORMAL --\033[0m")"
     fi
 fi
 
