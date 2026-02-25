@@ -63,3 +63,5 @@ keybind = ctrl+space>x=close_surface
 
 # Zoom pane (leader+z)
 keybind = ctrl+space>z=toggle_split_zoom
+
+window-save-state = always
