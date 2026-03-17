@@ -1,6 +1,5 @@
-# This breaks XCode
-#[url "git@github.com:"]
-#    insteadOf = https://github.com/
+[url "git@github.com:"]
+    insteadOf = https://github.com/
 [color]
     ui = always
 [color "branch"]
