@@ -299,7 +299,7 @@ dmake() { # django
 }
 
 if (( $+commands[rbenv] )); then
-  rbenv() { unset -f rbenv && eval "$(rbenv init -)" && rbenv "$@"; }
+  eval "$(rbenv init -)"
 fi
 
 if (( $+commands[nodenv] )); then
@@ -636,6 +636,7 @@ if [[ -n $CODER_WORKSPACE_NAME ]]; then
   [[ $CODER_WORKSPACE_NAME == *green* ]]  && _coder_emoji=" 💚" && _coder_color="green"
   [[ $CODER_WORKSPACE_NAME == *blue* ]]   && _coder_emoji=" 💙" && _coder_color="blue"
   [[ $CODER_WORKSPACE_NAME == *purple* ]] && _coder_emoji=" 💜" && _coder_color="135"
+  [[ $CODER_WORKSPACE_NAME == *orange* ]] && _coder_emoji=" 🧡" && _coder_color="208"
   export PS1='%F{'"${_coder_color}"'}devcontainer.$CODER_WORKSPACE_NAME'"${_coder_emoji}"'%f%b %F{blue}%~%f$(__dx_git_zsh) %F{green}%#%f '
   unset _coder_emoji _coder_color
   if [[ -f ~/.terminfo/x/xterm-ghostty ]]; then
@@ -648,4 +649,3 @@ if ! hash claude 2>/dev/null && [[ -f "$HOME/.claude/local/claude" ]]; then
 fi
 
 alias clawd="claude --dangerously-skip-permissions"
-

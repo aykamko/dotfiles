@@ -36,6 +36,7 @@ if [[ -n "$CODER_WORKSPACE_NAME" ]]; then
     [[ $CODER_WORKSPACE_NAME == *green* ]]  && _coder_emoji=" 💚" && _coder_ansi="$c6"
     [[ $CODER_WORKSPACE_NAME == *blue* ]]   && _coder_emoji=" 💙" && _coder_ansi="$c2"
     [[ $CODER_WORKSPACE_NAME == *purple* ]] && _coder_emoji=" 💜" && _coder_ansi="38;5;135"
+    [[ $CODER_WORKSPACE_NAME == *orange* ]] && _coder_emoji=" 🧡" && _coder_ansi="38;5;208"
     prompt_parts="$(printf "\033[${_coder_ansi}mcoder:%s%s\033[0m " "$CODER_WORKSPACE_NAME" "$_coder_emoji")"
 fi
 
