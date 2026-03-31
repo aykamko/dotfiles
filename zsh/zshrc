@@ -299,7 +299,7 @@ dmake() { # django
 }
 
 if (( $+commands[rbenv] )); then
-  eval "$(rbenv init -)"
+  rbenv() { unset -f rbenv && eval "$(rbenv init -)" && rbenv "$@"; }
 fi
 
 if (( $+commands[nodenv] )); then
@@ -649,3 +649,4 @@ if ! hash claude 2>/dev/null && [[ -f "$HOME/.claude/local/claude" ]]; then
 fi
 
 alias clawd="claude --dangerously-skip-permissions"
+alias judgebench='bazel run //ml/py/figma/processing/judge_bench:cli -- '
