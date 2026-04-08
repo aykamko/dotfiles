@@ -496,6 +496,20 @@ if [[ -f "$HOME/figma/figma/bin/coder-helpers/zshrc" ]]; then
   source "$HOME/figma/figma/bin/coder-helpers/zshrc"
 fi
 
+cssh() {
+  local workspace="${1:?usage: cssh <workspace>}"
+  local target="devcontainer.${workspace}.akamko"
+  while true; do
+    coder ssh -A "$target"
+    local rc=$?
+    if [[ $rc -eq 0 ]]; then
+      return 0
+    fi
+    echo "coder ssh exited with $rc, retrying in 3s..."
+    sleep 3
+  done
+}
+
 ###############################################################################
 # Vi Mode Cursor
 ###############################################################################
