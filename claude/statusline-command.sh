@@ -9,6 +9,7 @@ session_name=$(echo "$input" | jq -r '.session_name // empty')
 output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 vim_mode=$(echo "$input" | jq -r '.vim.mode // empty')
 remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
+model_id=$(echo "$input" | jq -r '.model.id // empty')
 
 # Colors (using ANSI codes)
 c1='36'  # cyan
@@ -102,6 +103,10 @@ if [[ -n "$remaining" ]]; then
     for (( i=0; i<filled; i++ )); do bar+="█"; done
     for (( i=0; i<empty; i++ )); do bar+="░"; done
     prompt_parts+=" $(printf "\033[${c5}m[%s] %d%%\033[0m" "$bar" "$used_int")"
+
+    # Add effort level from settings
+    effort_level=$(jq -r '.effortLevel // "auto"' ~/.claude/settings.json 2>/dev/null || echo "auto")
+    prompt_parts+=" $(printf "\033[${c3}m%s\033[0m" "$effort_level")"
 fi
 
 printf "%s\n" "$prompt_parts"
