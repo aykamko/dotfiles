@@ -10,6 +10,10 @@ output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 vim_mode=$(echo "$input" | jq -r '.vim.mode // empty')
 remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
 model_id=$(echo "$input" | jq -r '.model.id // empty')
+five_hour_used=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+five_hour_resets=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
+seven_day_used=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
+seven_day_resets=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
 
 # Colors (using ANSI codes)
 c1='36'  # cyan
@@ -107,6 +111,47 @@ if [[ -n "$remaining" ]]; then
     # Add effort level from settings
     effort_level=$(jq -r '.effortLevel // "auto"' ~/.claude/settings.json 2>/dev/null || echo "auto")
     prompt_parts+=" $(printf "\033[${c3}m%s\033[0m" "$effort_level")"
+fi
+
+# Claude 5-hour usage
+if [[ -n "$five_hour_used" ]]; then
+    used_int=$(printf "%.0f" "$five_hour_used")
+    reset_str=""
+    if [[ -n "$five_hour_resets" ]]; then
+        now=$(date +%s)
+        seconds_until=$(( five_hour_resets - now ))
+        if [[ $seconds_until -gt 0 ]]; then
+            hours=$(( seconds_until / 3600 ))
+            minutes=$(( (seconds_until % 3600) / 60 ))
+            if [[ $hours -gt 0 ]]; then
+                reset_str=" | ${hours}h${minutes}m"
+            else
+                reset_str=" | ${minutes}m"
+            fi
+        fi
+    fi
+    prompt_parts+=" $(printf "\033[${c6}m[5h ⬡ %d%%%s]\033[0m" "$used_int" "$reset_str")"
+fi
+
+# Claude 7-day usage
+if [[ -n "$seven_day_used" ]]; then
+    used_int=$(printf "%.0f" "$seven_day_used")
+    reset_str=""
+    if [[ -n "$seven_day_resets" ]]; then
+        now=$(date +%s)
+        seconds_until=$(( seven_day_resets - now ))
+        if [[ $seconds_until -gt 0 ]]; then
+            days=$(( seconds_until / 86400 ))
+            hours=$(( (seconds_until % 86400) / 3600 ))
+            if [[ $days -gt 0 ]]; then
+                reset_str=" | ${days}d${hours}h"
+            else
+                minutes=$(( (seconds_until % 3600) / 60 ))
+                reset_str=" | ${hours}h${minutes}m"
+            fi
+        fi
+    fi
+    prompt_parts+=" $(printf "\033[38;5;135m[7d ⬡ %d%%%s]\033[0m" "$used_int" "$reset_str")"
 fi
 
 printf "%s\n" "$prompt_parts"
