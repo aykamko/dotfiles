@@ -40,6 +40,12 @@ unfocused-split-opacity = 0.90
 
 # Keybindings
 
+# Font size changes apply to all panes globally
+keybind = all:cmd+equal=increase_font_size:1
+keybind = all:cmd+minus=decrease_font_size:1
+keybind = all:cmd+zero=reset_font_size
+
+
 # Split panes with leader key (Ctrl+Space)
 keybind = ctrl+space>h=new_split:left
 keybind = ctrl+space>j=new_split:down
