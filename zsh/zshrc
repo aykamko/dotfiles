@@ -584,6 +584,11 @@ bindkey -r '^D'
 bindkey '^A' beginning-of-line
 bindkey '^E' end-of-line
 
+# ctrl-g to edit command line in $EDITOR
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^G' edit-command-line
+
 # don't warn when overwriting existing file
 setopt clobber
 

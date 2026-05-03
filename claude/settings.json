@@ -44,5 +44,6 @@
     "type": "command",
     "command": "bash $HOME/.claude/statusline-command.sh"
   },
-  "viMode": true
+  "viMode": true,
+  "editorMode": "vim"
 }
