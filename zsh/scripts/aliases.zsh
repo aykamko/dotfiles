@@ -114,15 +114,21 @@ if ! hash claude 2>/dev/null && [[ -f "$HOME/.claude/local/claude" ]]; then
 fi
 alias clawd="claude --dangerously-skip-permissions"
 
-# eternal terminal via coder ssh proxy.
+# eternal terminal via coder connect.
 # usage: et-coder <workspace> [user]
-# Uses --jumphost: SSH to coder.<workspace>, then port-forward to etserver on its loopback.
-# The target must be `localhost` because hostnames are resolved from the jumphost's view.
+# Requires Coder Connect to be running (the userspace VPN daemon makes the
+# *.coder hostname directly TCP-reachable and auths SSH via your Coder session).
 et-coder() {
   if [[ -z "$1" ]]; then
     echo "usage: et-coder <workspace> [user]" >&2
     return 1
   fi
-  local user="${2:-ubuntu}"
-  command et "$user@localhost" --jumphost "$user@coder.$1"
+  local ws="$1" user="${2:-ubuntu}"
+  local host="devcontainer.$ws.akamko.coder"
+  if ! coder connect exists "$host" 2>/dev/null; then
+    echo "et-coder: Coder Connect isn't reachable for $host." >&2
+    echo "  Start it via the Coder Desktop app, or 'coder connect run'." >&2
+    return 1
+  fi
+  command et "$user@$host"
 }
