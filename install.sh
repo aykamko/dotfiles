@@ -49,18 +49,6 @@ git submodule update --init --recursive
 
 echo "Setting up zsh..."
 
-# macOS: link /etc/zshenv
-if is_darwin; then
-    sudo rm -f /etc/zshenv
-    sudo ln -s "$DOTFILES/zsh/etc/zshenv.os.darwin" /etc/zshenv
-fi
-
-# Platform-specific zshrc.os
-if is_darwin; then
-    mklink "$DOTFILES/zsh/zshrc.os.darwin" ~/.zshrc.os
-fi
-
-# Symlink zsh dotfiles
 mklink "$DOTFILES/zsh/zshenv"    ~/.zshenv
 mklink "$DOTFILES/zsh/zshrc"     ~/.zshrc
 mklink "$DOTFILES/zsh/zprofile"  ~/.zprofile

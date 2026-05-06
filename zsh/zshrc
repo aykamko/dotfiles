@@ -24,6 +24,22 @@ if [[ $(uname -s) == "Darwin" ]]; then
       tmux setenv DOCKER_CERT_PATH $DOCKER_CERT_PATH
       tmux setenv DOCKER_MACHINE_NAME $DOCKER_MACHINE_NAME
   }
+
+  __git_statusline() {
+    local reset='%f%b'
+    local light_blue='%F{cyan}'
+    local yellow='%F{yellow}'
+    local git_display=""
+    local branch
+    branch=$(git --no-optional-locks branch --show-current 2>/dev/null)
+    if [[ -n "$branch" ]]; then
+      git_display="${light_blue}(${reset}${yellow}${branch}${reset}${light_blue})${reset}"
+    fi
+    echo "${git_display}"
+  }
+
+  setopt PROMPT_SUBST
+  export PS1='%F{200}macbook%f%b %F{blue}%~%f $(__git_statusline) %F{green}%#%f '
 fi
 
 
@@ -402,7 +418,7 @@ if [[ -n $CODER_WORKSPACE_NAME ]]; then
   [[ $CODER_WORKSPACE_NAME == *blue* ]]   && _coder_emoji=" 💙" && _coder_color="blue"
   [[ $CODER_WORKSPACE_NAME == *purple* ]] && _coder_emoji=" 💜" && _coder_color="135"
   [[ $CODER_WORKSPACE_NAME == *orange* ]] && _coder_emoji=" 🧡" && _coder_color="208"
-  export PS1='%F{'"${_coder_color}"'}devcontainer.$CODER_WORKSPACE_NAME'"${_coder_emoji}"'%f%b %F{blue}%~%f$(__dx_git_zsh) %F{green}%#%f '
+  export PS1='%F{'"${_coder_color}"'}devcontainer.$CODER_WORKSPACE_NAME'"${_coder_emoji}"'%f%b %F{blue}%~%f $(__dx_git_zsh) %F{green}%#%f '
   unset _coder_emoji _coder_color
   if [[ -f ~/.terminfo/x/xterm-ghostty ]]; then
     export TERM=xterm-ghostty
