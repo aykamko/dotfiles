@@ -114,3 +114,15 @@ if ! hash claude 2>/dev/null && [[ -f "$HOME/.claude/local/claude" ]]; then
   alias claude="$HOME/.claude/local/claude"
 fi
 alias clawd="claude --dangerously-skip-permissions"
+
+# eternal terminal via coder ssh proxy.
+# usage: et-coder <workspace> [user]
+et-coder() {
+  if [[ -z "$1" ]]; then
+    echo "usage: et-coder <workspace> [user]" >&2
+    return 1
+  fi
+  local host="coder.$1"
+  local user="${2:-ubuntu}"
+  command et "$user@$host" --jumphost "$user@$host"
+}

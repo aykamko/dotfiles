@@ -110,6 +110,17 @@ if [ ! -d "$HOME/.fzf" ]; then
     "$HOME/.fzf/install" --all --no-update-rc
 fi
 
+# ── eternal terminal ────────────────────────────────────────────────
+
+if is_linux && hash apt-get 2>/dev/null && ! hash etserver 2>/dev/null; then
+    if confirm "Install Eternal Terminal (et)?"; then
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:jgmath2000/et
+        sudo apt-get update
+        sudo apt-get install -y et
+    fi
+fi
+
 # ── tmux ────────────────────────────────────────────────────────────
 
 echo "Setting up tmux..."
