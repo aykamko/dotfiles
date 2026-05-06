@@ -116,12 +116,13 @@ alias clawd="claude --dangerously-skip-permissions"
 
 # eternal terminal via coder ssh proxy.
 # usage: et-coder <workspace> [user]
+# Uses --jumphost: SSH to coder.<workspace>, then port-forward to etserver on its loopback.
+# The target must be `localhost` because hostnames are resolved from the jumphost's view.
 et-coder() {
   if [[ -z "$1" ]]; then
     echo "usage: et-coder <workspace> [user]" >&2
     return 1
   fi
-  local host="coder.$1"
   local user="${2:-ubuntu}"
-  command et "$user@$host" --jumphost "$user@$host"
+  command et "$user@localhost" --jumphost "$user@coder.$1"
 }
