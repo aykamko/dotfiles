@@ -165,8 +165,12 @@ if (( $+commands[nodenv] )); then
 fi
 
 if (( $+commands[pyenv] )); then
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
+  pyenv() {
+    unset -f pyenv
+    eval "$(pyenv init -)"
+    eval "$(pyenv virtualenv-init -)"
+    pyenv "$@"
+  }
 fi
 
 # git
@@ -229,7 +233,7 @@ compctl -f -W $DOTFILES/ dotfiles
 export RACK_ENV=development
 export AWS_CONFIG_FILE="$HOME/figma/figma/config/aws/sso_config"
 
-if (( $+commands[mise] )); then
+if (( $+commands[mise] && ! $+functions[_mise_hook] )); then
   eval "$(mise activate zsh)"
 fi
 

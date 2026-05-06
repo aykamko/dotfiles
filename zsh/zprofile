@@ -76,7 +76,15 @@ fi
 if [[ $UNAME == darwin ]]; then
   # used by Homebrew
   path=(/usr/local/sbin $path)
-  eval "$(/opt/homebrew/bin/brew shellenv)"
+  # Inlined `brew shellenv` — output is static, so we skip spawning Homebrew on every shell.
+  # Regenerate these lines if Homebrew is reinstalled or its layout changes.
+  export HOMEBREW_PREFIX="/opt/homebrew"
+  export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
+  export HOMEBREW_REPOSITORY="/opt/homebrew"
+  path=(/opt/homebrew/bin /opt/homebrew/sbin $path)
+  export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
+  export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
+  fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
 fi
 
 export GOPATH="$HOME/go"
