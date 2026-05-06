@@ -125,21 +125,6 @@ v() {
   fi
 }
 
-# From: https://github.com/junegunn/fzf/wiki/Examples
-unalias z
-z() {
-  if [[ -z "$*" ]]; then
-    cd "$(_z -l 2>&1 | fzf +s --tac | sed 's/^[0-9,.]* *//')"
-  else
-    _last_z_args="$@"
-    _z "$@"
-  fi
-}
-
-zz() {
-  cd "$(_z -l 2>&1 | sed 's/^[0-9,.]* *//' | fzf -q $_last_z_args)"
-}
-
 fgit() {
   local root pipecmd out dir
   root=$(git rev-parse --show-toplevel 2>/dev/null)

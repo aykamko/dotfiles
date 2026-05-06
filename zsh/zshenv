@@ -1,23 +1,9 @@
-#
-# Defines environment variables and sets up profiler.
-#
-# Authors:
-#   Sorin Ionescu <sorin.ionescu@gmail.com>
-#   Aleks Kamko <aykamko@gmail.com>
-#
-
 # Profiler for interactive shell
 if [[ -o INTERACTIVE ]]; then
   zmodload zsh/datetime
 
-  #######################################
-  #######################################
-
   ZSH_XTRACE_STARTUP=0
   ZSH_ZPROF=0
-
-  #######################################
-  #######################################
 
   if (( $ZSH_XTRACE_STARTUP )); then
     setopt promptsubst
@@ -42,12 +28,7 @@ fi
 # fi
 source "${ZDOTDIR:-$HOME}/.zprofile"
 
-# Fix shim paths for neovim libvterm
-if [[ -n $VIMRUNTIME ]]; then
-  source "${ZDOTDIR:-$HOME}/.zprofile"
-fi
-
-# rust
-if [[ -d "$HOME/.cargo" ]]; then
-  . "$HOME/.cargo/env"
+# system-wide environment settings for zsh(1)
+if [[ -x /usr/libexec/path_helper && -z $TMUX ]]; then
+	eval `/usr/libexec/path_helper -s`
 fi

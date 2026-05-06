@@ -1,24 +1,30 @@
 # vim: set ft=zsh:
+bindkey -v # Vi Mode
+
 ###############################################################################
-# Vi Mode
+# Platform Specific
 ###############################################################################
-bindkey -v
+if [[ $(uname -s) == "Darwin" ]]; then
+  # alias for rm (requires trash script)
+  if (( $+commands[trash] )); then
+      alias rm=trash
+  fi
 
-# redraw prompt on async prompt callback signal
-function TRAPUSR1 {
-  _async_prompt_pid=0
-  _async_prompt=$(cat $HOME/._async_prompt)
-  zle && zle .reset-prompt
-}
+  # copy to mac osx clipboard
+  copy() { cat $1 | pbcopy }
 
-# run compinit -S on trusted computers
-export TRUSTED_COMPINIT="alekskamkosmacbookpro16inchnov2023m3max"
+  # clean .DS_Store
+  dsclean() { find . -name ".DS_Store" -exec /bin/rm -rf {} \; }
 
-# load shell bookmarks
-if [[ -f $HOME/.config/shell_bookmarks.zsh ]]; then
-  source $HOME/.config/shell_bookmarks.zsh
+  # docker+tmux
+  docker-mount() {
+      eval "$(docker-machine env default)"
+      tmux setenv DOCKER_TLS_VERIFY $DOCKER_TLS_VERIFY
+      tmux setenv DOCKER_HOST $DOCKER_HOST
+      tmux setenv DOCKER_CERT_PATH $DOCKER_CERT_PATH
+      tmux setenv DOCKER_MACHINE_NAME $DOCKER_MACHINE_NAME
+  }
 fi
-alias bookmarks="vim $HOME/.config/shell_bookmarks.zsh"
 
 
 ###############################################################################
@@ -88,7 +94,6 @@ fi
 # Aliases & Functions
 ###############################################################################
 # basics
-alias restart="exec $SHELL"
 alias c=clear
 alias ':q'=exit
 
@@ -101,52 +106,14 @@ stripansi() {
     sed -E "s/"$'\E'"\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g" ||
     sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g"
 }
-word() {
-  awk "{print \$$1}"
-}
-
-alias cm='command'
-
-alias unixtime='date +%s'
-
-alias todo='vim ~/todo.md'
-alias anxiety='vim ~/anxiety.md'
 
 alias vimrc='vim ~/.vimrc'
-alias vis='vim -u ~/.vim/vimrc_small'
-alias vimrc_small='vis ~/.vim/vimrc_small'
-
-vim-profile() {
-  $DOTFILES/vim-profiler/vim-profiler.py ${@:1:$((${#@} - 1))} $(which nvim) ${@: -1}
-}
-
-swpclean() {
-  find . -name '*.sw*' -exec /bin/rm -rf {} \;
-}
-
-vimreplace() {
-  [[ $# < 2 ]] && echo 'Not enough arguments' && return
-
-  local search
-  (( $+commands[ag] )) && \
-    search="command ag -l --nocolor '$1'" || \
-    search="grep -rl '$1' *"
-
-  local -a matches
-  while read line; do
-    matches+=$line
-  done < <(eval $search)
-
-  # eventignore magic from http://stackoverflow.com/a/12487439
-  vim -c "bufdo set eventignore-=Syntax | %s/$1/$2/gec | update" ${matches}
-}
 
 # zsh
 alias zshso='source ~/.zshrc'
 alias zshenv='vim ~/.zshenv'
 alias zshrc='vim ~/.zshrc'
 alias zprofile='vim ~/.zprofile'
-
 alias zlogin='vim ~/.zlogin'
 alias zlocal='vim ~/.zshrc.local'
 
@@ -155,70 +122,6 @@ alias gitconfig='vim ~/.gitconfig'
 alias gitignore_global='vim ~/.gitignore_global'
 alias gs='git status'
 
-mergebase() {
-  local base="$1"
-  if [[ -z "$base" ]]; then
-    base="master"
-  fi
-  git merge-base HEAD "$base"
-}
-
-# lists all files in a git repository, marking gitignored files as yellow
-ripgrep_git_list() {
-  local root is_git_dir
-  if [[ -n $1 ]]; then
-    root=$1
-    is_git_dir="true"
-  else
-    root=$(git rev-parse --show-toplevel 2>/dev/null)
-    if [[ $? -eq 0 ]]; then
-      is_git_dir="true"
-    else
-      is_git_dir="false"
-      root=$PWD
-    fi
-  fi
-
-  local rg_args_inverse_git_ignore=()
-  if [[ $is_git_dir == "true" ]]; then
-    if [[ -f "$root/.gitignore" ]]; then
-      # include everything in gitignore (inverse of the gitignore file)
-      while read rule; do
-        # filter out comments and empty lines
-        rule=${rule%%\#*}
-        if [[ -n $rule ]]; then
-          rg_args_inverse_git_ignore+=("-g" "$rule")
-        fi
-      done < "$root/.gitignore"
-    fi
-    if [[ -f "$root/.ignore" ]]; then
-      # exclude everything in .ignore
-      while read rule; do
-        # filter out comments and empty lines
-        rule=${rule%%\#*}
-        if [[ -n $rule ]]; then
-          rg_args_inverse_git_ignore+=("-g" "!$rule")
-        fi
-      done < "$root/.ignore"
-    fi
-  fi
-
-  {
-    chdir "$root"
-
-    # regular files (excluding .git folder)
-    rg -g '!.git' --hidden --files
-
-    # gitignored files, output in yellow
-    if [[ -n "$rg_args_inverse_git_ignore" ]]; then
-      rg --no-ignore-vcs "${rg_args_inverse_git_ignore[@]}" --files | \
-        while read match; do
-          echo -e "$_ylw$match$_clr"
-        done
-    fi
-  }
-}
-
 # tmux
 alias t='tmux'
 alias tl='tmux ls'
@@ -226,77 +129,16 @@ alias detach='tmux detach'
 alias tmuxconf="vim ~/.tmux.conf"
 alias tconf='tmuxconf'
 alias tname='tmux rename-session'
-tswap() {
-  tmux swap-window -t $1
-}
-notmux() {
-  touch ~/.no_tmux
-}
 if [[ -z $TMUX ]]; then
-  tmux() { [[ -z "$@" ]] && command tmux new -A -s main || command tmux "$@" }
+  tmux() { [[ -z "$@" ]] && command tmux new -A -s 0 || command tmux "$@" }
 fi
-
 alias tkill="killall tmux"
-
-# CSV
-# source: https://chrisjean.com/view-csv-data-from-the-command-line/
-csvless() {
-  local outputcmd
-  if [[ -n $2 ]]; then
-    outputcmd="head -n $2"
-  else
-    outputcmd="cat"
-  fi
-  eval "$outputcmd $1" | sed -e 's/,,/, ,/g' | column -s, -t | less -#5 -N -S
-}
-
-# julia
-alias jl=julia
 
 # python
 alias ipy3=ipython3
 alias ipy=ipython
 alias py3=python3
 alias py=python
-venv() {
-  source $1/bin/activate
-}
-rpdb() {
-  socat readline tcp:${2:-0.0.0.0}:${1:-4444}
-}
-
-ctags() {
-  unset -f ctags && \
-    brew list ctags >/dev/null 2>&1 && \
-    alias ctags="$(brew --prefix)/bin/ctags"
-  ctags "$@"
-}
-# re-activate any active VIRTUAL_ENV on shell start up
-if [[ -n $VIRTUAL_ENV ]]; then
-  source ${VIRTUAL_ENV}/bin/activate
-fi
-
-# re-activate any active anaconda env on shell start up
-if [[ -n $CONDA_DEFAULT_ENV ]]; then
-  echo "Sourcing conda env: $CONDA_DEFAULT_ENV"
-  source activate $CONDA_DEFAULT_ENV
-fi
-
-# modified from http://unix.stackexchange.com/questions/13464
-upsearch() {
-  local curdir="$PWD"
-  while 1; do
-    [[ -f "$curdir/$1" ]] && echo "$curdir/$1" && return
-    [[ $curdir == "/" ]] && return
-    curdir=$(dirname "$curdir")
-  done
-}
-dmake() { # django
-  local django=$(upsearch manage.py)
-  [[ -n $django ]] && \
-    (cd $(dirname $django) && python $django "$@") || \
-    echo "Couldn't find manage.py"
-}
 
 if (( $+commands[rbenv] )); then
   rbenv() { unset -f rbenv && eval "$(rbenv init -)" && rbenv "$@"; }
@@ -340,35 +182,6 @@ fi
 
 # other
 alias tmp="cd $HOME/tmp"
-alias texclean='rm -rf *.aux *.fdb_latexmk *.fls *.log *.synctex.gz 2>/dev/null'
-
-# NOTE: overrides unix `last` command, but that's not too useful anyway
-last() {
-  [[ -z $TMUX && -z $NVIM_LISTEN_ADDRESS ]] && echo 'Sorry, not in tmux or nvim. :(' && return
-
-  local prev_cmd
-  prev_cmd=$(fc -ln -1 | sed -e 's/[\/&]/\\&/g')
-
-  local last_out=$TMPDIR/last.$$
-  if [[ -n $NVIM_LISTEN_ADDRESS ]]; then
-    nvr -c "w! $last_out" >/dev/null
-  else
-    tmux capture-pane -pe -S - >! $last_out
-  fi
-
-  tail -r $last_out | awk "/$PROMPT_DELIM/{p=!p;if(p){next}else{exit}} p" | tail -r
-}
-if (( $+commands[fpp] )); then
-  alias lp='last | fpp'
-fi
-
-psag() {
-  ps aux | ag "[${1[1]}]${1[2,-1]}"
-}
-
-pskill() {
-  ps aux | ag "[${1[1]}]${1[2,-1]}" | awk '{print $2}' | sudo xargs -I% command kill ${2:-} %
-}
 
 ###############################################################################
 # Builtin overrides
@@ -378,14 +191,9 @@ if (( $+commands[lsd] )); then
   alias ls=lsd
 fi
 
-alias l='ls -l'
-alias la='ls -a'
-alias lla='ls -la'
-alias lt='ls --tree'
-
 # override cd to do ls and vim when necessary
 better_cd() {
-  set -- ${1//,/.} # replace commas , with periods . (looking at u Golang)
+  set -- ${1//,/.} # replace commas , with periods . (Golang)
   if [[ -f $1 ]]; then
     local fdir=$(dirname $1)
     [[ -d $fdir ]] && builtin cd $fdir && ls && vim $(basename $1) ${*:2}
@@ -399,19 +207,11 @@ alias cd=better_cd
 dotfiles() { cd $DOTFILES/$1; }
 compctl -f -W $DOTFILES/ dotfiles
 
-# alias ls='COLUMNS=150 ls -G'
-
 ###############################################################################
 # Figma
 ###############################################################################
-export PATH="${HOMEBREW_PREFIX}/opt/openssl/bin:$PATH"
-export PKG_CONFIG_PATH="/opt/homebrew/opt/zlib/lib/pkgconfig:/usr/local/opt/zlib/lib/pkgconfig:$PKG_CONFIG_PATH"
-export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@3/lib/pkgconfig:/usr/local/opt/openssl@3/lib/pkgconfig:$PKG_CONFIG_PATH"
 export RACK_ENV=development
-export PATH="$HOME/.cargo/bin:$PATH"
 export AWS_CONFIG_FILE="$HOME/figma/figma/config/aws/sso_config"
-export PATH="$HOME/.cargo/bin:$PATH"
-export PATH="$HOME/.cargo/bin:$PATH"
 
 if (( $+commands[mise] )); then
   eval "$(mise activate zsh)"
@@ -456,10 +256,9 @@ k9s() {
 alias kdev0="k8s dev admin 0"
 alias kdev1="k8s dev admin 1"
 alias kdev2="k8s dev admin 2"
-alias watchh='watch '
 
 function tf() {
-		# Example usage: tf ml plan
+    # Example usage: tf ml plan
     unset AWS_VAULT
 
     if [[ $1 = "prod" || $1 = "production" ]]; then
@@ -527,43 +326,15 @@ function zle-line-init {
 zle -N zle-line-init
 
 ###############################################################################
-# Special Settings
-###############################################################################
-[[ -f "$HOME/.zshrc.os" ]] && source "$HOME/.zshrc.os"         # OS Specific
-[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"   # Local
-[[ -f "$HOME/.secret_zshrc" ]] && source "$HOME/.secret_zshrc" # Secret!
-
-###############################################################################
-# z
-###############################################################################
-[[ -f $DOTFILES/z/z.sh ]] && source $DOTFILES/z/z.sh
-
-###############################################################################
-# vim fzf
+# fzf
 ###############################################################################
 if [[ -f ~/.fzf.zsh ]]; then
   source ~/.fzf.zsh
   export FZF_COMPLETION_TRIGGER='jk'
 
-  #export FZF_DEFAULT_COMMAND="$(which ripgrep_git_list); ripgrep_git_list"
-
-  #if (( $+commands[fd] )); then
-  #  export FZF_CTRL_T_COMMAND='command fd --type f'
-  #else
-  #  export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
-  #fi
-
   export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
   bindkey '^F' fzf-file-widget
 fi
-
-###############################################################################
-# direnv
-###############################################################################
-# TODO(aleks, 08/13/17): too slow
-# if (( $+commands[direnv] )); then
-#   eval "$(direnv hook zsh)"
-# fi
 
 ###############################################################################
 # zsh scripts
@@ -596,10 +367,6 @@ if [[ -o INTERACTIVE && ! -o LOGIN ]]; then
   _startup_time_prompt '\x1b[35m'  # purple
 fi
 
-if [[ -f /Users/aleks/lib/torch/install/bin/torch-activate ]]; then
-  . /Users/aleks/lib/torch/install/bin/torch-activate
-fi
-
 alias rgb2hex='printf "#%02x%02x%02x\n"'
 
 # Kubernetes
@@ -618,33 +385,12 @@ kube-clear-evicted() {
   kubectl $namespace delete pod $(kubectl $namespace get pods | grep Evicted | awk '{print $1}')
 }
 
-docker-gc() {
-  docker run \
-    --rm \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /etc:/etc \
-    -e MINIMUM_IMAGES_TO_SAVE=2 \
-    spotify/docker-gc
-}
-
-macos-flushdns() {
-  sudo killall -HUP mDNSResponder && sudo killall mDNSResponderHelper && sudo dscacheutil -flushcache
-}
-
-# export HOMEBREW_NO_AUTO_UPDATE=1  # disable Homebrew auto update
-
 # Make sure docker doesn't build arm64 images
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
 # uv (Python)
 [[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 alias uvr="uv run --no-project"
-
-export PATH="/opt/homebrew/opt/protobuf@29/bin:$PATH"
-
-sinatra-test() {
-  local filepath="$1"
-  RACK_ENV=test bundle exec ruby -Isinatra/test:sinatra/lib/test "$filepath"
-}
 
 ###############################################################################
 # Figma Remote Editing
@@ -669,3 +415,6 @@ fi
 
 alias clawd="claude --dangerously-skip-permissions"
 alias judgebench='bazel run //ml/py/figma/processing/judge_bench:cli -- '
+
+# Local settings. Keep at the end!
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
