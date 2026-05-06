@@ -1,3 +1,13 @@
+# vim: set ft=zsh:
+
+if [[ -f ~/.fzf.zsh ]]; then
+  source ~/.fzf.zsh
+  export FZF_COMPLETION_TRIGGER='jk'
+
+  export FZF_DEFAULT_OPTS='--ansi -x -m --bind=alt-k:up,alt-j:down'
+  bindkey '^F' fzf-file-widget
+fi
+
 gd() {
   local root fzfcmd filter out dir
   root=$(git rev-parse --show-toplevel 2>/dev/null)
