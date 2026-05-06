@@ -1,8 +1,8 @@
 # vim: set ft=zsh:
 
 # basics
-alias c=clear
 alias ':q'=exit
+alias c=clear
 
 clr() {
   clear
@@ -50,7 +50,6 @@ alias py=python
 
 # misc
 alias tmp="cd $HOME/tmp"
-alias rgb2hex='printf "#%02x%02x%02x\n"'
 
 # Builtin overrides
 if (( $+commands[lsd] )); then
