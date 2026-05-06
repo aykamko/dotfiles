@@ -379,10 +379,6 @@ bindkey '^G' edit-command-line
 # don't warn when overwriting existing file
 setopt clobber
 
-if [[ -o INTERACTIVE && ! -o LOGIN ]]; then
-  _startup_time_prompt '\x1b[35m'  # purple
-fi
-
 alias rgb2hex='printf "#%02x%02x%02x\n"'
 
 # Kubernetes

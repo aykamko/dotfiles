@@ -20,6 +20,33 @@ if [[ -o INTERACTIVE ]]; then
   fi
 
   ZSH_START_TIME=$EPOCHREALTIME
+
+  _startup_time_prompt() {
+    if [[ $SHELL != *"zsh"* ]]; then return; fi
+    if [[ -z "$ZSH_START_TIME" ]]; then return; fi
+    local color="$1"
+    reset='\x1b[0m'
+    shell_start_time=${ZSH_START_TIME:0}
+    now=${EPOCHREALTIME:0}
+    echo "${color}> Started zsh in about ${$(( ($now - $shell_start_time) * 1000 ))%%\.*} ms.${reset}"
+    unset reset
+  }
+
+  # Fires once, right before the first prompt — bounds the trace to "stuff
+  # that delays the first prompt", regardless of login vs non-login shell.
+  _zsh_profile_finish() {
+    add-zsh-hook -d precmd _zsh_profile_finish
+    _startup_time_prompt '\x1b[33m'
+    if (( $ZSH_XTRACE_STARTUP )); then
+      unsetopt xtrace
+      exec 2>&3 3>&-
+      [[ -f $DOTFILES/bin/zsh-profile-processor.py ]] && \
+        $DOTFILES/bin/zsh-profile-processor.py $ZSH_START_TIME $ZSH_PROFILER_LOG &!
+    fi
+    (( $ZSH_ZPROF )) && zprof
+  }
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _zsh_profile_finish
 fi
 
 # Ensure that a non-login, non-interactive shell has a defined environment.
