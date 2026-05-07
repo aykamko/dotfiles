@@ -58,15 +58,10 @@ mklink "$DOTFILES/zsh/zlogin"    ~/.zlogin
 
 echo "Setting up vim..."
 
-clean_dead_symlinks ~/.vim ~/.vim/colors
+clean_dead_symlinks ~/.vim ~/.vim/colors ~/.config/nvim
 
-mkdir -p ~/.vim
-# TODO: simplify vimrc (famous last words lol)
-# mklink "$DOTFILES/vim/vimrc"                    ~/.vimrc
-# mklink "$DOTFILES/vim/vimrc_small"              ~/.vim/vimrc_small
-# mklink "$DOTFILES/vim/vim/snippets"             ~/.vim/snippets
-# mklink "$DOTFILES/vim/vim/colors/hybrid_ayk.vim" ~/.vim/colors/hybrid_ayk.vim
-# mklink "$DOTFILES/vim/vim/autoload/test"        ~/.vim/autoload/test
+mkdir -p ~/.config/nvim
+mklink "$DOTFILES/nvim/init.lua" ~/.config/init.lua
 
 # ── Neovim ──────────────────────────────────────────────────────────
 
