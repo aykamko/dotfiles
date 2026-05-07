@@ -54,33 +54,28 @@ mklink "$DOTFILES/zsh/zshrc"     ~/.zshrc
 mklink "$DOTFILES/zsh/zprofile"  ~/.zprofile
 mklink "$DOTFILES/zsh/zlogin"    ~/.zlogin
 
-# ── vim ─────────────────────────────────────────────────────────────
+# ── neovim ────────────────────────────────────────────────────
 
-echo "Setting up vim..."
-
-clean_dead_symlinks ~/.vim ~/.vim/colors ~/.config/nvim
-
-mkdir -p ~/.config/nvim
-mklink "$DOTFILES/nvim/init.lua" ~/.config/init.lua
-
-# ── Neovim ──────────────────────────────────────────────────────────
+echo "Setting up neovim..."
 
 if ! hash nvim 2>/dev/null; then
-    if confirm "Install Neovim?"; then
-        if is_darwin; then
-            brew install neovim
-        elif is_linux && hash apt-get 2>/dev/null; then
-            sudo apt-get install -y neovim
-        else
-            echo "Skipping Neovim install: no supported package manager found."
-        fi
+    if is_darwin; then
+        brew install neovim
+    elif is_linux && hash apt-get 2>/dev/null; then
+        sudo apt-get install -y neovim
+    else
+        echo "Skipping Neovim install: no supported package manager found."
     fi
 fi
 
-echo "Linking neovim config to vim..."
-mkdir -p "${XDG_CONFIG_HOME:=$HOME/.config}"
-mklink ~/.vim       "$XDG_CONFIG_HOME/nvim"
-mklink ~/.vimrc     "$XDG_CONFIG_HOME/nvim/init.vim"
+NVIM_CONFIG_DIR="${XDG_CONFIG_HOME:=$HOME/.config}/nvim"
+if [[ -L "$NVIM_CONFIG_DIR" ]]; then
+    # remove old ~/.vim symlink
+    rm "$NVIM_CONFIG_DIR"
+fi
+
+mkdir -p "${XDG_CONFIG_HOME:=$HOME/.config}/nvim"
+mklink "$DOTFILES/nvim/init.lua" "$XDG_CONFIG_HOME/nvim/init.lua"
 
 # ── git ─────────────────────────────────────────────────────────────
 
