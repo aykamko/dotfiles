@@ -14,7 +14,7 @@ stripansi() {
     sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?m//g"
 }
 
-alias vimrc='vim ~/.vimrc'
+alias vimrc='vim ~/.config/nvim/init.lua'
 
 # zsh
 alias zshso='source ~/.zshrc'
