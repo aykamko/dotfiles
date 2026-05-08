@@ -82,6 +82,20 @@ opt.lazyredraw = false      -- can break some plugins; off by default
 -- Behavior
 opt.mouse = "a"
 opt.clipboard = "unnamedplus"
+
+if os.getenv("SSH_TTY") or os.getenv("SSH_CONNECTION") then
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = {
+      ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+      ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+    },
+    paste = {
+      ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+      ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
+    },
+  }
+end
 opt.completeopt = { "menu", "menuone", "noselect" }
 opt.shortmess:append("cI")  -- less noisy, no intro screen
 
