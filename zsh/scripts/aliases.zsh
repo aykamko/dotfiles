@@ -108,10 +108,6 @@ man() {
       /usr/bin/man "$@"
 }
 
-# claude
-if ! hash claude 2>/dev/null && [[ -f "$HOME/.claude/local/claude" ]]; then
-  alias claude="$HOME/.claude/local/claude"
-fi
 alias clawd="claude --dangerously-skip-permissions"
 
 # eternal terminal via coder connect.

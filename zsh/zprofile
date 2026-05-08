@@ -123,6 +123,10 @@ if [[ -d $HOME/.local/bin ]]; then
   path=($LOCAL_BIN $path)
 fi
 
+if [[ -d $HOME/.claude/local ]]; then
+  path=($HOME/.claude/local $path)
+fi
+
 # rust
 if [[ -d "$HOME/.cargo" ]]; then
   . "$HOME/.cargo/env"
