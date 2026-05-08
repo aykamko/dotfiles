@@ -143,6 +143,7 @@ mklink "$DOTFILES/claude/notify.sh"            ~/.claude/hooks/notify.sh
 
 if is_darwin; then
     echo "Applying macOS settings..."
+    touch ~/.hushlogin  # suppress "Last login:" message
     defaults write com.apple.dock no-bouncing -bool True
     killall Dock
 fi
