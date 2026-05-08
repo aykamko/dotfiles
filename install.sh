@@ -74,8 +74,8 @@ if [[ -L "$NVIM_CONFIG_DIR" ]]; then
     rm "$NVIM_CONFIG_DIR"
 fi
 
-mkdir -p "${XDG_CONFIG_HOME:=$HOME/.config}/nvim"
-mklink "$DOTFILES/nvim/init.lua" "$XDG_CONFIG_HOME/nvim/init.lua"
+mkdir -p "$NVIM_CONFIG_DIR"
+mklink "$DOTFILES/vim/init.lua" "$NVIM_CONFIG_DIR/init.lua"
 
 # ── git ─────────────────────────────────────────────────────────────
 
