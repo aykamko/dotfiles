@@ -112,11 +112,18 @@ map("n", "<leader>q", "<cmd>quit<CR>", { desc = "Quit" })
 map({ "n", "x" }, "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 map({ "n", "x" }, "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 
--- Window navigation
-map("n", "<C-h>", "<C-w>h")
-map("n", "<C-j>", "<C-w>j")
-map("n", "<C-k>", "<C-w>k")
-map("n", "<C-l>", "<C-w>l")
+-- Window/tmux pane navigation (no plugin needed)
+local function tmux_nav(dir, tmux_dir)
+  local win = vim.api.nvim_get_current_win()
+  vim.cmd("wincmd " .. dir)
+  if vim.api.nvim_get_current_win() == win then
+    vim.fn.system("tmux select-pane -" .. tmux_dir)
+  end
+end
+map("n", "<C-h>", function() tmux_nav("h", "L") end)
+map("n", "<C-j>", function() tmux_nav("j", "D") end)
+map("n", "<C-k>", function() tmux_nav("k", "U") end)
+map("n", "<C-l>", function() tmux_nav("l", "R") end)
 
 -- Keep selection when indenting
 map("v", "<", "<gv")
