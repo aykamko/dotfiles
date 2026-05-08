@@ -52,17 +52,17 @@ keybind = ctrl+space>j=new_split:down
 keybind = ctrl+space>k=new_split:up
 keybind = ctrl+space>l=new_split:right
 
-# Navigate panes with Ctrl+hjkl
-keybind = ctrl+h=goto_split:left
-keybind = ctrl+j=goto_split:down
-keybind = ctrl+k=goto_split:up
-keybind = ctrl+l=goto_split:right
+# Navigate panes with Ctrl+hjkl (performable: forwards key if no split in that direction)
+keybind = performable:ctrl+h=goto_split:left
+keybind = performable:ctrl+j=goto_split:down
+keybind = performable:ctrl+k=goto_split:up
+keybind = performable:ctrl+l=goto_split:right
 
 # Navigate panes with Ctrl+Arrow keys
-keybind = ctrl+left=goto_split:left
-keybind = ctrl+down=goto_split:down
-keybind = ctrl+up=goto_split:up
-keybind = ctrl+right=goto_split:right
+keybind = performable:ctrl+left=goto_split:left
+keybind = performable:ctrl+down=goto_split:down
+keybind = performable:ctrl+up=goto_split:up
+keybind = performable:ctrl+right=goto_split:right
 
 # Close pane (leader+x)
 keybind = ctrl+space>x=close_surface
