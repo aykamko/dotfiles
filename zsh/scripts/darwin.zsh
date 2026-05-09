@@ -20,10 +20,10 @@ __git_statusline() {
   local branch
   branch=$(git --no-optional-locks branch --show-current 2>/dev/null)
   if [[ -n "$branch" ]]; then
-    git_display="${light_blue}(${reset}${yellow}${branch}${reset}${light_blue})${reset}"
+    git_display="${light_blue}(${reset}${yellow}${branch}${reset}${light_blue})${reset} "
   fi
   echo "${git_display}"
 }
 
 setopt PROMPT_SUBST
-export PS1='%F{200}macbook%f%b %F{blue}%~%f $(__git_statusline) %F{green}%#%f '
+export PS1='%F{200}macbook%f%b %F{blue}%~%f $(__git_statusline)%F{green}%#%f '

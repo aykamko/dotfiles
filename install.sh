@@ -139,6 +139,19 @@ mklink "$DOTFILES/claude/statusline-command.sh" ~/.claude/statusline-command.sh
 mkdir -p ~/.claude/hooks
 mklink "$DOTFILES/claude/notify.sh"            ~/.claude/hooks/notify.sh
 
+# ── cc-clip (clipboard image forwarding for remote Claude Code) ─────
+
+if is_darwin && ! hash cc-clip 2>/dev/null && confirm "Install cc-clip (clipboard forwarding for remote Claude Code)?"; then
+    if ! hash pngpaste 2>/dev/null; then
+        brew install pngpaste
+    fi
+    if hash go 2>/dev/null; then
+        go install github.com/ShunmeiCho/cc-clip@latest
+    else
+        echo "Skipping cc-clip install: Go not found. See https://github.com/ShunmeiCho/cc-clip"
+    fi
+fi
+
 # ── macOS ───────────────────────────────────────────────────────────
 
 if is_darwin; then

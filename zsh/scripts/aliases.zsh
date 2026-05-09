@@ -126,5 +126,16 @@ et-coder() {
     echo "  Start it via the Coder Desktop app, or 'coder connect run'." >&2
     return 1
   fi
-  command et "$user@$host"
+
+  local et_flags=()
+  if (( $+commands[cc-clip] )); then
+    if ! pgrep -qf "cc-clip serve" 2>/dev/null; then
+      cc-clip serve &>/dev/null &
+      disown
+      echo "et-coder: started cc-clip daemon"
+    fi
+    et_flags+=(-r 18339:127.0.0.1:18339)
+  fi
+
+  command et "${et_flags[@]}" "$user@$host"
 }
