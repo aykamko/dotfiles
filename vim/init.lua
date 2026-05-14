@@ -18,8 +18,20 @@ require("lazy").setup({
     "MeanderingProgrammer/render-markdown.nvim",
     ft = { "markdown" },
     opts = {
-      code = { width = "block", right_pad = 2 },
-      heading = { width = "full" },
+      heading = {
+        icons = { "", "", "", "", "", "" },
+        position = "inline",
+        sign = false,
+        width = "full",
+      },
+      code = {
+        conceal_delimiters = false,
+        language = false,
+        sign = false,
+        border = "none",
+        width = "block",
+        right_pad = 2,
+      },
     },
   },
 }, {
