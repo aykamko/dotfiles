@@ -3,6 +3,19 @@ vim.g.maplocalleader = ","
 
 local opt = vim.opt
 
+-- Auto-heal corrupted ShaDa (runs before nvim's own shada read at step 12)
+local shada = vim.fn.stdpath("state") .. "/shada/main.shada"
+for _, f in ipairs(vim.fn.glob(shada .. ".tmp.*", false, true)) do
+  local stat = vim.uv.fs_stat(f)
+  if stat and os.time() - stat.mtime.sec > 3600 then
+    os.remove(f)
+  end
+end
+if not pcall(vim.cmd, "rshada!") then
+  os.remove(shada)
+  pcall(vim.cmd, "rshada!")
+end
+
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
