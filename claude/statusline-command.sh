@@ -14,6 +14,7 @@ five_hour_used=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage /
 five_hour_resets=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
 seven_day_used=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 seven_day_resets=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
+effort_level=$(echo "$input" | jq -r '.effort.level // empty')
 
 # Colors (using ANSI codes)
 c1='36'  # cyan
@@ -33,6 +34,11 @@ fi
 
 # Build prompt components
 prompt_parts=""
+
+# Vim mode indicator (first, before everything else)
+if [[ -n "$vim_mode" && "$vim_mode" == "NORMAL" ]]; then
+    prompt_parts="$(printf "\033[${c3}m-- NORMAL --\033[0m ")"
+fi
 
 # Coder workspace indicator (if env var is set)
 if [[ -n "$CODER_WORKSPACE_NAME" ]]; then
@@ -79,13 +85,6 @@ if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
     prompt_parts+=" $(printf "\033[${c2}m(\033[${c4}m%s\033[0m%s%s\033[${c2}m)\033[0m" "$git_branch" "$git_status" "$ahead_behind")"
 fi
 
-# Vim mode indicator (no ❯ character)
-if [[ -n "$vim_mode" ]]; then
-    if [[ "$vim_mode" == "NORMAL" ]]; then
-        prompt_parts+=" $(printf "\033[${c3}m-- NORMAL --\033[0m")"
-    fi
-fi
-
 # Add session name if present
 if [[ -n "$session_name" ]]; then
     prompt_parts+=" $(printf "\033[${c2}m[\033[0m%s\033[${c2}m]\033[0m" "$session_name")"
@@ -108,9 +107,9 @@ if [[ -n "$remaining" ]]; then
     for (( i=0; i<empty; i++ )); do bar+="░"; done
     prompt_parts+=" $(printf "\033[${c5}m[%s] %d%%\033[0m" "$bar" "$used_int")"
 
-    # Add effort level from settings
-    effort_level=$(jq -r '.effortLevel // "auto"' ~/.claude/settings.json 2>/dev/null || echo "auto")
-    prompt_parts+=" $(printf "\033[${c3}m%s\033[0m" "$effort_level")"
+    if [[ -n "$effort_level" ]]; then
+        prompt_parts+=" $(printf "\033[${c3}m%s\033[0m" "$effort_level")"
+    fi
 fi
 
 # Claude 5-hour usage

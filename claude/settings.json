@@ -44,6 +44,16 @@
     "type": "command",
     "command": "bash $HOME/.claude/statusline-command.sh"
   },
-  "viMode": true,
-  "editorMode": "vim"
+  "enabledPlugins": {
+    "figma-security-guidance@figma-internal": true,
+    "figma-plugin@figma-internal": true,
+    "fix-a11y@figma-internal": true,
+    "fpl-practices@figma-internal": true,
+    "validate-and-fix@figma-internal": true,
+    "feature-flag-cleanup@figma-internal": true,
+    "qawolf-from-e2e@figma-internal": true,
+    "ml-tools@figma-internal": true
+  },
+  "editorMode": "vim",
+  "viMode": true
 }
