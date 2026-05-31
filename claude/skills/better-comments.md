@@ -2,8 +2,6 @@ I'd like you to consider all the code comments you added in this Graphite PR wit
 
 Look through all comments you added and consider carefully about "what would a future human or agent actually find useful about this?"
 
-You tend to add very verbose comments when you are writing your code, especially when iterating multiple times on the same codepath -- you will leave references to previous iterations that were never committed upstream, which could be confusing to future users.
-
 If the code is self-explanatory, it probably doesn't need a comment. Use your judgement though. For example, if we are going out of our way to do a unconventional or hacky thing, then it may deserve a comment.
 
 You sometimes leave references to specific line numbers in your comments. This is a bad idea because the linked code could drift, causing line numbers reference to break, therefore confusing a future human or agent. You are allowed to leave a reference to a specific filepath / function / class, but please avoid line numbers.
@@ -13,6 +11,29 @@ When writing comments at the top of a file, on a class, or on a function/method:
 Furthermore, please consider all of your comments as a whole. You tend to put the same comment in multiple places. For example, if there is a typed payload that flows from Sinatra -> protobuf -> typescript, you will annotate the fields in all 3 places (!!!). Instead, pick one of two strategies:
   - Annotate everywhere, but keep comments short (one line)
   - For larger comments, pick one canonical place to annotate and reference the file from the other places.
+
+You will leave verbose references to previous iterations that were never committed upstream, which could be confusing to future users. Here is an rough example:
+>  ```
+>  master:
+>   - commit0:
+>     ```
+>     def approach_foo():
+>       ...
+>     ```
+>  my_local_branch:
+>   - commit1:
+>     ```
+>     def approach_bar():
+>       ...
+>     ```
+>   - commit2:
+>     ```
+>     # approach_bar was too buggy because of x,y,z so we are using approach_baz instead
+>     def approach_baz():
+>       ...
+>     ```
+>  ```
+>  If `my_local_branch` were to merge into `master`, we would land it as one squashed commit. This would make the code comment confusing: future readers would only see `foo -> baz` in the git history; they would never see the full context of `foo -> bar -> baz`, because `bar` was an ephemeral during-local-development state. We should avoid doing this.
 
 Comments _are_ useful, but there is also cognitive overload when you arrive at a huge comment block. Please consider this.
 

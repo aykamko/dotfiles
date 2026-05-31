@@ -82,9 +82,8 @@ mklink "$DOTFILES/vim/init.lua" "$NVIM_CONFIG_DIR/init.lua"
 echo "Setting up git..."
 
 mklink "$DOTFILES/git/gitconfig"        ~/.gitconfig
-mklink "$DOTFILES/git/gitconfig.user"   ~/.gitconfig.user
+mklink "$DOTFILES/git/gitconfig.figma"  ~/.gitconfig.figma
 mklink "$DOTFILES/git/gitignore_global" ~/.gitignore_global
-mklink "$DOTFILES/git/git_template"     ~/.git_template
 
 if is_darwin; then
     mklink "$DOTFILES/git/gitconfig.os.darwin" ~/.gitconfig.os

@@ -1,0 +1,5 @@
+# Included by gitconfig's `includeIf "hasconfig:remote.*.url:**figma**"`.
+# Overrides the personal default identity for any repo whose remote URL
+# contains "figma" (e.g. github.com/figma/figma).
+[user]
+	email = akamko@figma.com

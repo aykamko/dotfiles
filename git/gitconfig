@@ -1,5 +1,3 @@
-[color]
-    ui = always
 [color "branch"]
     current = yellow reverse
     local = yellow
@@ -159,8 +157,6 @@
     #       :; \
     #     }; hub_showpr"
 
-    ctags = "!.git/hooks/ctags"
-
     # nice: http://stackoverflow.com/a/5201642
     splat = "!splat() { \
         git reset --soft \"${1}^\" && \
@@ -246,9 +242,24 @@
     editor = git-commit-editor
     fsmonitor = true
     untrackedcache = true
+    # speed up commit-walks (log, blame, merge-base) via the commit-graph
+    commitGraph = true
     #pager = delta --dark
 [fetch]
     writeCommitGraph = true
+    # drop remote-tracking refs/tags that no longer exist upstream
+    prune = true
+    pruneTags = true
+[feature]
+    # umbrella switch for large repos: enables index v4 (compressed index),
+    # core.untrackedCache, and fetch.negotiationAlgorithm = skipping
+    manyFiles = true
+[pack]
+    # skip walking trees that aren't part of the requested objects
+    useSparse = true
+[checkout]
+    # parallel checkout across all available cores (0 = auto)
+    workers = 0
 # [interactive]
 #     diffFilter = delta --color-only
 [advice]
@@ -265,10 +276,8 @@
     # http://gitfu.wordpress.com/2008/04/20/git-rerere-rereremember-what-you-did-last-time/
     enabled = true
 [init]
-    templatedir = ~/.git_template
 	defaultBranch = main
 [include]
-    path = .gitconfig.user
     path = .gitconfig.os
 [difftool "nbdime"]
 	cmd = git-nbdifftool diff \"$LOCAL\" \"$REMOTE\"
@@ -277,5 +286,14 @@
 [mergetool "nbdime"]
 	cmd = git-nbmergetool merge \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"
 [user]
-	email = akamko@figma.com
+	# personal default; figma repos override the email via the includeIf below
+	email = aykamko@gmail.com
 	name = Aleks Kamko
+[github]
+	user = aykamko
+
+# Override identity for figma repos. Must come after [user] so the included email wins.
+[includeIf "hasconfig:remote.*.url:*figma/**"]
+	path = .gitconfig.figma
+[includeIf "hasconfig:remote.*.url:**/figma/**"]
+	path = .gitconfig.figma

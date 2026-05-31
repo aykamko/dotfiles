@@ -1,5 +1,4 @@
 {
-  "model": "claude-opus-4-6[1m]",
   "hooks": {
     "Notification": [
       {
@@ -52,7 +51,13 @@
     "validate-and-fix@figma-internal": true,
     "feature-flag-cleanup@figma-internal": true,
     "qawolf-from-e2e@figma-internal": true,
-    "ml-tools@figma-internal": true
+    "ml-tools@figma-internal": true,
+    "send-to-github@figma-internal": true,
+    "prodsec@figma-internal": true,
+    "testing@figma-internal": true,
+    "ci-tools@figma-internal": true,
+    "coder-tools@figma-internal": true,
+    "update-dependency@figma-internal": true
   },
   "editorMode": "vim",
   "viMode": true
