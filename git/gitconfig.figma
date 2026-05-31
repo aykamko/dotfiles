@@ -1,5 +1,11 @@
-# Included by gitconfig's `includeIf "hasconfig:remote.*.url:**figma**"`.
-# Overrides the personal default identity for any repo whose remote URL
-# contains "figma" (e.g. github.com/figma/figma).
+# Included for any repo whose remote URL matches figma — see the two
+# `includeIf "hasconfig:remote.*.url:..."` blocks in gitconfig.
+#
+# Identity override only. Branch-pinning is NOT done here: fetch refspecs in a
+# globally-included config break `git clone` of figma repos (the clone wildcard
+# and these pins map the same refs twice / require branches a repo may lack).
+# Pinning is applied per-repo instead, into the repo's local .git/config: the
+# git wrapper in zsh/scripts/figma.zsh runs `git figma-pin` automatically on the
+# first fetch/pull in an unpinned figma repo (or run `git figma-pin` by hand).
 [user]
 	email = akamko@figma.com

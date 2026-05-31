@@ -41,6 +41,32 @@ if [[ -f "$HOME/figma/figma/bin/coder-helpers/zshrc" ]]; then
   source "$HOME/figma/figma/bin/coder-helpers/zshrc"
 fi
 
+# ── Lazy, idempotent figma fetch-refspec pinning ─────────────────────
+# Piggybacks on `git fetch`/`git pull`: the first time you fetch in a figma
+# repo that still has the clone-written `+refs/heads/*` catch-all, this applies
+# `git figma-pin` (pins fetch refspecs + --no-tags) so this fetch and every
+# later one stays lean. Once pinned it bails after a single `git config` read,
+# so it's effectively free thereafter. Wraps interactive use only; scripts and
+# git's own aliases shell out to the real `git` and are unaffected.
+_figma_autopin() {
+  # Bail unless the catch-all refspec is still present (i.e. not yet pinned).
+  command git config --get-all remote.origin.fetch 2>/dev/null \
+    | grep -q ':refs/remotes/origin/\*$' || return 0
+  case "$(command git config --get remote.origin.url 2>/dev/null)" in
+    *figma/*)
+      command git figma-pin >/dev/null 2>&1 \
+        && print -P "%F{244}[figma] pinned fetch refspecs for faster fetches%f"
+      ;;
+  esac
+}
+
+git() {
+  case "$1" in
+    fetch|pull|pl) _figma_autopin ;;
+  esac
+  command git "$@"
+}
+
 cssh() {
   local workspace="${1:?usage: cssh <workspace>}"
   local target="devcontainer.${workspace}.akamko"

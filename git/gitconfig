@@ -103,6 +103,28 @@
     # remote
     r = remote -v
 
+    # Pin a figma repo's local fetch refspecs to only the branches worth
+    # tracking (replacing the clone-written `+refs/heads/*` catch-all) and stop
+    # auto-following tags. The git wrapper in zsh/scripts/figma.zsh runs this
+    # automatically on the first fetch/pull in an unpinned figma repo. Writes
+    # local .git/config only — never global, so it can't break `git clone`.
+    # Guarded: no-op on non-figma remotes.
+    figma-pin = "!f() { \
+        u=$(git config --get remote.origin.url 2>/dev/null); \
+        case \"$u\" in \
+          *figma/*) \
+            git remote set-branches origin master; \
+            git remote set-branches --add origin stable; \
+            git remote set-branches --add origin 'akamko/*'; \
+            git remote set-branches --add origin 'aleks/*'; \
+            git remote set-branches --add origin 'release-202*'; \
+            git remote set-branches --add origin 'release-hotfix*'; \
+            git config remote.origin.tagOpt --no-tags; \
+            echo 'figma-pin: pinned origin fetch refspecs:'; \
+            git config --get-all remote.origin.fetch ;; \
+          *) echo \"figma-pin: '$u' is not a figma remote; nothing to do\" >&2 ;; \
+        esac; }; f"
+
     # reset
     cleanuntracked = "!(cd $(git rev-parse --show-toplevel) && git ls-files --other --exclude-standard | xargs rm -rf %)"
     unstage = reset HEAD
