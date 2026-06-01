@@ -58,13 +58,18 @@ if (( $+commands[lsd] )); then
 fi
 
 # override cd to do ls and vim when necessary
+# `ls` only runs when stdout is a terminal, so non-interactive/captured
+# shells (e.g. tooling) don't get a directory dump after every cd. The
+# function always returns cd's own exit status so `cd … && cmd` chains work.
 better_cd() {
   set -- ${1//,/.} # replace commas , with periods . (Golang)
   if [[ -f $1 ]]; then
     local fdir=$(dirname $1)
-    [[ -d $fdir ]] && builtin cd $fdir && ls && vim $(basename $1) ${*:2}
+    [[ -d $fdir ]] && builtin cd $fdir && { [[ -t 1 ]] && ls; vim $(basename $1) ${*:2}; }
   else
-    builtin cd "$@" && ls
+    builtin cd "$@" || return
+    [[ -t 1 ]] && ls
+    return 0
   fi
 }
 alias cd=better_cd
