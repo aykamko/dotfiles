@@ -92,6 +92,7 @@ if [[ -n $CODER_WORKSPACE_NAME ]]; then
   [[ $CODER_WORKSPACE_NAME == *purple* ]] && _coder_emoji=" 💜" && _coder_color="135"
   [[ $CODER_WORKSPACE_NAME == *orange* ]] && _coder_emoji=" 🧡" && _coder_color="208"
   [[ $CODER_WORKSPACE_NAME == *cyan* ]]   && _coder_emoji=" 🩵" && _coder_color="cyan"
+  [[ $CODER_WORKSPACE_NAME == *yellow* ]] && _coder_emoji=" 💛" && _coder_color="yellow"
   export PS1='%F{'"${_coder_color}"'}devcontainer.$CODER_WORKSPACE_NAME'"${_coder_emoji}"'%f%b %F{blue}%~%f $(__dx_git_zsh) %F{green}%#%f '
   unset _coder_emoji _coder_color
   if [[ -f ~/.terminfo/x/xterm-ghostty ]]; then
