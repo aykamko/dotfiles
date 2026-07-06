@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""Open a Zed window per color-coded Coder devbox, each connected over SSH.
+
+    zed-devboxes                       # all colors (blue green purple orange cyan yellow)
+    zed-devboxes blue green            # just these
+    zed-devboxes -p /home/ubuntu/foo   # override the remote project path
+    zed-devboxes -u ubuntu             # override the remote user
+    zed-devboxes -f                    # force: reopen even if a window is already up
+
+By default a color is skipped if a Zed window is already connected to it. Zed
+opens each remote over ssh with a distinctive ControlPath (.../zed-ssh-session...),
+which is how we detect a live window per host (and not confuse it with `et`).
+
+Requires Coder Connect running (Coder Desktop app or `coder connect run`) so the
+devcontainer.<color>.akamko.coder hosts are reachable. Mirrors the host/user
+convention used by `et-coder`. Zed shells out to ssh, so it honors ~/.ssh/config
+(including the Coder ProxyCommand) for each connection.
+"""
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+import time
+
+ALL_COLORS = ["blue", "green", "purple", "orange", "cyan", "yellow"]
+HOST_FMT = "devcontainer.{}.akamko.coder"
+
+
+def find_zed_cli():
+    """Locate the Zed CLI (installed via "zed: install cli", else the app bundle)."""
+    zed = shutil.which("zed")
+    if zed:
+        return zed
+    bundled = "/Applications/Zed.app/Contents/MacOS/cli"
+    if os.access(bundled, os.X_OK):
+        return bundled
+    sys.exit("zed-devboxes: Zed CLI not found")
+
+
+def is_open(host):
+    """True if Zed is holding an ssh control socket for this host."""
+    return subprocess.run(
+        ["pgrep", "-f", f"zed-ssh-session.*{host}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
+
+def is_reachable(host):
+    """False only if `coder` exists and reports the host is not connectable."""
+    if not shutil.which("coder"):
+        return True
+    return subprocess.run(
+        ["coder", "connect", "exists", host],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=__doc__.splitlines()[0],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("colors", nargs="*", default=ALL_COLORS,
+                        help="colors to open (default: all)")
+    parser.add_argument("-p", "--path", default=os.environ.get("ZED_DEVBOX_PATH", "/home/ubuntu/figma/figma"),
+                        help="remote project path")
+    parser.add_argument("-u", "--user", default="ubuntu", help="remote user")
+    parser.add_argument("-f", "--force", action="store_true",
+                        help="reopen even if a window is already up")
+    args = parser.parse_args()
+
+    zed = find_zed_cli()
+
+    for color in args.colors:
+        host = HOST_FMT.format(color)
+        if not args.force and is_open(host):
+            print(f"skip {color}: already open in Zed")
+            continue
+        if not is_reachable(host):
+            print(f"skip {color}: {host} not reachable (is Coder Connect running?)", file=sys.stderr)
+            continue
+        print(f"opening {color} -> {args.user}@{host}:{args.path}")
+        subprocess.run([zed, "-n", f"ssh://{args.user}@{host}{args.path}"])
+        time.sleep(0.5)  # small gap so windows don't race on cold start
+
+
+if __name__ == "__main__":
+    main()
