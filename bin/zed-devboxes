@@ -6,10 +6,19 @@
     zed-devboxes -p /home/ubuntu/foo   # override the remote project path
     zed-devboxes -u ubuntu             # override the remote user
     zed-devboxes -f                    # force: reopen even if a window is already up
+    zed-devboxes --no-border           # skip the colored window borders
 
 By default a color is skipped if a Zed window is already connected to it. Zed
 opens each remote over ssh with a distinctive ControlPath (.../zed-ssh-session...),
 which is how we detect a live window per host (and not confuse it with `et`).
+
+Colored window borders: Zed exposes nothing per-window to tell devboxes apart,
+so we capture each NET-NEW window's CoreGraphics number right after launching it
+and record number->color into ~/.cache/zed-window-borders/map.json. A companion
+daemon (zed-window-borders.swift, built on first run) reads that map and paints
+a matching border. Windows that were already open get no border (we only track
+what we launch). The daemon is spawned lazily and self-exits when Zed quits, so
+there's no launchd agent.
 
 Requires Coder Connect running (Coder Desktop app or `coder connect run`) so the
 devcontainer.<color>.akamko.coder hosts are reachable. Mirrors the host/user
@@ -17,14 +26,21 @@ convention used by `et-coder`. Zed shells out to ssh, so it honors ~/.ssh/config
 (including the Coder ProxyCommand) for each connection.
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 ALL_COLORS = ["blue", "green", "purple", "orange", "cyan", "yellow"]
 HOST_FMT = "devcontainer.{}.akamko.coder"
+
+CACHE = Path.home() / ".cache" / "zed-window-borders"
+DAEMON_SRC = Path(__file__).resolve().parent / "zed-window-borders.swift"
+DAEMON_BIN = CACHE / "zed-window-borders"
+MAP_PATH = CACHE / "map.json"
 
 
 def find_zed_cli():
@@ -58,6 +74,58 @@ def is_reachable(host):
     ).returncode == 0
 
 
+# ---------- Border daemon + launch-capture map ----------
+def ensure_daemon_built():
+    """Compile the Swift daemon if it's missing or the source is newer."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    if not DAEMON_BIN.exists() or DAEMON_SRC.stat().st_mtime > DAEMON_BIN.stat().st_mtime:
+        subprocess.run(["swiftc", "-O", str(DAEMON_SRC), "-o", str(DAEMON_BIN)], check=True)
+
+
+def daemon_running():
+    return subprocess.run(
+        ["pgrep", "-f", str(DAEMON_BIN)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
+
+def start_daemon():
+    """Spawn the daemon detached so it outlives this script (no launchd)."""
+    if daemon_running():
+        return
+    log = open(CACHE / "daemon.log", "a")
+    subprocess.Popen([str(DAEMON_BIN)], stdout=log, stderr=log, start_new_session=True)
+
+
+def zed_window_numbers():
+    """Set of current Zed window numbers, via the daemon's --windows mode."""
+    r = subprocess.run([str(DAEMON_BIN), "--windows"], capture_output=True, text=True)
+    return {int(n) for n in r.stdout.split() if n.strip().isdigit()}
+
+
+def capture_new_window(before, timeout=12.0, interval=0.2):
+    """Poll until a window number not in `before` appears; return it (or None)."""
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        new = zed_window_numbers() - before
+        if new:
+            return max(new)  # newest window has the highest (monotonic) number
+        time.sleep(interval)
+    return None
+
+
+def load_map():
+    try:
+        return json.loads(MAP_PATH.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_map(mapping):
+    MAP_PATH.parent.mkdir(parents=True, exist_ok=True)
+    MAP_PATH.write_text(json.dumps(mapping, indent=2))
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__.splitlines()[0],
@@ -70,9 +138,27 @@ def main():
     parser.add_argument("-u", "--user", default="ubuntu", help="remote user")
     parser.add_argument("-f", "--force", action="store_true",
                         help="reopen even if a window is already up")
+    parser.add_argument("--no-border", action="store_true",
+                        help="don't color the launched windows")
     args = parser.parse_args()
 
     zed = find_zed_cli()
+
+    borders = not args.no_border
+    if borders:
+        try:
+            ensure_daemon_built()
+        except Exception as e:  # missing swiftc, compile error, etc.
+            print(f"zed-devboxes: border daemon unavailable ({e}); continuing without colors",
+                  file=sys.stderr)
+            borders = False
+
+    # Start from any still-live mappings; drop entries for windows that are gone
+    # (stale numbers from a previous Zed session never match a live window).
+    mapping = {}
+    if borders:
+        live = zed_window_numbers()
+        mapping = {k: v for k, v in load_map().items() if int(k) in live}
 
     for color in args.colors:
         host = HOST_FMT.format(color)
@@ -82,9 +168,21 @@ def main():
         if not is_reachable(host):
             print(f"skip {color}: {host} not reachable (is Coder Connect running?)", file=sys.stderr)
             continue
+        before = zed_window_numbers() if borders else set()
         print(f"opening {color} -> {args.user}@{host}:{args.path}")
         subprocess.run([zed, "-n", f"ssh://{args.user}@{host}{args.path}"])
+        if borders:
+            num = capture_new_window(before)
+            if num is not None:
+                mapping[str(num)] = color
+                save_map(mapping)
+                print(f"  tracked window {num} as {color}")
+            else:
+                print(f"  couldn't capture a new window for {color}; no border", file=sys.stderr)
         time.sleep(0.5)  # small gap so windows don't race on cold start
+
+    if borders and mapping:
+        start_daemon()
 
 
 if __name__ == "__main__":
