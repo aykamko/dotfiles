@@ -39,6 +39,7 @@ let COLOR_MAP: [String: NSColor] = [
   "orange": hex(0xFB8500),
   "cyan":   hex(0x22D3EE),
   "yellow": hex(0xEAB308),
+  "red":    hex(0xEF4444),
 ]
 
 // ---------- Window enumeration (CoreGraphics) ----------

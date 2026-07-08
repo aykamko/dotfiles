@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Open a Zed window per color-coded Coder devbox, each connected over SSH.
 
-    zed-devboxes                       # all colors (blue green purple orange cyan yellow)
+    zed-devboxes                       # all colors (blue green purple orange cyan yellow red)
     zed-devboxes blue green            # just these
     zed-devboxes -p /home/ubuntu/foo   # override the remote project path
     zed-devboxes -u ubuntu             # override the remote user
@@ -34,7 +34,7 @@ import sys
 import time
 from pathlib import Path
 
-ALL_COLORS = ["blue", "green", "purple", "orange", "cyan", "yellow"]
+ALL_COLORS = ["blue", "green", "purple", "orange", "cyan", "yellow", "red"]
 HOST_FMT = "devcontainer.{}.akamko.coder"
 
 CACHE = Path.home() / ".cache" / "zed-window-borders"
