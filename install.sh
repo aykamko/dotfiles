@@ -138,6 +138,11 @@ mklink "$DOTFILES/claude/statusline-command.sh" ~/.claude/statusline-command.sh
 mkdir -p ~/.claude/hooks
 mklink "$DOTFILES/claude/notify.sh"            ~/.claude/hooks/notify.sh
 
+# ── codex ──
+
+echo "Setting up codex..."
+mklink "$DOTFILES/codex/AGENTS.md" ~/.codex/AGENTS.md
+
 
 # ── macOS ───────────────────────────────────────────────────────────
 

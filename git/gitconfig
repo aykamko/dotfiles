@@ -319,3 +319,5 @@
 	path = .gitconfig.figma
 [includeIf "hasconfig:remote.*.url:**/figma/**"]
 	path = .gitconfig.figma
+[remote "origin"]
+	tagopt = --no-tags
