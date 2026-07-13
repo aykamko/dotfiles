@@ -321,3 +321,5 @@
 	path = .gitconfig.figma
 [remote "origin"]
 	tagopt = --no-tags
+[maintenance]
+	repo = /home/ubuntu/figma/figma

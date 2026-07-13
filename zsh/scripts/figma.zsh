@@ -100,3 +100,10 @@ if [[ -n $CODER_WORKSPACE_NAME ]]; then
     export TERM=xterm-ghostty
   fi
 fi
+
+# stash and sync
+gtsync() {
+  git stash
+  gt sync
+  git stash pop
+}
