@@ -1,0 +1,974 @@
+#!/usr/bin/env python3
+"""Generate a landed-PR contributor leaderboard from Git history.
+
+Examples:
+    figma-contributors
+    figma-contributors --user aykamko --user anrooo
+    figma-contributors --repo-path ~/figma/figma --output report.md
+
+The command defaults to figma/figma and the GitHub user authenticated by `gh`.
+It uses only the Python standard library, plus the `git` and `gh` commands.
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+from typing import Sequence
+import unicodedata
+
+
+PR_NUMBER_RE = re.compile(r"\(#[0-9]+\)$")
+NOREPLY_LOGIN_RE = re.compile(
+    r"^(?:[0-9]+\+)?([^@]+)@users\.noreply\.github\.com$",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True)
+class Window:
+    label: str
+    start: date
+
+
+@dataclass(frozen=True)
+class GitHubUser:
+    login: str
+    name: str | None
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate a contributor leaderboard of PR-numbered commits landed on "
+            "a GitHub repository's default branch."
+        ),
+    )
+    parser.add_argument(
+        "--repo",
+        default="figma/figma",
+        help="GitHub OWNER/REPO to analyze (default: figma/figma)",
+    )
+    parser.add_argument(
+        "--repo-path",
+        type=Path,
+        help=(
+            "existing local clone to use; otherwise ~/OWNER/REPO is used or "
+            "created after confirmation"
+        ),
+    )
+    parser.add_argument(
+        "--user",
+        action="append",
+        metavar="LOGIN",
+        help=(
+            "GitHub user whose rank and percentile should be highlighted; "
+            "repeat for multiple users (default: current gh user)"
+        ),
+    )
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=20,
+        help="number of contributors to show per window (default: 20)",
+    )
+    parser.add_argument(
+        "--as-of",
+        type=date.fromisoformat,
+        default=datetime.now(timezone.utc).date(),
+        metavar="YYYY-MM-DD",
+        help="UTC report date (default: today)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="write the report to this path instead of stdout",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("auto", "terminal", "markdown"),
+        default="auto",
+        help=(
+            "output style; auto uses terminal formatting on a TTY and Markdown "
+            "for files or redirects (default: auto)"
+        ),
+    )
+    parser.add_argument(
+        "--no-fetch",
+        action="store_true",
+        help="analyze the existing remote-tracking ref without fetching",
+    )
+    args = parser.parse_args()
+
+    if args.top < 1:
+        parser.error("--top must be at least 1")
+    if "/" not in args.repo:
+        parser.error("--repo must look like OWNER/REPO")
+    return args
+
+
+def run_text(command: Sequence[str], cwd: Path | None = None) -> str:
+    try:
+        result = subprocess.run(
+            command,
+            cwd=cwd,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.strip() or error.stdout.strip()
+        if detail:
+            raise RuntimeError(f"{' '.join(command)} failed: {detail}") from error
+        raise RuntimeError(f"{' '.join(command)} failed") from error
+    return result.stdout
+
+
+def require_commands() -> None:
+    missing = [command for command in ("git", "gh") if not shutil.which(command)]
+    if missing:
+        raise RuntimeError(f"missing required command(s): {', '.join(missing)}")
+
+
+def authenticate_gh() -> None:
+    run_text(["gh", "auth", "status", "--hostname", "github.com"])
+
+
+def default_branch(repo: str) -> str:
+    raw = run_text(
+        ["gh", "repo", "view", repo, "--json", "defaultBranchRef"],
+    )
+    data = json.loads(raw)
+    branch = data.get("defaultBranchRef", {}).get("name")
+    if not branch:
+        raise RuntimeError(f"could not determine the default branch for {repo}")
+    return branch
+
+
+def remote_matches_repo(remote_url: str, repo: str) -> bool:
+    normalized = remote_url.strip().removesuffix(".git").lower()
+    repo = repo.lower()
+    return normalized.endswith(f"github.com/{repo}") or normalized.endswith(
+        f"github.com:{repo}",
+    )
+
+
+def prepare_repo(
+    repo: str,
+    repo_path: Path | None,
+    branch: str,
+    as_of: date,
+    fetch: bool,
+) -> tuple[Path, str]:
+    if repo_path is not None:
+        path = repo_path.expanduser().resolve()
+    else:
+        path = Path.home() / repo
+
+    if not (path / ".git").exists():
+        if repo_path is not None:
+            raise RuntimeError(f"not a Git clone: {path}")
+
+        if path.exists():
+            raise RuntimeError(f"path exists but is not a Git clone: {path}")
+
+        if not sys.stdin.isatty():
+            raise RuntimeError(
+                f"no clone found at {path}; cloning requires an interactive terminal",
+            )
+        answer = input(
+            f"No clone found at {path}. Clone lightweight {repo} history there? [y/N] ",
+        )
+        if answer.strip().lower() not in ("y", "yes"):
+            raise RuntimeError("clone declined")
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Cloning {repo} into {path}...", file=sys.stderr)
+        subprocess.run(
+            [
+                "gh",
+                "repo",
+                "clone",
+                repo,
+                str(path),
+                "--",
+                "--filter=blob:none",
+                "--no-checkout",
+                "--single-branch",
+                f"--shallow-since={as_of.year}-01-01",
+            ],
+            check=True,
+        )
+
+    remote_url = run_text(
+        ["git", "-C", str(path), "remote", "get-url", "origin"],
+    )
+    if not remote_matches_repo(remote_url, repo):
+        raise RuntimeError(f"{path} is not an origin clone of {repo}")
+
+    if fetch:
+        print(f"Fetching {repo}'s {branch} branch...", file=sys.stderr)
+        subprocess.run(
+            ["git", "-C", str(path), "fetch", "--quiet", "origin", branch],
+            check=True,
+        )
+
+    ref = f"origin/{branch}"
+    run_text(["git", "-C", str(path), "rev-parse", "--verify", ref])
+    return path, ref
+
+
+def report_windows(as_of: date) -> list[Window]:
+    return [
+        Window("Last 7 days", as_of - timedelta(days=6)),
+        Window("Last 30 days", as_of - timedelta(days=29)),
+        Window("Since January 1", date(as_of.year, 1, 1)),
+    ]
+
+
+def read_contributions(
+    repo_path: Path,
+    ref: str,
+    windows: list[Window],
+    as_of: date,
+) -> tuple[
+    dict[str, Counter[str]],
+    dict[str, set[str]],
+    dict[str, str],
+]:
+    git_command = ["git", "-C", str(repo_path)]
+    has_mailmap = subprocess.run(
+        [*git_command, "cat-file", "-e", f"{ref}:.mailmap"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+    if has_mailmap:
+        git_command.extend(["-c", f"mailmap.blob={ref}:.mailmap"])
+
+    year_start = date(as_of.year, 1, 1).isoformat()
+    output = run_text(
+        [
+            *git_command,
+            "log",
+            ref,
+            "--first-parent",
+            f"--since={year_start}T00:00:00Z",
+            "--format=%x1e%H%x00%cI%x00%aN%x00%aE%x00%s",
+        ],
+    )
+
+    counts = {window.label: Counter() for window in windows}
+    aliases: dict[str, set[str]] = defaultdict(set)
+    latest_commits: dict[str, str] = {}
+
+    for raw_record in output.split("\x1e"):
+        record = raw_record.strip("\n")
+        if not record:
+            continue
+
+        fields = record.split("\x00", 4)
+        if len(fields) != 5:
+            raise RuntimeError("could not parse git log output")
+        commit_sha, committed_at_text, author_name, author_email, subject = fields
+
+        if not PR_NUMBER_RE.search(subject):
+            continue
+        if "[bot]" in author_name.lower() or "[bot]" in author_email.lower():
+            continue
+
+        committed_at = datetime.fromisoformat(
+            committed_at_text.replace("Z", "+00:00"),
+        ).astimezone(timezone.utc)
+        committed_on = committed_at.date()
+        if committed_on > as_of:
+            continue
+
+        aliases[author_name].add(author_name.casefold())
+        latest_commits.setdefault(author_name, commit_sha)
+        noreply_match = NOREPLY_LOGIN_RE.match(author_email)
+        if noreply_match:
+            aliases[author_name].add(noreply_match.group(1).casefold())
+
+        for window in windows:
+            if committed_on >= window.start:
+                counts[window.label][author_name] += 1
+
+    return counts, aliases, latest_commits
+
+
+def github_user(login: str) -> GitHubUser:
+    endpoint = "user" if login == "@me" else f"users/{login.lstrip('@')}"
+    data = json.loads(run_text(["gh", "api", endpoint]))
+    return GitHubUser(login=data["login"], name=data.get("name"))
+
+
+def contributor_for_user(
+    user: GitHubUser,
+    aliases: dict[str, set[str]],
+    year_counts: Counter[str],
+) -> str | None:
+    login = user.login.casefold()
+    profile_name = user.name.casefold() if user.name else None
+
+    profile_name_matches = [
+        contributor
+        for contributor in aliases
+        if profile_name and contributor.casefold() == profile_name
+    ]
+    if profile_name_matches:
+        return max(profile_name_matches, key=year_counts.get)
+
+    login_name_matches = [
+        contributor for contributor in aliases if contributor.casefold() == login
+    ]
+    if login_name_matches:
+        return max(login_name_matches, key=year_counts.get)
+
+    email_matches = [
+        contributor for contributor, names in aliases.items() if login in names
+    ]
+    if email_matches:
+        return max(email_matches, key=year_counts.get)
+    return None
+
+
+def displayed_contributors(
+    windows: list[Window],
+    counts: dict[str, Counter[str]],
+    top: int,
+) -> set[str]:
+    contributors = set()
+    for window in windows:
+        ordered = sorted(
+            counts[window.label].items(),
+            key=lambda item: (-item[1], item[0].casefold()),
+        )
+        contributors.update(name for name, _ in ordered[:top])
+    return contributors
+
+
+def github_handles(
+    repo: str,
+    contributors: set[str],
+    latest_commits: dict[str, str],
+) -> dict[str, str]:
+    owner, name = repo.split("/", 1)
+    contributor_commits = [
+        (contributor, latest_commits[contributor])
+        for contributor in sorted(contributors, key=str.casefold)
+        if contributor in latest_commits
+    ]
+    handles = {}
+
+    for batch_start in range(0, len(contributor_commits), 75):
+        batch = contributor_commits[batch_start : batch_start + 75]
+        fields = []
+        aliases = {}
+        for index, (contributor, commit_sha) in enumerate(batch):
+            alias = f"commit{index}"
+            aliases[alias] = contributor
+            fields.append(
+                f'{alias}: object(expression: "{commit_sha}") '
+                "{ ... on Commit { author { user { login } } } }",
+            )
+
+        query = (
+            "query($owner: String!, $name: String!) { "
+            "repository(owner: $owner, name: $name) { "
+            + " ".join(fields)
+            + " } }"
+        )
+        raw = run_text(
+            [
+                "gh",
+                "api",
+                "graphql",
+                "-f",
+                f"query={query}",
+                "-F",
+                f"owner={owner}",
+                "-F",
+                f"name={name}",
+            ],
+        )
+        data = json.loads(raw)
+        repository_data = data.get("data", {}).get("repository")
+        if repository_data is None:
+            raise RuntimeError(f"could not resolve contributor handles for {repo}")
+
+        for alias, contributor in aliases.items():
+            commit_data = repository_data.get(alias) or {}
+            author_data = commit_data.get("author") or {}
+            user_data = author_data.get("user") or {}
+            login = user_data.get("login")
+            if login:
+                handles[contributor] = login
+
+    return handles
+
+
+def rank_and_percentile(
+    contributor: str,
+    counts: Counter[str],
+) -> tuple[int, int, float, float]:
+    contribution_count = counts[contributor]
+    greater = sum(count > contribution_count for count in counts.values())
+    equal = sum(count == contribution_count for count in counts.values())
+    below = sum(count < contribution_count for count in counts.values())
+    population = len(counts)
+
+    rank = greater + 1
+    percentile = 100 * (below + 0.5 * equal) / population
+    top_share = 100 - percentile
+    return rank, contribution_count, percentile, top_share
+
+
+def markdown_escape(value: str) -> str:
+    return value.replace("|", "\\|")
+
+
+def display_date(value: date) -> str:
+    return f"{value.strftime('%B')} {value.day}, {value.year}"
+
+
+def display_date_range(start: date, end: date) -> str:
+    if start.year == end.year and start.month == end.month:
+        return f"{start.strftime('%B')} {start.day}–{end.day}, {end.year}"
+    if start.year == end.year:
+        return (
+            f"{start.strftime('%B')} {start.day}–"
+            f"{end.strftime('%B')} {end.day}, {end.year}"
+        )
+    return f"{display_date(start)}–{display_date(end)}"
+
+
+def render_markdown_report(
+    repo: str,
+    ref: str,
+    as_of: date,
+    windows: list[Window],
+    counts: dict[str, Counter[str]],
+    aliases: dict[str, set[str]],
+    handles: dict[str, str],
+    users: list[GitHubUser],
+    top: int,
+) -> str:
+    lines = [
+        f"# {repo} contributor leaderboard",
+        "",
+        f"Generated {display_date(as_of)} from `{ref}`.",
+        "",
+        "## Methodology",
+        "",
+        "- Contribution unit: PR-numbered first-parent commit landed on the default branch",
+        "- Contributor: commit author normalized through the repository's `.mailmap`, when present",
+        "- GitHub handle: account attached by GitHub to the contributor's latest landed commit",
+        "- Excludes: GitHub bot accounts",
+        "- Ranking: contributors with equal counts share a rank",
+        "- Percentile population: all non-bot contributors with at least one landed PR in the window",
+        "- Percentile formula: `(contributors below + 0.5 × contributors tied) ÷ total contributors`",
+        "",
+        "This measures changes actually landed on the default branch. It does not count PRs merged only into stacked or non-default branches.",
+        "",
+        "## Highlighted contributors",
+        "",
+    ]
+
+    year_counts = counts[windows[-1].label]
+    resolved_users = [
+        (user, contributor_for_user(user, aliases, year_counts)) for user in users
+    ]
+    for user, contributor in resolved_users:
+        display_name = user.name or user.login
+        lines.extend(
+            [
+                f"### {markdown_escape(display_name)} (`{user.login}`)",
+                "",
+            ],
+        )
+        if contributor is None:
+            lines.extend(
+                [
+                    "No matching landed commits were found.",
+                    "",
+                ],
+            )
+            continue
+
+        lines.extend(
+            [
+                "| Window | Rank | Landed PRs | Contributors | Percentile | Equivalent top share |",
+                "|---|---:|---:|---:|---:|---:|",
+            ],
+        )
+        for window in windows:
+            window_counts = counts[window.label]
+            rank, contribution_count, percentile, top_share = rank_and_percentile(
+                contributor,
+                window_counts,
+            )
+            tied = sum(
+                count == contribution_count for count in window_counts.values()
+            )
+            rank_text = f"{rank} (tied)" if tied > 1 else str(rank)
+            lines.append(
+                f"| {window.label} | **{rank_text}** | **{contribution_count}** | "
+                f"{len(window_counts)} | **{percentile:.1f}th** | **Top {top_share:.1f}%** |",
+            )
+        lines.append("")
+
+    for window in windows:
+        window_counts = counts[window.label]
+        ordered = sorted(
+            window_counts.items(),
+            key=lambda item: (-item[1], item[0].casefold()),
+        )
+        shown = ordered[:top]
+
+        date_range = display_date_range(window.start, as_of)
+        lines.extend(
+            [
+                f"## {window.label}",
+                "",
+                date_range,
+                "",
+                "| Rank | Contributor | GitHub | Landed PRs |",
+                "|---:|---|---|---:|",
+            ],
+        )
+
+        previous_count = None
+        rank = 0
+        for position, (contributor, contribution_count) in enumerate(shown, start=1):
+            if contribution_count != previous_count:
+                rank = position
+                previous_count = contribution_count
+            handle = f"@{handles[contributor]}" if contributor in handles else "—"
+            lines.append(
+                f"| {rank} | {markdown_escape(contributor)} | "
+                f"{handle} | {contribution_count} |",
+            )
+        lines.append("")
+
+        for user, contributor in resolved_users:
+            if contributor is None:
+                continue
+            rank, contribution_count, percentile, top_share = rank_and_percentile(
+                contributor,
+                window_counts,
+            )
+            tied = sum(
+                count == contribution_count for count in window_counts.values()
+            )
+            rank_text = f"{rank} (tied)" if tied > 1 else str(rank)
+            display_name = markdown_escape(user.name or user.login)
+            lines.extend(
+                [
+                    f"> **{display_name} (`{user.login}`):** rank **{rank_text}** · "
+                    f"**{contribution_count}** landed PRs · **{percentile:.1f}th percentile** · "
+                    f"**top {top_share:.1f}%**",
+                    "",
+                ],
+            )
+
+        if len(ordered) > top:
+            cutoff_count = shown[-1][1]
+            tied_total = sum(count == cutoff_count for count in window_counts.values())
+            tied_shown = sum(count == cutoff_count for _, count in shown)
+            if tied_total > tied_shown:
+                lines.extend(
+                    [
+                        f"The {top}-person cutoff truncates a {tied_total}-way tie at {cutoff_count} landed PRs.",
+                        "",
+                    ],
+                )
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def text_width(value: str) -> int:
+    width = 0
+    for character in value:
+        if unicodedata.combining(character):
+            continue
+        if unicodedata.east_asian_width(character) in ("F", "W"):
+            width += 2
+        else:
+            width += 1
+    return width
+
+
+def truncate_cell(value: str, width: int) -> str:
+    if text_width(value) <= width:
+        return value
+    if width <= 1:
+        return "…"[:width]
+
+    result = []
+    result_width = 0
+    for character in value:
+        character_width = text_width(character)
+        if result_width + character_width > width - 1:
+            break
+        result.append(character)
+        result_width += character_width
+    return "".join(result) + "…"
+
+
+def pad_cell(value: str, width: int, right_align: bool) -> str:
+    value = truncate_cell(value, width)
+    padding = " " * (width - text_width(value))
+    if right_align:
+        return padding + value
+    return value + padding
+
+
+def terminal_style(value: str, code: str, color: bool) -> str:
+    if not color:
+        return value
+    return f"\033[{code}m{value}\033[0m"
+
+
+def render_terminal_table(
+    headers: list[str],
+    rows: list[list[str]],
+    right_aligned: set[int],
+    highlighted_rows: set[int],
+    color: bool,
+) -> list[str]:
+    widths = [text_width(header) for header in headers]
+    for row in rows:
+        for index, value in enumerate(row):
+            widths[index] = max(widths[index], text_width(value))
+
+    terminal_columns = shutil.get_terminal_size(fallback=(100, 24)).columns
+    available_width = max(terminal_columns, 40) - (3 * len(headers) + 1)
+    while sum(widths) > available_width:
+        shrinkable = [
+            index for index, width in enumerate(widths) if width > 3
+        ]
+        if not shrinkable:
+            break
+        widest = max(shrinkable, key=lambda index: widths[index])
+        widths[widest] -= 1
+
+    def border(left: str, middle: str, right: str) -> str:
+        line = left + middle.join("─" * (width + 2) for width in widths) + right
+        return terminal_style(line, "2", color)
+
+    separator = terminal_style("│", "2", color)
+    lines = [border("╭", "┬", "╮")]
+    header_cells = [
+        terminal_style(pad_cell(header, widths[index], False), "1;36", color)
+        for index, header in enumerate(headers)
+    ]
+    lines.append(separator + " " + (" " + separator + " ").join(header_cells) + " " + separator)
+    lines.append(border("├", "┼", "┤"))
+
+    for row_index, row in enumerate(rows):
+        row_code = "1;33" if row_index in highlighted_rows else ""
+        cells = []
+        for column_index, value in enumerate(row):
+            cell = pad_cell(
+                value,
+                widths[column_index],
+                column_index in right_aligned,
+            )
+            if row_code:
+                cell = terminal_style(cell, row_code, color)
+            cells.append(cell)
+        lines.append(separator + " " + (" " + separator + " ").join(cells) + " " + separator)
+
+    lines.append(border("╰", "┴", "╯"))
+    return lines
+
+
+def render_terminal_report(
+    repo: str,
+    ref: str,
+    as_of: date,
+    windows: list[Window],
+    counts: dict[str, Counter[str]],
+    aliases: dict[str, set[str]],
+    handles: dict[str, str],
+    users: list[GitHubUser],
+    top: int,
+    color: bool,
+) -> str:
+    title = terminal_style(f"{repo} contributor leaderboard", "1;35", color)
+    detail = terminal_style(
+        f"{display_date(as_of)}  •  {ref}  •  landed PRs, bots excluded",
+        "2",
+        color,
+    )
+    lines = [
+        title,
+        detail,
+        "",
+        terminal_style("Methodology", "1;36", color),
+        terminal_style(
+            "  • PR-numbered first-parent commits landed on the default branch",
+            "2",
+            color,
+        ),
+        terminal_style(
+            "  • Authors normalized through .mailmap; GitHub bots excluded",
+            "2",
+            color,
+        ),
+        terminal_style(
+            "  • Handles come from GitHub's account attribution for the latest landed commit",
+            "2",
+            color,
+        ),
+        terminal_style(
+            "  • Equal counts share a rank",
+            "2",
+            color,
+        ),
+        terminal_style(
+            "  • Percentile uses the midpoint for ties among contributors with 1+ landed PR",
+            "2",
+            color,
+        ),
+        terminal_style(
+            "  • PRs merged only into stacked or non-default branches are not counted",
+            "2",
+            color,
+        ),
+        "",
+        terminal_style("Highlighted contributors", "1;36", color),
+    ]
+
+    year_counts = counts[windows[-1].label]
+    resolved_users = [
+        (user, contributor_for_user(user, aliases, year_counts)) for user in users
+    ]
+    highlighted_contributors = {
+        contributor for _, contributor in resolved_users if contributor is not None
+    }
+    for user, contributor in resolved_users:
+        display_name = user.name or user.login
+        user_title = f"{display_name} (@{user.login})"
+        lines.extend(["", terminal_style(user_title, "1", color)])
+
+        if contributor is None:
+            lines.append(terminal_style("No matching landed commits were found.", "33", color))
+            continue
+
+        user_rows = []
+        for window in windows:
+            window_counts = counts[window.label]
+            rank, contribution_count, percentile, top_share = rank_and_percentile(
+                contributor,
+                window_counts,
+            )
+            tied = sum(
+                count == contribution_count for count in window_counts.values()
+            )
+            rank_text = f"T-{rank}" if tied > 1 else str(rank)
+            user_rows.append(
+                [
+                    window.label,
+                    rank_text,
+                    str(contribution_count),
+                    str(len(window_counts)),
+                    f"{percentile:.1f}th",
+                    f"top {top_share:.1f}%",
+                ],
+            )
+        lines.extend(
+            render_terminal_table(
+                headers=["Window", "Rank", "PRs", "N", "Percentile", "Top share"],
+                rows=user_rows,
+                right_aligned={1, 2, 3, 4, 5},
+                highlighted_rows=set(),
+                color=color,
+            ),
+        )
+
+    for window in windows:
+        window_counts = counts[window.label]
+        ordered = sorted(
+            window_counts.items(),
+            key=lambda item: (-item[1], item[0].casefold()),
+        )
+        shown = ordered[:top]
+        date_range = display_date_range(window.start, as_of)
+        lines.extend(
+            [
+                "",
+                terminal_style(window.label, "1;36", color),
+                terminal_style(date_range, "2", color),
+            ],
+        )
+
+        leaderboard_rows = []
+        highlighted_rows = set()
+        previous_count = None
+        rank = 0
+        for position, (contributor, contribution_count) in enumerate(shown, start=1):
+            if contribution_count != previous_count:
+                rank = position
+                previous_count = contribution_count
+            leaderboard_rows.append(
+                [
+                    str(rank),
+                    contributor,
+                    f"@{handles[contributor]}" if contributor in handles else "—",
+                    str(contribution_count),
+                ],
+            )
+            if contributor in highlighted_contributors:
+                highlighted_rows.add(position - 1)
+
+        lines.extend(
+            render_terminal_table(
+                headers=["Rank", "Contributor", "GitHub", "PRs"],
+                rows=leaderboard_rows,
+                right_aligned={0, 3},
+                highlighted_rows=highlighted_rows,
+                color=color,
+            ),
+        )
+
+        for user, contributor in resolved_users:
+            if contributor is None:
+                continue
+            rank, contribution_count, percentile, top_share = rank_and_percentile(
+                contributor,
+                window_counts,
+            )
+            tied = sum(
+                count == contribution_count for count in window_counts.values()
+            )
+            rank_text = f"T-{rank}" if tied > 1 else str(rank)
+            display_name = user.name or user.login
+            lines.extend(
+                [
+                    terminal_style(
+                        f"★ {display_name} (@{user.login})",
+                        "1;33",
+                        color,
+                    ),
+                    terminal_style(
+                        f"  rank {rank_text}  •  {contribution_count} PRs  •  "
+                        f"{percentile:.1f}th percentile  •  top {top_share:.1f}%",
+                        "1;33",
+                        color,
+                    ),
+                ],
+            )
+
+        if len(ordered) > top:
+            cutoff_count = shown[-1][1]
+            tied_total = sum(count == cutoff_count for count in window_counts.values())
+            tied_shown = sum(count == cutoff_count for _, count in shown)
+            if tied_total > tied_shown:
+                lines.append(
+                    terminal_style(
+                        f"Note: the top-{top} cutoff truncates a {tied_total}-way tie at {cutoff_count} PRs.",
+                        "2;33",
+                        color,
+                    ),
+                )
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def main() -> int:
+    args = parse_args()
+    require_commands()
+    authenticate_gh()
+
+    branch = default_branch(args.repo)
+    repo_path, ref = prepare_repo(
+        repo=args.repo,
+        repo_path=args.repo_path,
+        branch=branch,
+        as_of=args.as_of,
+        fetch=not args.no_fetch,
+    )
+    windows = report_windows(args.as_of)
+    counts, aliases, latest_commits = read_contributions(
+        repo_path,
+        ref,
+        windows,
+        args.as_of,
+    )
+    handles = github_handles(
+        args.repo,
+        displayed_contributors(windows, counts, args.top),
+        latest_commits,
+    )
+
+    requested_users = args.user or ["@me"]
+    users = [github_user(login) for login in requested_users]
+
+    output_format = args.format
+    if output_format == "auto":
+        output_format = (
+            "terminal" if args.output is None and sys.stdout.isatty() else "markdown"
+        )
+
+    if output_format == "terminal":
+        color = (
+            args.output is None
+            and sys.stdout.isatty()
+            and "NO_COLOR" not in os.environ
+            and os.environ.get("TERM") != "dumb"
+        )
+        report = render_terminal_report(
+            repo=args.repo,
+            ref=ref,
+            as_of=args.as_of,
+            windows=windows,
+            counts=counts,
+            aliases=aliases,
+            handles=handles,
+            users=users,
+            top=args.top,
+            color=color,
+        )
+    else:
+        report = render_markdown_report(
+            repo=args.repo,
+            ref=ref,
+            as_of=args.as_of,
+            windows=windows,
+            counts=counts,
+            aliases=aliases,
+            handles=handles,
+            users=users,
+            top=args.top,
+        )
+
+    if args.output:
+        output_path = args.output.expanduser()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(report, encoding="utf-8")
+        print(f"Wrote {output_path}", file=sys.stderr)
+    else:
+        sys.stdout.write(report)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except (RuntimeError, subprocess.CalledProcessError) as error:
+        print(f"figma-contributors: {error}", file=sys.stderr)
+        raise SystemExit(1)
+
