@@ -57,7 +57,14 @@
     "testing@figma-internal": true,
     "ci-tools@figma-internal": true,
     "coder-tools@figma-internal": true,
-    "update-dependency@figma-internal": true
+    "update-dependency@figma-internal": true,
+    "ai-trace@figma-internal": true,
+    "assistant-tooling@figma-internal": true,
+    "refresh-plugins@figma-internal": true,
+    "plugin-tools@figma-internal": true,
+    "storage-norms@figma-internal": true,
+    "devex-ci@figma-internal": true,
+    "swift-lsp@claude-plugins-official": true
   },
   "editorMode": "vim",
   "viMode": true
