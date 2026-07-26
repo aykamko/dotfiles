@@ -54,6 +54,22 @@ if [[ -n "$CODER_WORKSPACE_NAME" ]]; then
     prompt_parts="$(printf "\033[${_coder_ansi}mcoder:%s%s\033[0m " "$CODER_WORKSPACE_NAME" "$_coder_emoji")"
 fi
 
+# Effort level
+if [[ -n "$effort_level" ]]; then
+    prompt_parts+="$(printf "\033[${c3}m%s\033[0m " "$effort_level")"
+fi
+
+# Context used percentage, with a warning once we're past 80%
+if [[ -n "$remaining" ]]; then
+    remaining_int=$(printf "%.0f" "$remaining")
+    context_used=$(( 100 - remaining_int ))
+    if [[ $context_used -ge 80 ]]; then
+        prompt_parts+="$(printf "\033[${c4}m⚠️ %d%%\033[0m " "$context_used")"
+    else
+        prompt_parts+="$(printf "\033[${c5}m%d%%\033[0m " "$context_used")"
+    fi
+fi
+
 # Current directory in cyan
 prompt_parts+="$(printf "\033[${c1}m%s\033[0m" "$short_path")"
 
@@ -96,23 +112,6 @@ fi
 # Add output style if not default
 if [[ -n "$output_style" && "$output_style" != "default" ]]; then
     prompt_parts+=" $(printf "\033[${c6}m%s\033[0m" "$output_style")"
-fi
-
-# Add context used progress bar if available
-if [[ -n "$remaining" ]]; then
-    remaining_int=$(printf "%.0f" "$remaining")
-    used_int=$(( 100 - remaining_int ))
-    bar_width=20
-    filled=$(( used_int * bar_width / 100 ))
-    empty=$(( bar_width - filled ))
-    bar=""
-    for (( i=0; i<filled; i++ )); do bar+="█"; done
-    for (( i=0; i<empty; i++ )); do bar+="░"; done
-    prompt_parts+=" $(printf "\033[${c5}m[%s] %d%%\033[0m" "$bar" "$used_int")"
-
-    if [[ -n "$effort_level" ]]; then
-        prompt_parts+=" $(printf "\033[${c3}m%s\033[0m" "$effort_level")"
-    fi
 fi
 
 # Claude 5-hour usage
