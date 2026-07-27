@@ -133,6 +133,7 @@ fi
 # ── claude code ─────────────────────────────────────────────────────
 
 echo "Setting up claude code..."
+mklink "$DOTFILES/claude/CLAUDE.md"            ~/.claude/CLAUDE.md
 mklink "$DOTFILES/claude/settings.json"        ~/.claude/settings.json
 mklink "$DOTFILES/claude/statusline-command.sh" ~/.claude/statusline-command.sh
 mkdir -p ~/.claude/hooks

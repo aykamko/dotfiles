@@ -104,9 +104,10 @@ if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
     prompt_parts+=" $(printf "\033[${c2}m(\033[${c4}m%s\033[0m%s%s\033[${c2}m)\033[0m" "$git_branch" "$git_status" "$ahead_behind")"
 fi
 
-# Add session name if present
+# Session name gets its own line, rendered above everything else
+session_line=""
 if [[ -n "$session_name" ]]; then
-    prompt_parts+=" $(printf "\033[${c2}m[\033[0m%s\033[${c2}m]\033[0m" "$session_name")"
+    session_line="$(printf "\033[${c2}m[\033[0m%s\033[${c2}m]\033[0m" "$session_name")"
 fi
 
 # Add output style if not default
@@ -155,4 +156,5 @@ if [[ -n "$seven_day_used" ]]; then
     prompt_parts+=" $(printf "\033[38;5;135m[7d ⬡ %d%%%s]\033[0m" "$used_int" "$reset_str")"
 fi
 
+[[ -n "$session_line" ]] && printf "%s\n" "$session_line"
 printf "%s\n" "$prompt_parts"
