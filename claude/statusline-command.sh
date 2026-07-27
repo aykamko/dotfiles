@@ -8,7 +8,7 @@ cwd=$(echo "$input" | jq -r '.workspace.current_dir')
 session_name=$(echo "$input" | jq -r '.session_name // empty')
 output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 vim_mode=$(echo "$input" | jq -r '.vim.mode // empty')
-remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
+remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // 100')
 model_id=$(echo "$input" | jq -r '.model.id // empty')
 five_hour_used=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
 five_hour_resets=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
@@ -40,8 +40,11 @@ if [[ -n "$vim_mode" && "$vim_mode" == "NORMAL" ]]; then
     prompt_parts="$(printf "\033[${c3}m-- NORMAL --\033[0m ")"
 fi
 
-# Coder workspace indicator (if env var is set)
-if [[ -n "$CODER_WORKSPACE_NAME" ]]; then
+# Machine indicator: coder workspace (if env var is set), otherwise a local Mac
+if [[ -z "$CODER_WORKSPACE_NAME" && "$OSTYPE" == darwin* ]]; then
+    # 256-color 200 to match the `macbook` label in the zsh prompt (zsh/scripts/darwin.zsh)
+    prompt_parts+="$(printf "\033[38;5;200mmacbook\033[0m ")"
+elif [[ -n "$CODER_WORKSPACE_NAME" ]]; then
     _coder_emoji=""
     _coder_ansi="$c6"
     [[ $CODER_WORKSPACE_NAME == *green* ]]  && _coder_emoji=" 💚" && _coder_ansi="$c6"
@@ -51,7 +54,7 @@ if [[ -n "$CODER_WORKSPACE_NAME" ]]; then
     [[ $CODER_WORKSPACE_NAME == *cyan* ]]   && _coder_emoji=" 🩵" && _coder_ansi="$c1"
     [[ $CODER_WORKSPACE_NAME == *yellow* ]] && _coder_emoji=" 💛" && _coder_ansi="$c5"
     [[ $CODER_WORKSPACE_NAME == *red* ]]    && _coder_emoji=" ❤️" && _coder_ansi="$c4"
-    prompt_parts="$(printf "\033[${_coder_ansi}mcoder:%s%s\033[0m " "$CODER_WORKSPACE_NAME" "$_coder_emoji")"
+    prompt_parts+="$(printf "\033[${_coder_ansi}mcoder:%s%s\033[0m " "$CODER_WORKSPACE_NAME" "$_coder_emoji")"
 fi
 
 # Effort level
@@ -77,37 +80,13 @@ prompt_parts+="$(printf "\033[${c1}m%s\033[0m" "$short_path")"
 if git --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
     git_branch=$(git --no-optional-locks symbolic-ref --short HEAD 2>/dev/null || git --no-optional-locks rev-parse --short HEAD 2>/dev/null)
 
-    # Check for changes
-    git_status=""
-    if ! git --no-optional-locks diff --quiet 2>/dev/null; then
-        git_status="$(printf "\033[${c5}m●\033[0m")"  # yellow dot for unstaged
-    fi
-    if ! git --no-optional-locks diff --cached --quiet 2>/dev/null; then
-        git_status="$(printf "\033[${c6}m●\033[0m")"  # green dot for staged
-    fi
-
-    # Check ahead/behind
-    ahead_behind=""
-    upstream=$(git --no-optional-locks rev-parse --abbrev-ref @{upstream} 2>/dev/null)
-    if [[ -n "$upstream" ]]; then
-        ahead=$(git --no-optional-locks rev-list --count HEAD..@{upstream} 2>/dev/null || echo "0")
-        behind=$(git --no-optional-locks rev-list --count @{upstream}..HEAD 2>/dev/null || echo "0")
-        if [[ "$behind" != "0" || "$ahead" != "0" ]]; then
-            ahead_behind="$(printf "\033[${c2}m{\033[0m")"
-            [[ "$behind" != "0" ]] && ahead_behind+="$(printf "\033[${c5}m+%s\033[0m" "$behind")"
-            [[ "$behind" != "0" && "$ahead" != "0" ]] && ahead_behind+="$(printf "\033[${c2}m,\033[0m")"
-            [[ "$ahead" != "0" ]] && ahead_behind+="$(printf "\033[${c5}m-%s\033[0m" "$ahead")"
-            ahead_behind+="$(printf "\033[${c2}m}\033[0m")"
-        fi
-    fi
-
-    prompt_parts+=" $(printf "\033[${c2}m(\033[${c4}m%s\033[0m%s%s\033[${c2}m)\033[0m" "$git_branch" "$git_status" "$ahead_behind")"
+    prompt_parts+=" $(printf "\033[${c2}m(\033[${c4}m%s\033[${c2}m)\033[0m" "$git_branch")"
 fi
 
 # Session name gets its own line, rendered above everything else
 session_line=""
 if [[ -n "$session_name" ]]; then
-    session_line="$(printf "\033[${c2}m[\033[0m%s\033[${c2}m]\033[0m" "$session_name")"
+    session_line="$(printf "%s" "$session_name")"
 fi
 
 # Add output style if not default
