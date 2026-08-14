@@ -10,6 +10,8 @@ Here is a glossary of custom terms or phrases I use and what they mean for you:
 
 Our repo uses subfolder AGENTS.md files that define scoped conventions and workflows. When planning work that concentrates in specific top-level subfolders check for AGENTS.md files in those subfolders and proactively load them into context before beginning implementation work.
 
+Whenever you create or update a Github PR (through Graphite or directly), always include the Github URL to the PR in your reply to me. Makes it easy for me to click and open my browser.
+
 # Git branches
 
 When making new git branches for me, always prefix the branch name with `akamko/`. For example: `akamko/my-cool-feature`
