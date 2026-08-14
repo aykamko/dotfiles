@@ -1,6 +1,16 @@
+# Glossary
+
+Here is a glossary of custom terms or phrases I use and what they mean for you:
+
+- "yeet this change": "Please commit the change, `gt submit` it with Graphite, and update the PR description on Github"
+
 # Instructions for figma/figma repo
 
 Our repo uses subfolder AGENTS.md files that define scoped conventions and workflows. When planning work that concentrates in specific top-level subfolders check for AGENTS.md files in those subfolders and proactively load them into context before beginning implementation work.
+
+# Git branches
+
+When making new git branches for me, always prefix the branch name with `akamko/`. For example: `akamko/my-cool-feature`
 
 # PR descriptions
 
@@ -13,11 +23,13 @@ FILL ME IN
 
 ---
 
-## 🤖 Codex Description
+## 🤖 {AGENT} Description
 
-CODEX DESCRIPTION GOES HERE
+AGENT DESCRIPTION GOES HERE
 ```
-Replace `CODEX DESCRIPTION GOES HERE` with your description. Leave `FILL ME IN` alone for myself to fill out.
+Replace `AGENT DESCRIPTION GOES HERE` with your description. Leave `FILL ME IN` alone for myself to fill out.
+
+If you are Claude, `{AGENT}` should be `Claude`. If you are Codex/GPT, `{AGENT}` should be Codex.
 
 When making changes or updates to the PR description, never touch my
 human-written description (Aleks Description) without asking me first. If you
