@@ -82,6 +82,13 @@ if [[ $UNAME == darwin ]]; then
   export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
   export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
   fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
+
+  # macos-trash is keg-only (its `trash` would shadow macOS's own /usr/bin/trash),
+  # so it is not linked into /opt/homebrew/bin. Prepend it deliberately: Apple's
+  # built-in trashes files but breaks Finder's "Put Back", which is the point.
+  if [[ -d /opt/homebrew/opt/macos-trash/bin ]]; then
+    path=(/opt/homebrew/opt/macos-trash/bin $path)
+  fi
 fi
 
 export GOPATH="$HOME/go"

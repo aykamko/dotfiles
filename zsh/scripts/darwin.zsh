@@ -1,7 +1,9 @@
 # vim: set ft=zsh:
 [[ $UNAME != darwin ]] && return
 
-# alias for rm (requires trash script)
+# alias rm to macos-trash (brew; PATH set in zprofile). macOS ships its own
+# /usr/bin/trash, so this guard always passes -- PATH order decides which one
+# wins, and we want the brew one because Apple's breaks Finder's "Put Back".
 if (( $+commands[trash] )); then
     alias rm=trash
 fi

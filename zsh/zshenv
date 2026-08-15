@@ -49,13 +49,17 @@ if [[ -o INTERACTIVE ]]; then
   add-zsh-hook precmd _zsh_profile_finish
 fi
 
+# system-wide environment settings for zsh(1)
+# Must run BEFORE .zprofile: path_helper hoists the /etc/paths entries (/usr/bin,
+# /usr/local/bin, ...) to the front of PATH, demoting anything .zprofile prepended.
+# Login shells hid this because zsh re-sources .zprofile after .zshenv; non-login
+# shells (tmux panes, `zsh` subshells, IDE terminals) got /usr/bin first.
+if [[ -x /usr/libexec/path_helper && -z $TMUX ]]; then
+	eval `/usr/libexec/path_helper -s`
+fi
+
 # Ensure that a non-login, non-interactive shell has a defined environment.
 # if [[ "$SHLVL" -eq 1 && ! -o LOGIN && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
 #   source "${ZDOTDIR:-$HOME}/.zprofile"
 # fi
 source "${ZDOTDIR:-$HOME}/.zprofile"
-
-# system-wide environment settings for zsh(1)
-if [[ -x /usr/libexec/path_helper && -z $TMUX ]]; then
-	eval `/usr/libexec/path_helper -s`
-fi

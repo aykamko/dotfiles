@@ -74,6 +74,7 @@ libxslt
 libyaml
 lua
 lz4
+macos-trash
 makedepend
 maven
 mercurial
@@ -125,7 +126,6 @@ aykamko/tag-ag/tag-ag
 the_silver_searcher
 tmate
 tmux
-trash
 tree
 unifdef
 unison
