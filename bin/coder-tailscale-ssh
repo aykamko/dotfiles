@@ -1,0 +1,335 @@
+#!/usr/bin/env python3
+"""Bring up tailnet SSH on a Coder devbox: tailscaled (userspace) + sshd on 2222.
+
+    coder-tailscale-ssh setup    # once per new devbox; the only interactive step
+    coder-tailscale-ssh up       # idempotent boot path, called from dotfiles post-start
+    coder-tailscale-ssh status   # backend state, IP, key expiry, sshd liveness
+
+Tailscale's own SSH is unusable on this tailnet: the policy ships zero `ssh` rules
+for a personally-owned node, and tag:devbox can't be self-assigned (not in
+tagOwners). So we run a plain sshd instead, which the network ACLs govern -- and
+those permit all ports from your own devices.
+
+Everything except the browser auth lives in `up`, so a devbox that comes back
+without sshd can always heal itself. That matters because / is an overlay: the
+apt-installed sshd is gone after every rebuild, and if healing needed `setup` it
+would need the very access it just lost.
+
+Two directories, deliberately not one: tailscaled owns its statedir (forces 0700,
+creates its own ssh/, files/, profile-data/ inside), so sshd's host keys can't
+share it. Both sit on /home/ubuntu, the only path that survives a stop/start --
+Coder replaces the EC2 instance, so /var/lib/tailscale does not persist.
+"""
+import argparse
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+DOTFILES = Path(__file__).resolve().parent.parent
+CONF_SRC = DOTFILES / "coder-tailscale-ssh" / "sshd_config"
+KEYS_SRC = DOTFILES / "coder-tailscale-ssh" / "authorized_keys"
+
+STATE_TS = Path("/home/ubuntu/.local/state/tailscaled")
+STATE_SSHD = Path("/home/ubuntu/.local/state/tailnet-sshd")
+LEGACY_STATE = Path("/var/lib/tailscale/tailscaled.state")
+
+SOCK = "/var/run/tailscale/tailscaled.sock"
+SSHD_CONF = "/etc/ssh/sshd_coder_tailnet_config"
+HOST_KEY = STATE_SSHD / "ssh_host_ed25519_key"
+SSHD_LOG = STATE_SSHD / "sshd.log"
+TS_LOG = Path("/tmp/tailscaled.log")
+
+PORT = 2222
+AUTHORIZED_KEYS = Path("/home/ubuntu/.ssh/authorized_keys")
+EXPIRY_WARN_DAYS = 7
+
+
+def run(cmd, check=True, capture=True):
+    """Run a command, returning CompletedProcess. Text mode, no shell."""
+    return subprocess.run(
+        cmd, check=check, text=True,
+        stdout=subprocess.PIPE if capture else None,
+        stderr=subprocess.PIPE if capture else None,
+    )
+
+
+def quiet(cmd):
+    """True if the command exits 0."""
+    return subprocess.run(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
+    ).returncode == 0
+
+
+def is_tailscaled_running():
+    return quiet(["pgrep", "-x", "tailscaled"])
+
+
+def is_listening(port):
+    """True if something accepts TCP on loopback:port. Cheaper and more honest
+    than a PidFile, which goes stale when sshd is killed."""
+    with socket.socket() as s:
+        s.settimeout(1)
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
+def ts(*args):
+    """A tailscale CLI invocation against our socket."""
+    return ["tailscale", f"--socket={SOCK}", *args]
+
+
+def tailscale_status():
+    """Parsed `tailscale status --json`, or None if the daemon isn't answering."""
+    proc = run(ts("status", "--json"), check=False)
+    if proc.returncode != 0:
+        return None
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
+def node_hostname():
+    """akamko-blue -- derived so every devbox is distinct without per-box config.
+    CODER_WORKSPACE_OWNER_NAME, not $USER: the latter is 'ubuntu' in here."""
+    owner = os.environ.get("CODER_WORKSPACE_OWNER_NAME")
+    workspace = os.environ.get("CODER_WORKSPACE_NAME")
+    if not owner or not workspace:
+        sys.exit("coder-tailscale-ssh: not a Coder workspace "
+                 "(CODER_WORKSPACE_OWNER_NAME/CODER_WORKSPACE_NAME unset)")
+    return f"{owner}-{workspace}"
+
+
+def ensure_sshd_installed():
+    if Path("/usr/sbin/sshd").exists():
+        return
+    print("installing openssh-server (not in the base image, and / is an overlay)")
+    env = "DEBIAN_FRONTEND=noninteractive"
+    install = ["sudo", "-n", "env", env, "apt-get", "-o", "DPkg::Lock::Timeout=120",
+               "install", "-y", "--no-install-recommends", "openssh-server"]
+    if not quiet(install):
+        # The image ships a stale /var/lib/apt/lists, so a superseded pinned
+        # version 404s until we refresh.
+        print("  first attempt failed; refreshing apt lists and retrying")
+        quiet(["sudo", "-n", "apt-get", "update"])
+        run(install, capture=False)
+
+
+def ensure_run_dir():
+    """/run is tmpfs, so sshd's privilege-separation dir vanishes every boot."""
+    run(["sudo", "-n", "install", "-d", "-m", "0755", "-o", "root", "-g", "root",
+         "/run/sshd"])
+
+
+def ensure_host_keys():
+    """Persistent host keys, root-owned 0600. sshd refuses group/world-accessible
+    key files but doesn't walk ancestor dirs for HostKey, so ubuntu-owned 0755
+    parents are fine."""
+    run(["sudo", "-n", "install", "-d", "-m", "0700", "-o", "root", "-g", "root",
+         str(STATE_SSHD)])
+    if quiet(["sudo", "-n", "test", "-f", str(HOST_KEY)]):
+        return
+    print(f"generating persistent sshd host key at {HOST_KEY}")
+    run(["sudo", "-n", "ssh-keygen", "-t", "ed25519", "-N", "", "-q",
+         "-f", str(HOST_KEY), "-C", f"coder-tailscale-ssh {node_hostname()}"])
+    run(["sudo", "-n", "chmod", "600", str(HOST_KEY)])
+
+
+def ensure_authorized_keys():
+    if not KEYS_SRC.exists():
+        print(f"[warn] {KEYS_SRC} missing; leaving authorized_keys alone")
+        return
+    wanted = [ln.strip() for ln in KEYS_SRC.read_text().splitlines() if ln.strip()]
+    AUTHORIZED_KEYS.parent.mkdir(mode=0o700, exist_ok=True)
+    AUTHORIZED_KEYS.touch(mode=0o600, exist_ok=True)
+    present = AUTHORIZED_KEYS.read_text().splitlines()
+    missing = [k for k in wanted if k not in present]
+    if missing:
+        with AUTHORIZED_KEYS.open("a") as fh:
+            for key in missing:
+                fh.write(key + "\n")
+        print(f"authorized {len(missing)} key(s)")
+    AUTHORIZED_KEYS.chmod(0o600)
+
+
+def write_sshd_config():
+    """Regenerated every boot: /etc lives on the ephemeral overlay."""
+    if not CONF_SRC.exists():
+        sys.exit(f"coder-tailscale-ssh: missing {CONF_SRC}")
+    run(["sudo", "-n", "install", "-m", "0644", "-o", "root", "-g", "root",
+         str(CONF_SRC), SSHD_CONF])
+    proc = run(["sudo", "-n", "/usr/sbin/sshd", "-t", "-f", SSHD_CONF], check=False)
+    if proc.returncode != 0:
+        sys.exit(f"coder-tailscale-ssh: sshd config rejected: {proc.stderr.strip()}")
+
+
+def migrate_legacy_state():
+    """One-time lift of an already-authenticated node off the host root volume,
+    which Coder discards on stop/start. Plaintext JSON, so a copy keeps the same
+    machine key -- no re-auth, no second node."""
+    if quiet(["sudo", "-n", "test", "-f", str(STATE_TS / "tailscaled.state")]):
+        return
+    if not quiet(["sudo", "-n", "test", "-f", str(LEGACY_STATE)]):
+        return
+    print(f"migrating existing node state from {LEGACY_STATE}")
+    run(["sudo", "-n", "cp", "-p", str(LEGACY_STATE),
+         str(STATE_TS / "tailscaled.state")])
+
+
+def ensure_tailscaled():
+    run(["sudo", "-n", "install", "-d", "-m", "0700", "-o", "ubuntu", "-g", "ubuntu",
+         str(STATE_TS)])
+    migrate_legacy_state()
+    if is_tailscaled_running():
+        return
+    run(["sudo", "-n", "install", "-d", "-m", "0755", "/var/run/tailscale"])
+    print("starting tailscaled (userspace-networking)")
+    # No TUN device and no NET_ADMIN here, so userspace mode is the only option.
+    # --encrypt-state=false: encryption defaults on where supported and would
+    # TPM-seal the state, destroying the point of keeping it on the EBS volume.
+    with TS_LOG.open("a") as log:
+        subprocess.Popen(
+            ["sudo", "-n", "/usr/sbin/tailscaled",
+             "--tun=userspace-networking",
+             f"--state={STATE_TS / 'tailscaled.state'}",
+             f"--socket={SOCK}",
+             "--encrypt-state=false",
+             "--hardware-attestation=false"],
+            stdout=log, stderr=log, start_new_session=True,
+        )
+    for _ in range(30):
+        if tailscale_status() is not None:
+            return
+        time.sleep(1)
+    print("[warn] tailscaled did not answer within 30s; see " + str(TS_LOG))
+
+
+def ensure_sshd_running():
+    if is_listening(PORT):
+        return
+    print(f"starting sshd on 127.0.0.1:{PORT}")
+    run(["sudo", "-n", "/usr/sbin/sshd", "-f", SSHD_CONF, "-E", str(SSHD_LOG)])
+    for _ in range(10):
+        if is_listening(PORT):
+            return
+        time.sleep(0.5)
+    print(f"[warn] sshd not listening on {PORT}; see {SSHD_LOG}")
+
+
+def host_key_fingerprint():
+    proc = run(["sudo", "-n", "ssh-keygen", "-lf", f"{HOST_KEY}.pub"], check=False)
+    return proc.stdout.strip() if proc.returncode == 0 else "(unavailable)"
+
+
+def check_expiry(status):
+    """Untagged nodes expire on this tailnet's 30-day schedule, and expiry lands as
+    a silent NeedsLogin. Disable it per-device in the admin console."""
+    raw = (status.get("Self") or {}).get("KeyExpiry")
+    if not raw:
+        return
+    expiry = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    days = (expiry - datetime.now(timezone.utc)).days
+    if days < EXPIRY_WARN_DAYS:
+        print(f"[warn] node key expires in {days}d ({expiry:%Y-%m-%d}); "
+              "disable key expiry for this device in the Tailscale admin console")
+
+
+def check_hostname(status):
+    """A leftover node claims the name and Tailscale suffixes this one
+    (akamko-blue-1), silently breaking the client's saved host."""
+    want = node_hostname()
+    dns = (status.get("Self") or {}).get("DNSName", "")
+    if dns and not dns.startswith(want + "."):
+        print(f"[warn] registered as {dns.rstrip('.')}, expected {want}; "
+              "a stale node may be holding the name")
+
+
+def bring_up():
+    """Everything but the browser auth. Shared by `up` and `setup`."""
+    ensure_sshd_installed()
+    ensure_run_dir()
+    ensure_host_keys()
+    ensure_authorized_keys()
+    write_sshd_config()
+    ensure_tailscaled()
+    ensure_sshd_running()
+
+
+def cmd_up(_args):
+    bring_up()
+    status = tailscale_status()
+    if status is None:
+        print("[warn] tailscaled not answering; skipping tailnet checks")
+        return 0
+    state = status.get("BackendState")
+    if state == "NeedsLogin":
+        # Never fail the boot hook over a logged-out node.
+        print("[warn] tailnet logged out; run `coder-tailscale-ssh setup` to "
+              "re-authenticate")
+        return 0
+    check_expiry(status)
+    check_hostname(status)
+    # TailscaleIPs is null until the netmap lands, which is a second or two after
+    # the daemon starts answering.
+    ips = (status.get("Self") or {}).get("TailscaleIPs") or []
+    print(f"tailnet SSH ready: {state}" + (f", {' '.join(ips)}" if ips else ""))
+    return 0
+
+
+def cmd_setup(_args):
+    bring_up()
+    status = tailscale_status()
+    if status and status.get("BackendState") == "Running":
+        print("already authenticated; nothing interactive to do")
+    else:
+        print("authenticating -- open the URL below in a browser")
+        run(ts("up", "--ssh=false", "--accept-dns=false",
+               f"--hostname={node_hostname()}"), capture=False)
+    return cmd_status(None)
+
+
+def cmd_status(_args):
+    status = tailscale_status()
+    if status is None:
+        print("tailscaled: not running")
+    else:
+        self_ = status.get("Self") or {}
+        print(f"tailscaled : {status.get('BackendState')}")
+        print(f"node       : {self_.get('DNSName', '').rstrip('.')}")
+        print(f"addresses  : {' '.join(self_.get('TailscaleIPs') or [])}")
+        print(f"key expiry : {self_.get('KeyExpiry', '(none)')}")
+        for warning in status.get("Health") or []:
+            print(f"health     : {warning}")
+    print(f"sshd :{PORT}  : {'listening' if is_listening(PORT) else 'down'}")
+    print(f"host key   : {host_key_fingerprint()}")
+    ips = (status or {}).get("Self", {}).get("TailscaleIPs") or []
+    if ips:
+        print(f"\nconnect    : ssh -p {PORT} ubuntu@{ips[0]}")
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=__doc__.splitlines()[0],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("setup", help="one-time interactive tailnet auth for a new devbox")
+    sub.add_parser("up", help="idempotent bring-up; safe to run on every boot")
+    sub.add_parser("status", help="report tailnet and sshd state")
+    args = parser.parse_args()
+    return {"setup": cmd_setup, "up": cmd_up, "status": cmd_status}[args.command](args)
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or "").strip() or (error.stdout or "").strip()
+        print(f"coder-tailscale-ssh: {' '.join(error.cmd)} failed"
+              + (f": {detail}" if detail else ""), file=sys.stderr)
+        raise SystemExit(1)

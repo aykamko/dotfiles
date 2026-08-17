@@ -1,0 +1,32 @@
+# sshd for tailnet access from phone/remote, installed by bin/coder-tailscale-ssh.
+# Separate from the packaged /etc/ssh/sshd_config, which belongs to the systemd
+# unit that can't run in the devcontainer.
+
+Port 2222
+
+# The devcontainer shares the HOST network namespace, so 0.0.0.0 would publish
+# this on the EC2 primary ENI and bypass the tailnet ACL entirely. Tailscale's
+# userspace-networking mode forwards inbound tailnet TCP to 127.0.0.1 on the same
+# port, so loopback is all we need.
+ListenAddress 127.0.0.1
+
+# Host keys live on the EBS volume, not /etc/ssh: the openssh-server postinst runs
+# ssh-keygen -A, so /etc/ssh keys are regenerated every reinstall and the client's
+# known_hosts breaks after each container rebuild.
+HostKey /home/ubuntu/.local/state/tailnet-sshd/ssh_host_ed25519_key
+
+AllowUsers ubuntu
+PermitRootLogin no
+PubkeyAuthentication yes
+AuthorizedKeysFile /home/ubuntu/.ssh/authorized_keys
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+
+X11Forwarding no
+PrintMotd no
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+LogLevel VERBOSE
+PidFile /run/sshd-2222.pid
