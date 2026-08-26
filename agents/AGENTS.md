@@ -20,7 +20,7 @@ When making new git branches for me, always prefix the branch name with `akamko/
 
 When creating PR descriptions from scratch (or when replacing the Figma template), always us this format:
 
-```
+```markdown
 ## 👨 Aleks Description
 
 FILL ME IN

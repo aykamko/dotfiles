@@ -26,29 +26,217 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- Markdown rendered the way Claude Code renders it in the terminal.
+-- Values below are taken from the Claude Code renderer, not approximated:
+--   h1 -> bold+italic+underline, h2..h6 -> bold, '#' concealed
+--   unordered bullets -> '-' at every depth
+--   ordered bullets   -> depth 1 '1.', depth 2 'a.', depth 3 'i.'
+--   block quote       -> dim U+258E plus a space, body italic
+--   inline code       -> rgb(177,185,249) dark / rgb(87,105,247) light, no background
+--   fenced code       -> syntax highlight only, no border, background, or language label
+--                        (the ``` lines themselves are kept, see code.border below)
+--   thematic break    -> literal '---'
+--   tables            -> ASCII pipes, padded cells, no outer border
+--   task list         -> literal '[ ]' and '[x]'
+
+local md = {}
+
+-- 1 -> 'a', 26 -> 'z', 27 -> 'aa'
+function md.alpha(n)
+  local out = ""
+  while n > 0 do
+    n = n - 1
+    out = string.char(97 + n % 26) .. out
+    n = math.floor(n / 26)
+  end
+  return out
+end
+
+md.roman_pairs = {
+  { 1000, "m" }, { 900, "cm" }, { 500, "d" }, { 400, "cd" },
+  { 100, "c" }, { 90, "xc" }, { 50, "l" }, { 40, "xl" },
+  { 10, "x" }, { 9, "ix" }, { 5, "v" }, { 4, "iv" }, { 1, "i" },
+}
+
+function md.roman(n)
+  local out = ""
+  for _, pair in ipairs(md.roman_pairs) do
+    while n >= pair[1] do
+      out = out .. pair[2]
+      n = n - pair[1]
+    end
+  end
+  return out
+end
+
+-- Claude Code palette, dark and light variants.
+md.palette = {
+  dark = {
+    inline_code = "#b1b9f9",  -- theme key 'permission'
+    dim = "#999999",          -- theme key 'inactive', stands in for ANSI dim
+  },
+  light = {
+    inline_code = "#5769f7",
+    dim = "#666666",
+  },
+}
+
+function md.highlights()
+  local c = md.palette[vim.o.background == "light" and "light" or "dark"]
+  local hl = vim.api.nvim_set_hl
+
+  -- Inline code: foreground only, no background block.
+  hl(0, "RenderMarkdownCodeInline", { fg = c.inline_code })
+  hl(0, "@markup.raw.markdown_inline", { fg = c.inline_code })
+
+  -- Bullets, heading markers, and table pipes are plain text.
+  for _, group in ipairs({
+    "RenderMarkdownBullet",
+    "RenderMarkdownHeadingIcon",
+    "RenderMarkdownTableHead",
+    "RenderMarkdownTableRow",
+    "@markup.list.markdown",
+  }) do
+    hl(0, group, { link = "Normal" })
+  end
+
+  -- Table header cells are captured as @markup.heading. Claude Code does not
+  -- embolden them, and heading levels 1..6 are set explicitly below.
+  hl(0, "@markup.heading.markdown", { link = "Normal" })
+
+  -- Quote bar is dim, quote body is italic.
+  hl(0, "RenderMarkdownQuote", { fg = c.dim })
+  hl(0, "@markup.quote.markdown", { italic = true })
+
+  -- Headings carry no color of their own, only weight.
+  hl(0, "@markup.heading.1.markdown", { bold = true, italic = true, underline = true })
+  for level = 2, 6 do
+    hl(0, ("@markup.heading.%d.markdown"):format(level), { bold = true })
+  end
+
+  hl(0, "@markup.strong", { bold = true })
+  hl(0, "@markup.italic", { italic = true })
+  hl(0, "@markup.strikethrough", { strikethrough = true })
+end
+
 require("lazy").setup({
+  {
+    "nvim-treesitter/nvim-treesitter",
+    branch = "master",
+    build = ":TSUpdate",
+    main = "nvim-treesitter.configs",
+    opts = {
+      ensure_installed = {
+        "bash", "c", "css", "diff", "dockerfile", "go", "html", "javascript",
+        "json", "lua", "markdown", "markdown_inline", "python", "ruby", "rust",
+        "sql", "toml", "tsx", "typescript", "vim", "vimdoc", "yaml",
+      },
+      highlight = { enable = true },
+    },
+  },
   {
     "MeanderingProgrammer/render-markdown.nvim",
     ft = { "markdown" },
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
     opts = {
+      sign = { enabled = false },
+
       heading = {
-        icons = { "", "", "", "", "", "" },
+        -- An empty icon conceals the '#' marker and inlines nothing in its place.
+        icons = { "" },
         position = "inline",
         sign = false,
-        width = "full",
-      },
-      code = {
-        conceal_delimiters = false,
-        language = false,
-        sign = false,
-        border = "none",
         width = "block",
-        right_pad = 2,
+        backgrounds = {},
+        foregrounds = { "RenderMarkdownHeadingIcon" },
+        border = false,
       },
+
+      code = {
+        sign = false,
+        language = false,
+        -- Deliberate divergence from Claude Code: keep the ``` lines visible
+        -- instead of concealing them and removing the lines they sit on.
+        conceal_delimiters = false,
+        border = "none",
+        disable_background = true,
+        width = "block",
+        left_pad = 0,
+        right_pad = 0,
+        inline = true,
+        inline_left = "",
+        inline_right = "",
+        inline_pad = 0,
+        highlight_inline = "RenderMarkdownCodeInline",
+      },
+
+      bullet = {
+        icons = "-",
+        ordered_icons = function(ctx)
+          local value = vim.trim(ctx.value)
+          local n = tonumber(value:sub(1, #value - 1)) or ctx.index
+          if n < 1 then
+            n = ctx.index
+          end
+          if ctx.level == 2 then
+            return md.alpha(n) .. "."
+          elseif ctx.level == 3 and n <= 3999 then
+            return md.roman(n) .. "."
+          end
+          return ("%d."):format(n)
+        end,
+        left_pad = 0,
+        right_pad = 0,
+        highlight = "RenderMarkdownBullet",
+      },
+
+      quote = {
+        icon = "▎",
+        repeat_linebreak = true,
+        highlight = "RenderMarkdownQuote",
+      },
+
+      pipe_table = {
+        cell = "padded",
+        padding = 1,
+        min_width = 3,
+        border_enabled = false,
+        -- stylua: ignore
+        border = {
+          "|", "|", "|",
+          "|", "|", "|",
+          "|", "|", "|",
+          "|", "-",
+        },
+        alignment_indicator = "-",
+        head = "RenderMarkdownTableHead",
+        row = "RenderMarkdownTableRow",
+      },
+
+      -- Claude Code leaves all of these as literal source text.
+      dash = { enabled = false },
+      checkbox = { enabled = false },
+      link = { enabled = false },
+      html = { enabled = false },
+      latex = { enabled = false },
+      inline_highlight = { enabled = false },
     },
   },
 }, {
   change_detection = { notify = false },
+})
+
+md.highlights()
+-- ColorScheme does not always fire when only 'background' changes, so watch both.
+vim.api.nvim_create_autocmd({ "ColorScheme", "OptionSet" }, {
+  group = vim.api.nvim_create_augroup("markdown_claude_highlights", { clear = true }),
+  pattern = { "*", "background" },
+  callback = function(args)
+    if args.event == "OptionSet" and args.match ~= "background" then
+      return
+    end
+    md.highlights()
+  end,
 })
 
 
@@ -171,11 +359,17 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "markdown",
   callback = function()
-    pcall(vim.treesitter.start)
+    -- Fallback if nvim-treesitter did not attach. render-markdown needs a parser.
+    if not vim.b.ts_highlight then
+      pcall(vim.treesitter.start)
+    end
     vim.opt_local.wrap = true
     vim.opt_local.linebreak = true
     vim.opt_local.breakindent = true
-    vim.opt_local.showbreak = "↳ "
+    -- Claude Code shows no wrap marker. Two spaces also let the quote bar
+    -- repeat correctly on wrapped lines.
+    vim.opt_local.showbreak = "  "
+    vim.opt_local.breakindentopt = ""
     vim.opt_local.list = false
   end,
 })
