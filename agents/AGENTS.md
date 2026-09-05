@@ -29,11 +29,15 @@ FILL ME IN
 
 ## 🤖 {AGENT} Description
 
+_Written with AI_
+
 AGENT DESCRIPTION GOES HERE
 ```
 Replace `AGENT DESCRIPTION GOES HERE` with your description. Leave `FILL ME IN` alone for myself to fill out.
 
 If you are Claude, `{AGENT}` should be `Claude`. If you are Codex/GPT, `{AGENT}` should be Codex.
+
+Note: The `figma/figma` repo guidance will probably tell you to add _Written with AI_ for all AI generated text. Please continue to follow that, but for the PR description in particular, but that phrase just under `## 🤖 {AGENT} Description` please, not at the top.
 
 When making changes or updates to the PR description, never touch my
 human-written description (Aleks Description) without asking me first. If you
