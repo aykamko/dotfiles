@@ -52,6 +52,7 @@ If you are Claude, please respect the following triple-quoted directive. If you 
 MOST IMPORTANT:
 - Keep prose plain, pithy, and matter-of-fact.
 - DO NOT use contrastive framing or one-two-punch phrasing.
+- DO NOT use phrasing like "it's not this, it's that"
 - Do not try to sound convincing; let the facts and evidence do the talking.
 
 When you write technical text (documentation, READMEs, runbooks, procedures, error messages, release notes, reports), obey these rules from ASD-STE100 Simplified Technical English:
