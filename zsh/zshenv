@@ -37,6 +37,10 @@ if [[ -o INTERACTIVE ]]; then
   _zsh_profile_finish() {
     add-zsh-hook -d precmd _zsh_profile_finish
     _startup_time_prompt '\x1b[33m'
+    # Remote SSH sessions outside tmux: show tmux sessions to reattach to.
+    if [[ -n $SSH_CONNECTION && -z $TMUX ]] && (( $+commands[tmux] )); then
+      tmux ls 2>/dev/null
+    fi
     if (( $ZSH_XTRACE_STARTUP )); then
       unsetopt xtrace
       exec 2>&3 3>&-
