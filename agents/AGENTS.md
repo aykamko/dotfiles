@@ -2,7 +2,7 @@
 
 Here is a glossary of custom terms or phrases I use and what they mean for you:
 
-- "yeet this change": "Please commit the change with a good message (always prefer a new commit rather than amending), `gt submit` it with Graphite, and update the PR description on Github"
+- "yeet this change": "Please commit the change with a good message (always prefer a new commit rather than amending), `gt submit` it with Graphite (or use normal git if Graphite is not installed or not configured for the local repo), and update the PR description on Github"
 - "sweep my PR comments": "Please look at the comments I left for you on the Github PR, address each one, yeet the change, and then comment+resolve each of the comments in Github. If a comment reads more like an open question, pause before yeeting to talk to me about it"
 - "riff": "Let's brainstorm without writing code. You are welcome to search and run experiments, but don't change the checked-in code. Just talk to me."
 
