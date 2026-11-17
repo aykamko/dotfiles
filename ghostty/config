@@ -30,7 +30,7 @@ palette = 14=#b0c4de
 palette = 15=#ddccbb
 
 # Bell
-bell-features = title,attention
+bell-features = title
 
 # Disable paste protection warnings
 clipboard-paste-protection = false
