@@ -55,7 +55,6 @@ Plug 'junegunn/vim-peekaboo'
 Plug 'jceb/vim-orgmode'
       \ | Plug 'tpope/vim-speeddating'
 Plug 'blueyed/vim-diminactive'
-Plug 'neoclide/coc.nvim', { 'branch': 'release' }
 " Plug 'wakatime/vim-wakatime'  " this plugin is way too slow unfortunately
 
 if has('nvim')
@@ -66,7 +65,6 @@ else
        \ | Plug 'aykamko/vim-easymotion-segments'
 endif
 Plug 'mattn/webapi-vim'
-      \ | Plug 'mattn/gist-vim', { 'on': 'Gist' }
 Plug 'junegunn/goyo.vim',        { 'on': 'Goyo' }
 
 Plug 'HerringtonDarkholme/yats.vim', { 'for': ['typescript', 'typescript.tsx', 'typescriptreact'] }
@@ -79,7 +77,6 @@ Plug 'kchmck/vim-coffee-script',     { 'for': 'coffee' }
 Plug 'lervag/vimtex',                { 'for': 'tex' }
 " Plug 'mattn/emmet-vim',              { 'for': ['jinja', 'html'] }
 " Plug 'nono/vim-handlebars',          { 'for': ['jinja', 'html'] }
-Plug 'vim-scripts/sh.vim--Cla',      { 'for': ['sh', 'zsh', 'bash'] }
 Plug 'jez/vim-github-hub',           { 'for': 'markdown.ghpull' }
 Plug 'derekwyatt/vim-scala',         { 'for': 'scala' }
 Plug 'tweekmonster/django-plus.vim'
@@ -117,10 +114,6 @@ if has('nvim')
   " Plug 'euclio/vim-markdown-composer', { 'for': 'markdown' }
   Plug 'Shougo/neosnippet.vim'
   Plug 'Shougo/defx.nvim', { 'do': ':UpdateRemotePlugins' }
-endif
-
-if has('mac')
-  Plug 'junegunn/vim-xmark', { 'do': 'make' }
 endif
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
@@ -1733,51 +1726,6 @@ endfunction
 
 command! OpenDefxSplit Defx -search=`expand('%:p')` -split=vertical -winwidth=50 -direction=topleft -columns=mark:indent:icon:filename:type `getcwd()`
 nnoremap <silent> <leader>k :OpenDefxSplit<CR>
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
-" coc.nvim {{{
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Use tab for trigger completion with characters ahead and navigate.
-" Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.
-inoremap <silent><expr> <TAB>
-      \ pumvisible() ? "\<C-n>" :
-      \ <SID>check_back_space() ? "\<TAB>" :
-      \ coc#refresh()
-inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
-
-function! s:check_back_space() abort
-  let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~# '\s'
-endfunction
-
-" Use <cr> to confirm completion, `<C-g>u` means break undo chain at current position.
-" Coc only does snippet and additional edit on confirm.
-inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm() :
-                                           \"\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
-
-" Use `[c` and `]c` to navigate diagnostics
-nmap <silent> [c <Plug>(coc-diagnostic-prev)
-nmap <silent> ]c <Plug>(coc-diagnostic-next)
-
-" Use K to show documentation in preview window
-nnoremap <silent> K :call <SID>show_documentation()<CR>
-
-function! s:show_documentation()
-  if (index(['vim','help'], &filetype) >= 0)
-    execute 'h '.expand('<cword>')
-  else
-    call CocAction('doHover')
-  endif
-endfunction
-
-" Remap keys for gotos
-nmap <silent> gd <Plug>(coc-definition)
-nmap <silent> gy <Plug>(coc-type-definition)
-nmap <silent> gi <Plug>(coc-implementation)
-nmap <silent> gr <Plug>(coc-references)
-
-" Remap for rename current word
-nmap <leader>rn <Plug>(coc-rename)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" }}}
 " alacritty {{{
