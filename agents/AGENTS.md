@@ -2,9 +2,27 @@
 
 Here is a glossary of custom terms or phrases I use and what they mean for you:
 
-- "yeet this change": "Please commit the change with a good message (always prefer a new commit rather than amending), `gt submit` it with Graphite (or use normal git if Graphite is not installed or not configured for the local repo), and update the PR description on Github"
-- "sweep my PR comments": "Please look at the comments I left for you on the Github PR, address each one, yeet the change, and then comment+resolve each of the comments in Github. If a comment reads more like an open question, pause before yeeting to talk to me about it"
+- "yeet this change": "Please commit the change with a good message (always prefer a new commit rather than amending), `gt submit` it with Graphite (or use normal git if Graphite is not installed), and update the PR description on Github"
+- "sweep my PR comments": "Please look at the comments I left for you on the Github PR, address each one, yeet the change, and then comment+resolve each of the comments in Github. Exceptions: (1) If a comment says "note to self", ignore it and leave it open/unchanged; this is a note for myself to revisit later. (2) If a comment reads more like an open question, pause before yeeting to talk to me about it"
 - "riff": "Let's brainstorm without writing code. You are welcome to search and run experiments, but don't change the checked-in code. Just talk to me."
+- "babysit the PR": Herd the PR until it merges into master. Follow these rules:
+  - **Acknowledge, then go quiet.** Send one acknowledgment in the session. After that, do not write in the session until a stop condition occurs.
+  - **Draft PRs.** If the PR is a draft, add the `reviewbot` label and mark the PR ready. Wait for the ReviewBot review before you continue.
+  - **Poll.** Every 2 minutes, check the PR for new bot comments, human comments, CI status, and merge-queue status. If a wait will outlast the current turn, schedule a wake-up in this session before the turn ends.
+  - **Bot comments.** Sweep the comments from ReviewBot, Cursor, and other bots. Sweep only low-severity comments. If a comment is medium or high severity, stop. Use the severity that the bot assigns. If the bot assigns no severity, decide it yourself. If you are not sure, treat it as medium.
+  - **Human comments.** Do not address human review comments. Stop.
+  - **CI.** Fix CI failures that the PR causes, and yeet each fix. If a failure is flaky or unrelated to the PR, do not change code for it. Stop. If the same job still fails after 3 consecutive fix attempts, stop.
+  - **Merge conflicts.** If the PR conflicts with master, restack it. If the conflict resolution is not mechanical, stop.
+  - **Merge queue.** When the PR has approval and green CI, add the `ready-to-merge` label. This request is my explicit permission to add that label. If merge-queue CI fails because of the PR, fix it and enqueue the PR again. Apply the CI rules above to merge-queue failures.
+  - **Waiting on review.** If the PR waits only on review, DM me once and continue to poll.
+  - **Stop conditions.** Stop and DM me at @akamko in Slack when one of these occurs:
+    - The PR merges into master.
+    - A bot comment is medium or high severity.
+    - A human leaves a review comment.
+    - A CI failure is flaky or unrelated to the PR.
+    - The same job fails after 3 consecutive fix attempts.
+    - A merge conflict needs judgment.
+  - **DM content.** Give the stop reason, the PR URL, and the action that you need from me.
 
 # Instructions for figma/figma repo
 
@@ -35,7 +53,7 @@ AGENT DESCRIPTION GOES HERE
 ```
 Replace `AGENT DESCRIPTION GOES HERE` with your description. Leave `FILL ME IN` alone for myself to fill out.
 
-If you are Claude, `{AGENT}` should be `Claude`. If you are Codex/GPT, `{AGENT}` should be Codex.
+Fill in `{AGENT}` with your colloquial model name.
 
 Note: The `figma/figma` repo guidance will probably tell you to add _Written with AI_ for all AI generated text. Please continue to follow that, but for the PR description in particular, but that phrase just under `## 🤖 {AGENT} Description` please, not at the top.
 
@@ -46,7 +64,7 @@ know, but do not change my words without asking me first.
 
 # Prose
 
-If you are Claude, please respect the following triple-quoted directive. If you are a Codex/GPT model, feel free to ignore.
+If you are Claude, please respect the following triple-quoted directive. If you are a GPT model, feel free to ignore.
 
 """
 MOST IMPORTANT:
